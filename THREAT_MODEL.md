@@ -11,10 +11,11 @@ listed in [Evidence](#evidence).
 | Asset | Where | Amount at the time of writing |
 | --- | --- | --- |
 | Treasury reserve, native QOR | `PealTender` vault `0xc3EA5683C1f8D8594A1865D169D98B509b057D41` | 67 QOR |
-| Treasury budget, fUSD (ERC-20 `0x9714…63CA`) | the same vault | 0.202817 fUSD, of which 0.1 is reserved for tender 1 |
-| Sellers' escrowed tokens (tPEAL) | the same vault | while a tender is open |
+| Treasury budget, fUSD (ERC-20 `0x9714…63CA`) | the same vault | 0.102818 fUSD (after tender 1 spent 0.099999) |
+| Bought-back tokens (tPEAL) | the same vault | 76.92 tPEAL |
+| Sellers' escrowed tokens (tPEAL) | the same vault | none at the time of writing; held while a tender is open |
 | The treasury's authority (who may spend, open, settle, sweep, rotate) | `PealTender.signer()` = the drill account | |
-| Fee money of the drill account | drill account `0x1453faDA276086E39A87CA39C1CD1F754cbf56bF` (`qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j`) | about 16 QOR, native, no ERC-20 tokens, no approvals |
+| Fee money of the drill account | drill account `0x1453faDA276086E39A87CA39C1CD1F754cbf56bF` (`qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j`) | about 15 QOR (fees only), native, no ERC-20 tokens, no approvals |
 
 ## 2. The attacker
 

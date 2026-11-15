@@ -49,6 +49,12 @@ Transactions of the first run, 15 November 2026:
 | `MsgConvertCoin` of that fUSD straight into the vault | `191073279F92FF8D5BC15299C67E3BB9C4C2FD3D0A59060BDCACEFCF0A70589A` |
 | PQ-signed `openTender` (tender 1: budget 0.1 fUSD) | `0x501ace7d5040b16fc147c4290f8aed80c10fc293d9f19e50b52746167af3bc76` |
 | Offers: 60 tPEAL at 0.0010, 50 tPEAL at 0.0013 fUSD | `0x69194b6377f2c3163932278b7a47dc1a530283c39b59136874e7bacd79d3ac73`, `0x51f3e77414ddd036bb2b6854e35d6667cf2f82bbe601bac88498c4f1286a6185` |
+| PQ-signed `settle`: clears at tick 3 (0.0013 fUSD), 76.92 tPEAL bought, the 0.0013 offer filled pro-rata | `0x39c0cc40ebd12f4e9bfcc453a245d290efb762def3c387802d23b6eef5ca3cc4` |
+| Claims: 60 tPEAL sold for 0.078 fUSD; 16.92 of 50 tPEAL sold for 0.021999 fUSD, 33.08 returned | `0x2084f9436017c57596168569a0d40254e8e0095e00006779559b73f1873638fb`, `0xed5a808ff4dbefa5910d326768a5a6b5e18bd8f1641c1e63b03fcfd2a177ca1c` |
+
+Tender 1 spent 0.099999 of its 0.1 fUSD budget; both sellers were paid the same
+price, above the 0.0010 minimum of the cheaper one. After it, the vault holds
+67 QOR and 0.102818 fUSD (all free) plus the 76.92 tPEAL it bought.
 
 Native-lane hashes are upper-case, EVM hashes are `0x…`. Every window opened for these
 steps was closed again; the drill account has no live window, holds no ERC-20 tokens
@@ -89,7 +95,8 @@ and has granted no approvals.
   sized for exactly the transactions they send, and close it in a `finally` block. The
   one exception is deployment, because a scoped window refuses contract creation.
 
-The drill and the other threats are worked through in [THREAT_MODEL.md](THREAT_MODEL.md).
+The drill and the other threats are worked through in [THREAT_MODEL.md](THREAT_MODEL.md);
+the registration and drill-day steps are in [DRILL.md](DRILL.md).
 
 ## Build and test
 
