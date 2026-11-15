@@ -1,0 +1,32 @@
+{
+  "network": "qorechain-diana",
+  "evmChainId": 9800,
+  "deployedAt": "2026-11-15T22:11:37.790Z",
+  "drillAccount": {
+    "evm": "0x1453faDA276086E39A87CA39C1CD1F754cbf56bF",
+    "qor": "qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j"
+  },
+  "opsAccount": {
+    "evm": "0xdA940905B6665BdA3Dcdb000030c830B74D4659F",
+    "qor": "qor1m22qjpdkveda50wdkqqqxryrpd6dgevlzf5pd5"
+  },
+  "contracts": {
+    "PealTender": {
+      "address": "0xc3EA5683C1f8D8594A1865D169D98B509b057D41",
+      "tx": "0x0690038331502520cf45a426dcd83efc53c294fa52be5920c31ec6b570c7d123",
+      "block": 10158423
+    },
+    "PealTestToken": {
+      "address": "0x6dE33E6D9f106427fb0bee52a61BaD6CdEE01784",
+      "tx": "0xa3e87b068d6ec805707c1fc8950c575f9020e7183ea3a93da5be794f62042cd8",
+      "block": 10158420
+    }
+  },
+  "payToken": {
+    "symbol": "fUSD",
+    "address": "0x97143B771D34ddb9130b807b135Ae675A5a963CA"
+  },
+  "signer": "0x1453faDA276086E39A87CA39C1CD1F754cbf56bF",
+  "fundingTx": "0x6f13abf1881778082cef33d6982df02535c6a4c816ddfc1155257b05b4233b4a",
+  "windowClosedTx": "147F956D82B840D3EEA748A7F82E9D634DBA9BC87D259934BC9DF74549352D30"
+}

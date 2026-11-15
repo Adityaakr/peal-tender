@@ -1,0 +1,31 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+solc_version = "0.8.28"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+remappings = [
+  "forge-std/=lib/forge-std/src/",
+  "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+  "qore-pq-kit/=kit/src/",
+  "qore-pq-kit-test/=kit/test/",
+]
+fs_permissions = [{ access = "read", path = "./" }]
+
+[fuzz]
+runs = 512
+
+[invariant]
+runs = 128
+depth = 64
+fail_on_revert = false
+
+[rpc_endpoints]
+qorechain_testnet = "https://evm-testnet.qore.host"
+
+[lint]
+lint_on_build = false

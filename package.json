@@ -1,0 +1,31 @@
+{
+  "name": "peal-tender",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Peal Tender: a treasury buyback vault on QoreChain whose sensitive actions need a post-quantum signature.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "kit"
+  ],
+  "scripts": {
+    "setup": "forge install foundry-rs/forge-std@v1.9.7 --no-git && forge install OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git && npm --workspace kit run setup",
+    "build": "forge build",
+    "test": "forge test && npm --workspace kit run test",
+    "typecheck": "tsc --noEmit && npm --workspace kit run typecheck",
+    "deploy": "forge build && tsx scripts/deploy.ts",
+    "pq": "npm --workspace kit run pq --",
+    "tender": "tsx scripts/tender.ts",
+    "holder": "tsx scripts/holder.ts"
+  },
+  "dependencies": {
+    "qore-pq-kit": "*",
+    "viem": "^2.21.0",
+    "@qorechain/sdk": "0.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3"
+  }
+}
