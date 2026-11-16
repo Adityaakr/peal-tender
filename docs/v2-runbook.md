@@ -21,11 +21,13 @@ repository.
 | --- | --- | --- | --- |
 | Deploys the library and the vault | `v2-deployer` | `qor16z0zu9avvxxs5e5n2u0xmfcza07942zyjvcc9y` (`0xd09E2e17ac618d0A6693571E6DA702EBFC5aa844`) | 3 QOR |
 | Relays every action; pays gas, has no authority | `v2-relayer` | `qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc` (`0xCFF82d1Eff98be3873cb4C3C5ecA2daeA60d9a07`) | keeps the rest, at least 5 QOR |
-| Treasury signer A | `v2-signer-a` | `qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn` (`0x29a1b196e3cb98Aa5f01Dc8788Bedf04D5b0c8D7`) | 0.25 QOR |
-| Treasury signer B | `v2-signer-b` | `qor1ynz8d7q3l6rgnsvrytxhzw6jrjg4xwmy80h0u9` (`0x24c476f811FE8689c18322CD713b521c91533B64`) | 0.25 QOR |
-| Treasury signer C | `v2-signer-c` | `qor1qy60eg0nuwq54n9w6xmppsrkan58lfhzh4f7ga` (`0x0134fca1F3E3814aCcaEd1B610C076ECe87fA6E2`) | 0.25 QOR |
+| Treasury signer A | `v2-signer-a` | `qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn` (`0x29a1b196e3cb98Aa5f01Dc8788Bedf04D5b0c8D7`) | 0.4 QOR |
+| Treasury signer B | `v2-signer-b` | `qor1ynz8d7q3l6rgnsvrytxhzw6jrjg4xwmy80h0u9` (`0x24c476f811FE8689c18322CD713b521c91533B64`) | 0.4 QOR |
+| Treasury signer C | `v2-signer-c` | `qor1qy60eg0nuwq54n9w6xmppsrkan58lfhzh4f7ga` (`0x0134fca1F3E3814aCcaEd1B610C076ECe87fA6E2`) | 0.4 QOR |
 
-Signers only sign off chain; their QOR pays for the one key registration. In the
+Signers only sign off chain; their QOR pays for two native transactions at the fixed
+0.15 QOR fee: the ML-DSA-87 key registration and the ML-KEM-1024 key for sealed
+proposals (`MsgRegisterKEMKey`). In the
 demo the owner holds all three signer keys, as separate accounts, disclosed as
 demo-only.
 
@@ -34,8 +36,9 @@ demo-only.
 1. **Funds.** 10 QOR was sent to `v2-relayer`
    (`qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc`) on 16 November from the auction's
    deployer account. The budget below fits it: the deployer 3 QOR, each signer
-   0.25 QOR, and the relayer keeps about 6.2 QOR (about 5.5 after its own
-   registration and the four sends), enough for about a dozen relayed actions.
+   0.4 QOR (its ML-DSA-87 and ML-KEM-1024 registrations), and the relayer keeps
+   about 5.8 QOR (about 5 after its own registration and the four sends), enough
+   for about a dozen relayed actions.
    Spend it sparingly: every step here is in the runbook for a reason. If more is
    needed, **(owner)** a dashboard faucet claim for the same address.
 2. Register the relayer's key, then pass QOR on and register the others:
@@ -43,10 +46,11 @@ demo-only.
    ```sh
    npm run v2 -- account register v2-relayer
    npm run v2 -- account fund v2-relayer v2-deployer 3
-   npm run v2 -- account fund v2-relayer v2-signer-a 0.25
-   npm run v2 -- account fund v2-relayer v2-signer-b 0.25
-   npm run v2 -- account fund v2-relayer v2-signer-c 0.25
+   npm run v2 -- account fund v2-relayer v2-signer-a 0.4
+   npm run v2 -- account fund v2-relayer v2-signer-b 0.4
+   npm run v2 -- account fund v2-relayer v2-signer-c 0.4
    for n in v2-deployer v2-signer-a v2-signer-b v2-signer-c; do npm run v2 -- account register $n; done
+   for n in v2-signer-a v2-signer-b v2-signer-c; do npm run v2 -- account register-kem $n; done
    ```
 
    The testnet requires a post-quantum key for every native transaction
@@ -98,6 +102,7 @@ Amounts are in fUSD base units (6 decimals). Each quorum step is
 | # | What it shows | Commands |
 | --- | --- | --- |
 | 1 | A 2-of-3 post-quantum sweep | `propose sweep fusd <relayer 0x> 10000` … `relay` |
+| 1b | A private proposal: signed by its proposer, sealed to the co-signers' registered ML-KEM keys | `propose sweep fusd <relayer 0x> 10000 --as v2-signer-a`, `sign-action <file> --as v2-signer-a`, `seal <file> --as v2-signer-a`, `sign-action <file>.sealed.json --as v2-signer-b`, `relay <opened copy>` |
 | 2 | One signature is not enough | sign with one signer only; `relay` refuses ("1 shares, 2 needed") |
 | 3 | The scoped window refuses an off-target transaction | `refusal-demo` |
 | 4 | A rotation through the timelock, vetoed | `propose queue signers 2 <a>,<b>,<new>` … `relay`; `veto <opId> --as v2-signer-c` |

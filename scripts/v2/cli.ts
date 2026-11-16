@@ -2,12 +2,18 @@
  * cli.ts - operate Peal Tender v2 with post-quantum signatures.
  *
  * Accounts (in ~/.qore-peal-tender/, never the drill account):
- *   npm run v2 -- account new|register|status <name>
+ *   npm run v2 -- account new|register|register-kem|status <name>
  *
  * A quorum action takes three steps, which can run on three machines:
- *   npm run v2 -- propose <action> ...          writes a proposal file, prints its path
- *   npm run sign-action -- <file> --as <name>   one signer adds an ML-DSA-87 share (repeat per signer)
+ *   npm run v2 -- propose <action> ... [--as <name>]  writes a proposal file, prints its path; with
+ *                                                --as, the proposer (a signer) signs it (QoreSign)
+ *   npm run sign-action -- <file> --as <name>   one signer adds an ML-DSA-87 share (repeat per signer);
+ *                                                checks the proposer's signature first, if any
  *   npm run v2 -- relay <file>                  sends it once `threshold` shares are in
+ * Keeping a proposal private until it is relayed (QoreSeal, envelope.ts):
+ *   npm run v2 -- account register-kem <name>   publish the signer's ML-KEM-1024 key (once)
+ *   npm run v2 -- seal <file> --as <name>       seal it to the other signers' registered keys;
+ *                                                sign-action opens a sealed file with the signer's own key
  *
  * Proposal actions:
  *   sweep <token> <to> <amount>                 immediate, within the daily allowance
@@ -37,7 +43,8 @@
  * inside a window scoped to [vault, fUSD, PEAL-T, auction factory], for one
  * transaction, closed again afterwards. The relayer pays gas and has no authority.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { BaseError, decodeErrorResult, encodeFunctionData, keccak256, type Address, type Hex } from "viem";
 import { FUSD, estimate, sendEvm } from "pqkit";
 import { quorumMessage, signAnyAction, signQuorumShare, orderShares } from "pqkit/pqauthset";
@@ -46,6 +53,7 @@ import { loadV2Account, newV2Account, refuseDrill, registerV2, statusV2 } from "
 import { ACTIONS, OP_KINDS, OP_STATES, actionIdOf, argsHash, metadataHash, opData, type OpenParams, type SaleConfig } from "./encode.ts";
 import {
   CHAIN_ID,
+  PROPOSALS_DIR,
   argsHashFor,
   client,
   decodeArgs,
@@ -57,6 +65,11 @@ import {
   type Proposal,
 } from "./vault.ts";
 import { withScopedWindow } from "./window.ts";
+import { addressFromBytes } from "@qorechain/qoresign";
+import { network } from "pqkit";
+import { validateAddress } from "../../vendor/qorechain-custody-kit/address.ts";
+import { checkProposer, isSealed, openSealedProposal, sealProposal, signProposal, type SignedProposal } from "./envelope.ts";
+import { fingerprint, kemKeyOf, registerKemV2, sealKeysOf } from "./kem.ts";
 import { convertFusdToVault, fund, preflight, swapFusd } from "./ops.ts";
 
 const argv = process.argv.slice(2);
@@ -71,6 +84,7 @@ const AS = flag("as");
 const RELAYER = flag("relayer", process.env.RELAYER?.trim() || "v2-relayer")!;
 const TTL_MIN = BigInt(flag("ttl-min", "30")!);
 const OUT = flag("out");
+const REPLACE = argv.includes("--replace") ? (argv.splice(argv.indexOf("--replace"), 1), true) : false;
 
 const dep = () => loadDeployment();
 const VAULT = () => dep().contracts.PealTenderV2.address;
@@ -84,11 +98,24 @@ async function tokenArg(t: string): Promise<Address> {
   return t as Address;
 }
 
+/**
+ * An address argument, checked with the QoreChain custody kit's validateAddress
+ * (vendor/qorechain-custody-kit): `0x…` or `qor1…`; a hex address whose letter case
+ * does not match its EIP-55 checksum (a typo) is refused. Returns the checksummed hex.
+ */
 function addr(a: string | undefined, what: string): Address {
-  if (!a || !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new Error(`bad ${what} "${a}"`);
-  refuseDrill(a, what);
-  return a as Address;
+  const v = validateAddress(a ?? "");
+  if (!v.valid) throw new Error(`bad ${what} "${a ?? ""}": ${v.detail} (${v.error})`);
+  refuseDrill(v.hex, what);
+  return v.hex as Address;
 }
+
+/** The chain's own time: proposals, proofs and envelopes are all checked against it. */
+async function chainNow(): Promise<Date> {
+  return new Date(Number((await client().getBlock()).timestamp) * 1000);
+}
+
+const COSMOS_CHAIN_ID = () => network().chainId;
 
 async function targets(): Promise<string[]> {
   const t = [VAULT(), await read<Address>("payToken"), await read<Address>("buyToken")];
@@ -276,22 +303,80 @@ async function propose(): Promise<void> {
     createdAt: new Date().toISOString(),
     shares: [],
   };
-  const file = saveProposal(p, OUT);
+  let out: SignedProposal = p;
+  if (AS) {
+    const proposer = await loadV2Account(AS);
+    if (!(await read<boolean>("isMember", [proposer.evm]))) throw new Error(`${AS} (${proposer.evm}) is not a member of the vault's signer set`);
+    out = signProposal(p, proposer, COSMOS_CHAIN_ID(), new Date(Number(block.timestamp) * 1000));
+  }
+  const file = saveProposal(out, OUT);
   console.log(summary);
   console.log(`nonce ${nonce}, deadline ${deadline} (${TTL_MIN} min)`);
+  if (AS) console.log(`signed by the proposer ${AS} (secp256k1 + ML-DSA-87)`);
   console.log(`proposal: ${file}`);
+}
+
+// ------------------------------------------------------------------ seal
+
+/** Seal a proposal to every other member's registered ML-KEM-1024 key. */
+async function seal(): Promise<void> {
+  const file = argv[1];
+  if (!file || !AS) throw new Error("seal <proposal.json> --as <signer name>");
+  const p = loadProposal(file) as SignedProposal;
+  if (p.vault.toLowerCase() !== VAULT().toLowerCase()) throw new Error(`proposal is for vault ${p.vault}, not ${VAULT()}`);
+  const me = await loadV2Account(AS);
+  if (!(await read<boolean>("isMember", [me.evm]))) throw new Error(`${AS} (${me.evm}) is not a member of the vault's signer set`);
+  const now = await chainNow();
+  const pc = await checkProposer(p, client(), COSMOS_CHAIN_ID(), now);
+  if (pc.status === "unsigned") throw new Error("sign the proposal as its proposer first (propose ... --as <name>): recipients should know who wrote it");
+  const members = await read<Address[]>("members");
+  const recipients = [];
+  const missing: string[] = [];
+  for (const m of members) {
+    if (m.toLowerCase() === me.evm.toLowerCase()) continue;
+    const qor = addressFromBytes(Uint8Array.from(Buffer.from(m.slice(2), "hex"))).bech32;
+    const key = await kemKeyOf(qor);
+    if (key) recipients.push({ qor, mlkemPublicKey: key });
+    else missing.push(`${m} (${qor})`);
+  }
+  if (missing.length) throw new Error(`no ML-KEM-1024 key published for: ${missing.join(", ")}; each runs \`npm run v2 -- account register-kem <name>\``);
+  const sealed = sealProposal(p, me, COSMOS_CHAIN_ID(), recipients, now);
+  const out = OUT ?? file.replace(/\.json$/, "") + ".sealed.json";
+  writeFileSync(out, JSON.stringify(sealed, null, 2) + "\n", { mode: 0o600 });
+  console.log(`sealed to ${recipients.map((r) => `${r.qor} (${fingerprint(r.mlkemPublicKey)})`).join(", ")}`);
+  console.log(`sealed proposal: ${out}`);
 }
 
 // ------------------------------------------------------------------ sign-action
 
 async function signAction(): Promise<void> {
-  const file = argv[1];
+  let file = argv[1];
   if (!file || !AS) throw new Error("sign-action <proposal.json> --as <signer name>");
-  const p = loadProposal(file);
-  if (p.vault.toLowerCase() !== VAULT().toLowerCase()) throw new Error(`proposal is for vault ${p.vault}, not ${VAULT()}`);
   const signer = await loadV2Account(AS);
   const me = signer.evm as Address;
   if (!(await read<boolean>("isMember", [me]))) throw new Error(`${AS} (${me}) is not a member of the vault's signer set`);
+  const now = await chainNow();
+
+  // A sealed proposal: open this signer's envelope and check its sender against the chain.
+  const raw = JSON.parse(readFileSync(file, "utf8")) as unknown;
+  if (isSealed(raw)) {
+    const opened = await openSealedProposal(raw, signer.cosmos, sealKeysOf(signer), client(), now);
+    if (!(await read<boolean>("isMember", [opened.evm]))) throw new Error(`sealed by ${opened.from}, who is not a member of the signer set; not signing`);
+    file = saveProposal(opened.proposal, join(PROPOSALS_DIR, basename(file).replace(/(\.sealed)?\.json$/, "") + `.opened-by-${AS}.json`));
+    console.log(`opened a proposal sealed to ${signer.cosmos} by ${opened.from} (a member; signature verified against its key on chain)`);
+    console.log(`opened copy: ${file}`);
+  }
+  const p = loadProposal(file) as SignedProposal;
+  if (p.vault.toLowerCase() !== VAULT().toLowerCase()) throw new Error(`proposal is for vault ${p.vault}, not ${VAULT()}`);
+
+  // Who wrote it: the proposer's hybrid signature, against its ML-DSA-87 key on chain.
+  const pc = await checkProposer(p, client(), COSMOS_CHAIN_ID(), now);
+  if (pc.status === "verified") {
+    if (!(await read<boolean>("isMember", [pc.evm]))) throw new Error(`proposed by ${pc.from}, who is not a member of the signer set; not signing`);
+    console.log(`proposed by ${pc.from} (${pc.evm}), a member; its secp256k1 + ML-DSA-87 signature verifies against its key on chain`);
+  } else {
+    console.log("unsigned proposal: nothing says who wrote it, so check every field below yourself");
+  }
   const nonce = await read<bigint>("nonce");
   if (nonce.toString() !== p.nonce) throw new Error(`stale proposal: made at nonce ${p.nonce}, the vault is at ${nonce}`);
 
@@ -448,18 +533,20 @@ const commands: Record<string, () => Promise<unknown>> = {
   status,
   propose,
   "sign-action": signAction,
+  seal,
   relay,
   veto,
   ...permissionless,
   "refusal-demo": refusalDemo,
   account: async () => {
     const [sub, name, ...rest] = argv.slice(1);
-    if (!name) throw new Error("account new|register|status <name> | account fund <from> <to> <QOR>");
+    if (!name) throw new Error("account new|register|register-kem|status <name> | account fund <from> <to> <QOR>");
     if (sub === "new") return newV2Account(name);
     if (sub === "register") return registerV2(name);
+    if (sub === "register-kem") return registerKemV2(name, { replace: REPLACE });
     if (sub === "status") return statusV2(name);
     if (sub === "fund") return fund(name, rest[0]!, rest[1]!);
-    throw new Error("account new|register|status <name> | account fund <from> <to> <QOR>");
+    throw new Error("account new|register|register-kem|status <name> | account fund <from> <to> <QOR>");
   },
   preflight: () => preflight({ buy: flag("buy"), factory: flag("factory") }),
   fusd: async () => {
