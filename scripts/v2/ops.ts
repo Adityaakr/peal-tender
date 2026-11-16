@@ -36,21 +36,25 @@ import { DEPLOYMENT_FILE, LOCAL_RPC, loadDeployment } from "./vault.ts";
 
 export const NOT_BEFORE = Date.parse("2026-11-19T00:00:00Z");
 
-/** What each role needs in native QOR before the deploy and a demo's worth of actions. */
+/**
+ * What each role needs in native QOR, sized to a 10 QOR budget (what the v2 relayer
+ * received on 16 November). Native transactions cost a fixed 0.15 QOR fee; EVM
+ * transactions about 112.5 gwei per gas, with windows capped at 200 gwei.
+ */
 export const ROLES = [
   {
     name: "v2-deployer",
-    needQor: 5,
-    why: "key registration, a window, and two contract creations (TenderBook ~1.9M gas, the vault ~5.9M) at up to 250 gwei",
+    needQor: 3,
+    why: "key registration, a window open and close, and two creations (~1.9M and ~5.9M gas; the window cap is about 2 QOR)",
   },
   {
     name: "v2-relayer",
-    needQor: 8,
-    why: "key registration, then per relayed action a window open and close (~0.3 QOR) plus 0.5 to 0.7M gas; about 20 actions",
+    needQor: 5,
+    why: "key registration and four funding sends, then about 0.4 QOR per relayed action (window open and close plus 0.5 to 0.7M gas)",
   },
-  { name: "v2-signer-a", needQor: 0.5, why: "key registration only (signers sign off chain; they never send)" },
-  { name: "v2-signer-b", needQor: 0.5, why: "key registration only" },
-  { name: "v2-signer-c", needQor: 0.5, why: "key registration only" },
+  { name: "v2-signer-a", needQor: 0.25, why: "key registration only (signers sign off chain; they never send)" },
+  { name: "v2-signer-b", needQor: 0.25, why: "key registration only" },
+  { name: "v2-signer-c", needQor: 0.25, why: "key registration only" },
 ] as const;
 
 const UQOR_PER_QOR = 1_000_000n;

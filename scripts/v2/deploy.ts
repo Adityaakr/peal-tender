@@ -12,8 +12,9 @@
  *
  * 1. Refuses to run before 19 November 2026 00:00 UTC (the Q-Day Drill runs on the
  *    18th), and refuses any drill address as deployer, member, token or factory.
- * 2. Opens an UNSCOPED window for exactly two transactions (a scoped window refuses
- *    contract creation): the TenderBook library, then the vault linked to it.
+ * 2. Asks the node for both creations' gas, then opens an UNSCOPED window for
+ *    exactly those two transactions (a scoped window refuses contract creation):
+ *    the TenderBook library, then the vault linked to it.
  * 3. Closes the window and checks that none is left.
  * 4. Writes deployments/qorechain-diana-v2.json. The drill's
  *    deployments/qorechain-diana.json is never touched.
@@ -21,7 +22,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { fetchEvmWindow } from "@qorechain/sdk";
 import { encodeDeployData, getContractAddress, type Address } from "viem";
-import { FUSD, broadcast, network, publicClient, sendEvm } from "pqkit";
+import { FUSD, MAX_FEE_PER_GAS, balances, broadcast, estimate, network, publicClient, qor, sendEvm } from "pqkit";
 import { openEvmWindowMsg } from "@qorechain/sdk";
 import { evmWindowCost } from "@qorechain/evm";
 import { loadV2Account, refuseDrill } from "./accounts.ts";
@@ -58,20 +59,33 @@ async function main(): Promise<void> {
   const client = publicClient();
   const net = network();
 
-  const balance = await client.getBalance({ address: deployer.evm as Address });
-  if (balance < 3n * 10n ** 18n) {
-    throw new Error(`v2-deployer ${deployer.evm} holds ${balance} wei; it needs about 3 QOR of test funds`);
-  }
-
   const book = artifact("TenderBook.sol", "TenderBook");
   const vault = artifact("PealTenderV2.sol", "PealTenderV2");
+  const vaultData = (library: Address) =>
+    encodeDeployData({ abi: vault.abi, bytecode: link(vault, "TenderBook", library), args: [pay, buy, members, 2n, delay, factory, cap] });
 
-  // 1. Window: two creations of up to 8,000,000 gas each (the vault measured 5.87M locally), unscoped (creation needs it).
+  // 1. Ask the node what both creations cost (25% headroom), before the window: opening a
+  //    window advances the account's nonce, so the library's address is only known after
+  //    it. The library address does not change the vault's gas, so a stand-in is used here.
+  //    The vault's constructor reads every member's key from pqcKeyStatus, so this also
+  //    fails early if a signer has not registered.
+  const gasBook = await estimate(deployer, { data: book.bytecode.object });
+  const gasVault = await estimate(deployer, { data: vaultData("0x1111111111111111111111111111111111111111") });
+  const maxValue =
+    evmWindowCost({ gas: gasBook, maxFeePerGas: MAX_FEE_PER_GAS, value: 0n }) +
+    evmWindowCost({ gas: gasVault, maxFeePerGas: MAX_FEE_PER_GAS, value: 0n });
+  const nativeFees = 3n * 150_000n; // open window, close window, slack (uqor)
+  console.log(`estimated gas: TenderBook ${gasBook}, vault ${gasVault}; window cap ${qor(maxValue)}`);
   if (!LOCAL_RPC) {
-    const perTx = evmWindowCost({ gas: 8_000_000n, maxFeePerGas: 250_000_000_000n, value: 0n });
-    const open = await broadcast(deployer, [
-      openEvmWindowMsg({ sender: deployer.cosmos, blocks: 300, maxTxs: 2, maxValue: perTx * 2n }),
-    ]);
+    const have = (await balances(deployer.cosmos)).uqor ?? 0n;
+    if (have < maxValue + nativeFees) {
+      throw new Error(`v2-deployer ${deployer.cosmos} holds ${qor(have)}; it needs ${qor(maxValue + nativeFees)}`);
+    }
+  }
+
+  // 2. Window: exactly these two creations, unscoped (a scoped window refuses creation).
+  if (!LOCAL_RPC) {
+    const open = await broadcast(deployer, [openEvmWindowMsg({ sender: deployer.cosmos, blocks: 300, maxTxs: 2, maxValue })]);
     console.log(`opened an unscoped two-transaction window: tx ${open.transactionHash}`);
   }
   try {
@@ -79,17 +93,13 @@ async function main(): Promise<void> {
     const bookAddress = getContractAddress({ from: deployer.evm as Address, nonce });
     const vaultAddress = getContractAddress({ from: deployer.evm as Address, nonce: nonce + 1n });
 
-    // 2. The library, then the vault linked to it.
-    const r1 = await sendEvm(deployer, { data: book.bytecode.object, gas: 6_000_000n });
+    // 3. The library, then the vault linked to it.
+    const r1 = await sendEvm(deployer, { data: book.bytecode.object, gas: gasBook });
     if (r1.contractAddress?.toLowerCase() !== bookAddress.toLowerCase()) throw new Error("unexpected TenderBook address");
     console.log(`TenderBook   ${bookAddress} (tx ${r1.transactionHash}, gas ${r1.gasUsed})`);
 
-    const data = encodeDeployData({
-      abi: vault.abi,
-      bytecode: link(vault, "TenderBook", bookAddress),
-      args: [pay, buy, members, 2n, delay, factory, cap],
-    });
-    const r2 = await sendEvm(deployer, { data, gas: 8_000_000n });
+    const data = vaultData(bookAddress);
+    const r2 = await sendEvm(deployer, { data, gas: gasVault });
     if (r2.contractAddress?.toLowerCase() !== vaultAddress.toLowerCase()) throw new Error("unexpected vault address");
     console.log(`PealTenderV2 ${vaultAddress} (tx ${r2.transactionHash}, gas ${r2.gasUsed})`);
 
@@ -113,7 +123,7 @@ async function main(): Promise<void> {
     writeFileSync(DEPLOYMENT_FILE, JSON.stringify(out, null, 2) + "\n");
     console.log(`wrote ${DEPLOYMENT_FILE}`);
   } finally {
-    // 3. Close the window whatever happened.
+    // 4. Close the window whatever happened.
     if (!LOCAL_RPC) {
       await closeWindowFor(deployer);
       const w = await fetchEvmWindow({ rest: net.rest, address: deployer.cosmos });

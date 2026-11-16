@@ -13,7 +13,7 @@
  */
 import { closeEvmWindowMsg, fetchEvmWindow, openEvmWindowMsg, type UnifiedAccount } from "@qorechain/sdk";
 import { evmWindowCost } from "@qorechain/evm";
-import { broadcast, network } from "pqkit";
+import { MAX_FEE_PER_GAS, broadcast, network } from "pqkit";
 import { refuseDrill } from "./accounts.ts";
 import { LOCAL_RPC } from "./vault.ts";
 
@@ -22,7 +22,7 @@ export interface ScopedWindow {
   maxTxs: number; // 1 to 5
   blocks: number; // 1 to 600 (about ten minutes)
   gasPerTx: bigint;
-  maxFeePerGas?: bigint;
+  maxFeePerGas?: bigint; // default: the 200 gwei cap the kit's sendEvm signs with
 }
 
 export async function openScopedWindow(acc: UnifiedAccount, w: ScopedWindow): Promise<string> {
@@ -30,7 +30,7 @@ export async function openScopedWindow(acc: UnifiedAccount, w: ScopedWindow): Pr
   if (w.maxTxs < 1 || w.maxTxs > 5) throw new Error("a v2 window admits 1 to 5 transactions");
   if (w.blocks < 1 || w.blocks > 600) throw new Error("a v2 window lasts 1 to 600 blocks");
   for (const t of w.targets) refuseDrill(t, "window target");
-  const perTx = evmWindowCost({ gas: w.gasPerTx, maxFeePerGas: w.maxFeePerGas ?? 250_000_000_000n, value: 0n });
+  const perTx = evmWindowCost({ gas: w.gasPerTx, maxFeePerGas: w.maxFeePerGas ?? MAX_FEE_PER_GAS, value: 0n });
   const targets = w.targets.map((t) => t.toLowerCase());
   const msg = openEvmWindowMsg({
     sender: acc.cosmos,
