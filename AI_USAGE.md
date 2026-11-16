@@ -153,3 +153,13 @@ and refusals printed only a raw error selector (the CLI now names the vault's
 error, e.g. `OverDailyCap(…)`). The run also caught the harness's own arithmetic
 being wrong about the daily cap, which the vault enforced correctly; the harness
 now asserts that refusal.
+
+### 16 November 2026: v2, third pull request (ready for the testnet)
+
+After the second pull request was merged, the worker prepared the 19 November
+deployment without touching the chain: a read-only `preflight` command, `fund` /
+`fusd swap` / `fusd convert` restricted to v2 accounts and the v2 vault, and
+`docs/v2-runbook.md`. It created the five fresh v2 accounts on the build machine
+(keys in `~/.qore-peal-tender/`, addresses in the runbook) and ran `preflight`
+against the testnet read-only; nothing was signed or sent. **Still the owner's:**
+the faucet claim for `v2-relayer` from 19 November.

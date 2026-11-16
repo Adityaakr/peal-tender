@@ -25,6 +25,10 @@
  *   npm run v2 -- veto <opId> --as <name>
  * Anyone (permissionless):
  *   npm run v2 -- execute <opId> | settle | collect <auction>
+ * Getting ready (see docs/v2-runbook.md):
+ *   npm run v2 -- preflight [--buy <PEAL-T>] [--factory <factory>]   read-only checklist
+ *   npm run v2 -- account fund <fromName> <toName> <QOR>             between v2 accounts only
+ *   npm run v2 -- fusd swap <name> <uqorIn> <minOut> | fusd convert <name> [amount]
  * Read-only and demos:
  *   npm run v2 -- status
  *   npm run v2 -- refusal-demo                  a scoped window refuses an off-target transaction
@@ -53,6 +57,7 @@ import {
   type Proposal,
 } from "./vault.ts";
 import { withScopedWindow } from "./window.ts";
+import { convertFusdToVault, fund, preflight, swapFusd } from "./ops.ts";
 
 const argv = process.argv.slice(2);
 function flag(name: string, fallback?: string): string | undefined {
@@ -448,12 +453,20 @@ const commands: Record<string, () => Promise<unknown>> = {
   ...permissionless,
   "refusal-demo": refusalDemo,
   account: async () => {
-    const [sub, name] = argv.slice(1);
-    if (!name) throw new Error("account new|register|status <name>");
+    const [sub, name, ...rest] = argv.slice(1);
+    if (!name) throw new Error("account new|register|status <name> | account fund <from> <to> <QOR>");
     if (sub === "new") return newV2Account(name);
     if (sub === "register") return registerV2(name);
     if (sub === "status") return statusV2(name);
-    throw new Error("account new|register|status <name>");
+    if (sub === "fund") return fund(name, rest[0]!, rest[1]!);
+    throw new Error("account new|register|status <name> | account fund <from> <to> <QOR>");
+  },
+  preflight: () => preflight({ buy: flag("buy"), factory: flag("factory") }),
+  fusd: async () => {
+    const [sub, name, a, b, pool] = argv.slice(1);
+    if (sub === "swap" && name && a && b) return swapFusd(name, BigInt(a), BigInt(b), pool);
+    if (sub === "convert" && name) return convertFusdToVault(name, a ? BigInt(a) : undefined);
+    throw new Error("fusd swap <name> <uqorIn> <minOut> [poolId] | fusd convert <name> [amount]");
   },
 };
 const run = commands[cmd];
