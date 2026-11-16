@@ -109,6 +109,20 @@ Amounts are in fUSD base units (6 decimals). Each quorum step is
 `npm run dashboard` shows the vault, the signer keys from `pqcKeyStatus`, the
 allowance, the queue and the sales throughout.
 
+## 4b. Host the web app (owner, once) and smoke-test a guest account
+
+1. **(owner)** On vercel.com, import `Adityaakr/peal-tender` as a project. No settings
+   or environment variables are needed: `vercel.json` sets the install and build
+   commands, the output folder, the `/api/qore/*` rewrites to the testnet REST and RPC,
+   and the security headers. Every push to `main` then redeploys; pull requests get
+   preview URLs.
+2. In the hosted app: **Connect → Create a guest account**, fund it with about 0.6 QOR
+   (`npm run v2 -- account fund v2-relayer <name>` does not apply to a browser account;
+   send from QoreX, or a bank send from `v2-relayer` to the guest's `qor1` address),
+   then **Get test PEAL-T** and **Offer** into the open tender. This is the first run of
+   the browser path on the real chain (key registration, a scoped window, two EVM
+   transactions, the window closed); record the transactions in `docs/spikes.md`.
+
 ## 5. Afterwards
 
 - Record the addresses and transaction hashes in `README.md` and the measured gas in

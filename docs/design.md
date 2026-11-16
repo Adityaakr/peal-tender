@@ -96,6 +96,36 @@ behind `prefers-reduced-motion: no-preference`.
   or a wide table inside its own scroller.
 - Every page works at 390px wide.
 
+## Landing page (every entry)
+
+Each product opens on a landing page before its app, in this order:
+
+1. **Hero:** an eyebrow chip (the hackathon category), a Josefin Sans headline of at
+   most two lines with one phrase in the hero-mark box, a two-sentence sub in
+   secondary text, a primary button into the app and a secondary "try it" button, and
+   a simple diagram of the mechanism in the accent ramp on the right.
+2. **Live strip:** four or five figures read from the chain (one white card, hairline
+   dividers), or a plain "deploying on <date>" when nothing is live yet.
+3. **How it works:** three numbered cards.
+4. **Why it matters before Q-Day:** a short paragraph and evidence (a terminal-style
+   block of real results).
+5. **Who does what:** three role cards, each linking into the app.
+6. **Try it:** numbered steps a visitor can finish in about five minutes on testnet.
+7. **Built with:** the chain features, the shared toolkit, the sibling products, and
+   the repository.
+
+## Wallets (every entry)
+
+- One **Connect** button in the header opens a right-hand drawer.
+- Offer the ways in that the chain actually supports, and say plainly what each can
+  do: a **guest account** (a fresh testnet key pair in the browser, with backup and
+  forget; it registers its ML-DSA-87 key and opens scoped windows), **QoreX**
+  (identity, and funding the guest with one transfer; it cannot send EVM transactions
+  for pages yet), and **MetaMask** (identity and the network; it cannot sign for
+  QoreChain by itself).
+- The drawer shows a live log of each step (register key, open window, send, close
+  window), and errors in words.
+
 ## Trust
 
 - The web pages hold no keys. Reading is free; signing happens in a CLI or a wallet

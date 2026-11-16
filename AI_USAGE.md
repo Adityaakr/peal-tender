@@ -188,3 +188,19 @@ CLI, verified by the page, and relayed by the CLI on a local node; a tampered
 signature was flagged. Screenshots caught three of its own mistakes: unsized icons
 rendered huge, the drop zone's border broke (an inline element), and empty price
 fields made the first test proposal fail.
+
+### 16 November 2026: landing page and wallets (owner request)
+
+The owner asked for wallet connection so that other people can try the app, and for a
+landing page. The worker checked what QoreChain allows before building: the SDK has
+removed signature-derived accounts as unsafe; MetaMask cannot make the post-quantum
+signature an EVM transaction needs; and QoreX, per its current docs (read by a
+research agent), can identify the user and sign native transfers but not send EVM
+transactions or open windows for a page. The owner chose to offer all three: a guest
+account in the browser (the one that acts), QoreX (identity and funding the guest)
+and MetaMask (identity and network), hosted on Vercel. The worker built the landing
+page, the wallet drawer and the actions (get test PEAL-T, offer, claim, settle,
+execute, collect). It checked the guest flow in a real browser on a local node, and
+the QoreX and MetaMask paths with stand-in providers that follow the documented
+interfaces. It left the browser's first real testnet transactions for the deploy day,
+to save the 10 QOR budget.

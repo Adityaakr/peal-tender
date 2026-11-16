@@ -1,4 +1,7 @@
+import { encodeFunctionData } from "viem";
+import { vaultAbi } from "../../../../scripts/v2/abi.ts";
 import { ZERO, type Sale } from "../data.ts";
+import { act } from "../wallet/store.ts";
 import { type Ctx } from "../main.ts";
 import { chip, dateTime, h, hash, stat, table, amount } from "../ui.ts";
 import { fmt, header } from "./common.ts";
@@ -12,6 +15,13 @@ function saleChip(x: Sale): HTMLElement {
 
 export async function sales(ctx: Ctx): Promise<HTMLElement> {
   const s = ctx.snap;
+  const collect = (x: Sale) => {
+    const b = h("button.btn.btn-small.btn-primary", { type: "button" }, "Collect");
+    b.addEventListener("click", () =>
+      void act("Collect a sealed sale", [{ to: ctx.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "collectSealedSale", args: [x.auction] }), label: "Bring the proceeds and unsold fUSD home" }], ctx.reload),
+    );
+    return b;
+  };
   const collected = s.sales.filter((x) => x.state === "Collected");
   const sold = collected.reduce((a, x) => a + (x.supply - x.returned), 0n);
   const got = collected.reduce((a, x) => a + x.proceeds, 0n);
@@ -29,7 +39,7 @@ export async function sales(ctx: Ctx): Promise<HTMLElement> {
       x.state === "Collected" || x.state === "Cancelled" ? `${fmt(x.returned, s.pay)} ${s.pay.symbol}` : h("span.muted", "–"),
       each > 0n ? `${amount(each, s.buy.decimals, 2)} ${s.buy.symbol}` : h("span.muted", "–"),
       x.state === "Active" && (x.auctionState === "Settled" || x.auctionState === "Failed")
-        ? h("span.mono.small", `npm run v2 -- collect ${x.auction}`)
+        ? collect(x)
         : x.endTime
           ? h("span.small.muted", `bids close ${dateTime(x.endTime)}`)
           : dateTime(x.startedAt),

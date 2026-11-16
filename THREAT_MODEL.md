@@ -248,7 +248,9 @@ run against the real Peal Sealed Auction contracts ([`docs/spikes.md`](docs/spik
 | Settlement never happens | Anyone may `settle` after the end; there is no key holder to wait for |
 | A malicious **proposal file** handed to a signer | `sign-action` decodes the arguments, recomputes the argument hash itself, refuses a mismatch, checks the vault's own `quorumMessage` bytes, and prints what is being signed. The web app's checker does the same in the browser before anyone signs or relays, describes the action from its arguments rather than from the file's own summary, and verifies every share with ML-DSA-87 against the key the chain holds |
 | The precompile switched off | Fails closed, as v1 (`test_sweep_failsClosedWithoutPrecompile`) |
-| The web app | It holds no keys, has no wallet connection and sends nothing; text from the chain and from proposal files is set as text, never as HTML |
+| The web app | Treasury keys never enter it. Text from the chain and from proposal files is set as text, never as HTML, and the hosted site sends a strict Content-Security-Policy (scripts only from itself, connections only to itself and the testnet EVM RPC) |
+| A visitor's **guest account** | A testnet-only key pair in the visitor's own browser storage, from the browser's random source (never derived from a wallet signature, which the SDK rejects as unsafe). Whoever reads that browser's storage controls the guest account and its test funds; it has no authority over the vault, which only its 2-of-3 ML-DSA-87 signers have. The page says so, offers a backup and a forget button, and never asks for a treasury key |
+| The `/api/qore/*` proxy | Same-origin rewrites to the public testnet REST and CometBFT RPC endpoints only; it holds no keys and sees only what the public endpoints see. Data read through it is not trusted for authority: every vault rule is enforced on chain |
 | The linked `TenderBook` library | Its address is fixed in the vault's code at deployment; its state-changing functions refuse direct calls (Solidity's library call guard), and it holds no funds or state of its own |
 
 ### 8.3 Residual risks, stated plainly
