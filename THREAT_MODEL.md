@@ -209,3 +209,62 @@ registration reverts; inactive precompile returns empty data; `pqcVerify` costs
 about 317,000 gas as a whole transaction).
 
 Transactions are listed in the README under "Deployed".
+
+## 8. Peal Tender v2 (the full build)
+
+Added 16 November 2026. v2 (`src/PealTenderV2.sol`, `src/TenderBook.sol`) is a new
+contract beside the drill vault; sections 1 to 7 describe the drill vault and stay as
+they were. v2 is **not deployed yet** (no testnet deploys before 19 November 2026),
+so nothing in this section is "observed" on chain; the tests named here run on
+Foundry's local EVM with the precompiles mocked, and the sealed-sale path was also
+run against the real Peal Sealed Auction contracts ([`docs/spikes.md`](docs/spikes.md), T3).
+
+### 8.1 What changes
+
+| | v1 (drill) | v2 |
+| --- | --- | --- |
+| Authority | one signer account's ML-DSA-87 key | a 2-of-3 set of accounts, each with its own ML-DSA-87 key (`PqAuthSet`) |
+| Rule changes (signers, delay, caps, auction factory) | immediate (`rotateSigner`) | queued for `delay`; any one signer can veto |
+| Outflows the authority can make at once | everything free | at most `dailyCap` per token per UTC day, summed over sweeps, tender budgets and sealed-sale supplies; more waits in the queue |
+| Settlement | gated, with a 3-day `expire` valve | anyone, once the tender ends |
+| Buybacks | open tender | open tender, or a sealed sale on Peal Sealed Auction with the vault as issuer |
+
+### 8.2 Threats and what stops them
+
+| Threat | What happens |
+| --- | --- |
+| **The drill's attacker**: classical keys of every signer and of the relayer | Nothing moves. Every quorum action needs two ML-DSA-87 shares checked by `pqcVerify` against keys read from `pqcKeyStatus`; `msg.sender` grants nothing (`test_sweep_memberSenderWithJunkFails`, invariant `noAttackSucceeds`, whose handler sends forged actions from the members' own accounts). The relayer's classical key can at most open its own windows and pay gas |
+| **One signer's post-quantum key stolen** | The thief cannot act alone: one share is refused (`PqSetTooFewSignatures`), and a single-member veto signature is refused as a quorum share (different domain, `test_sweep_refusesSingleMemberDomainShares`). It can veto queued changes and so delay a signer rotation; the two honest signers can still sweep the treasury to safety at the daily cap's rate, and every veto is public |
+| **Two signers' post-quantum keys stolen** (a quorum) | Bounded and visible. Immediate outflows stop at `dailyCap` per token per day (`invariant_capAndDelay`, `testFuzz_capPerDay`). A larger sweep, a new signer set, a higher cap, a shorter delay or another auction factory must wait `delay` in the public queue, where the honest third signer vetoes it with one signature. A quorum can still spend within the cap at a bad price (a tender with a high price ladder, a sealed sale with a low reserve); the cap bounds that too, because tender budgets and sale supplies draw on the same allowance |
+| **All three keys stolen** | Total loss, as for any multisig: the timelock then only delays a drain by `delay` |
+| A share signed for one action used for another | Each share binds chain id, vault, member, action (under the quorum domain), set nonce, deadline and an argument hash; fuzzed (`testFuzz_argumentsBound`, `testFuzz_otherNonceRefused`) |
+| Replaying a share, or one made before a membership change | The set nonce is consumed by every quorum action and every veto; an executed signer-set change also voids every other queued change (`OpVoid`) |
+| The same member counted twice | Signers must be strictly ascending, which proves they are distinct (`test_sweep_refusesSameMemberTwice`) |
+| A queued change run early, or very late | `execute` only between `eta` and `eta + 7 days` (`testFuzz_executeWindow`); the delay itself is queued and bounded to 5 minutes to 30 days |
+| A new member without a usable key | Checked at queue time and again at execution (`test_timelock_rotateChecksKeysAtExecution`) |
+| A malicious **auction factory** | Only the factory set at deployment or through the timelock is used, and the quorum's signature binds the factory address too (`test_sale_signatureBindsNameDetailsAndFactory`). The vault approves exactly the supply, clears the approval in the same call, refuses a factory that moves a different amount (`SaleFundingMismatch`) or does not list the auction (`NotAnAuction`), and is `nonReentrant` throughout (`test_sale_reentryIsRefused`) |
+| A sealed sale that pays someone else | The vault refuses a config whose issuer is not the vault, whose sale and quote tokens are not fUSD and PEAL-T, or whose fee is not zero; the auction pays proceeds and unsold supply only to its issuer |
+| Someone claims a sale's proceeds on the auction directly | Harmless: they arrive in the vault anyway, and `collectSealedSale` takes whatever is left (`test_sale_collectAfterSomeoneClaimedDirectly`) |
+| Settlement never happens | Anyone may `settle` after the end; there is no key holder to wait for |
+| A malicious **proposal file** handed to a signer | `sign-action` decodes the arguments, recomputes the argument hash itself, refuses a mismatch, checks the vault's own `quorumMessage` bytes, and prints what is being signed |
+| The precompile switched off | Fails closed, as v1 (`test_sweep_failsClosedWithoutPrecompile`) |
+| The linked `TenderBook` library | Its address is fixed in the vault's code at deployment; its state-changing functions refuse direct calls (Solidity's library call guard), and it holds no funds or state of its own |
+
+### 8.3 Residual risks, stated plainly
+
+- **One signer can stall changes.** Any single member can veto every queued change,
+  including the change that removes it. With one compromised member the honest two
+  can still operate within the cap, but cannot rotate it out while it keeps vetoing.
+  We chose this over the opposite risk (two compromised members rotating the honest
+  one out) because the cap keeps the treasury drainable to safety either way.
+- **The cap is per UTC day,** so a quorum thief can spend the cap just before and
+  just after midnight: up to two caps in a short time.
+- **The timelock protects only as long as someone watches it.** A veto needs an
+  honest signer to notice the queued change within `delay`. The testnet demo uses a
+  15-minute delay so it fits a video; a real treasury would use days and alerting
+  on `OpQueued`. The dashboard shows every queued change with its countdown.
+- **In the demo the owner holds all three signer keys,** as three accounts on
+  separate machines or browsers, disclosed as demo-only (as decision D3 does for the
+  auction's committee). That shows the mechanism, not independent custody.
+- **v2 is not audited yet**; the two-stage QCAI audit is prepared in
+  [`audits/`](audits/README.md).

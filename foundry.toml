@@ -13,6 +13,11 @@ remappings = [
   "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
   "qore-pq-kit/=kit/src/",
   "qore-pq-kit-test/=kit/test/",
+  # PealTenderV2 and its tests use qore-pq-kit by git tag (v0.3.0, installed into
+  # lib/ by `npm run setup`). The drill vault keeps the in-repo kit/ copy until
+  # after the Q-Day Drill; the Solidity sources are byte-identical.
+  "pqkit/=lib/qore-pq-kit/src/",
+  "pqkit-test/=lib/qore-pq-kit/test/",
 ]
 fs_permissions = [{ access = "read", path = "./" }]
 
