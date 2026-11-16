@@ -172,3 +172,19 @@ The orchestrator relayed that 10 QOR, not a faucet claim of 90, was being sent t
 deploy script size its window from the node's own gas estimates instead of a fixed
 2 × 8M gas at 250 gwei, which had reserved about 4 QOR for a deploy that needs about
 1 QOR. Nothing was sent.
+
+### 16 November 2026: the web app, in Peal's design language (owner decision)
+
+The owner asked the worker directly for a "best in class" frontend and chose, from
+the options it offered, a full read-only app with a proposal builder (signing stays
+in the CLI) and Peal's design language as the shared look for all three entries.
+The worker read Peal's brand guide and the explorer's styles (read-only, never
+copied), wrote the rules down as `docs/design.md`, and built the app: seven pages,
+a price-ladder chart, and a proposal checker that verifies ML-DSA-87 shares in the
+browser with `@qorechain/pqc`. It moved the proposal format into one module shared
+by the CLI and the app. It checked the app in a real browser (Playwright, from a
+scratch folder): a proposal built in the page was signed by two signers with the
+CLI, verified by the page, and relayed by the CLI on a local node; a tampered
+signature was flagged. Screenshots caught three of its own mistakes: unsized icons
+rendered huge, the drop zone's border broke (an inline element), and empty price
+fields made the first test proposal fail.

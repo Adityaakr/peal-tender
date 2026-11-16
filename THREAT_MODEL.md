@@ -246,8 +246,9 @@ run against the real Peal Sealed Auction contracts ([`docs/spikes.md`](docs/spik
 | A sealed sale that pays someone else | The vault refuses a config whose issuer is not the vault, whose sale and quote tokens are not fUSD and PEAL-T, or whose fee is not zero; the auction pays proceeds and unsold supply only to its issuer |
 | Someone claims a sale's proceeds on the auction directly | Harmless: they arrive in the vault anyway, and `collectSealedSale` takes whatever is left (`test_sale_collectAfterSomeoneClaimedDirectly`) |
 | Settlement never happens | Anyone may `settle` after the end; there is no key holder to wait for |
-| A malicious **proposal file** handed to a signer | `sign-action` decodes the arguments, recomputes the argument hash itself, refuses a mismatch, checks the vault's own `quorumMessage` bytes, and prints what is being signed |
+| A malicious **proposal file** handed to a signer | `sign-action` decodes the arguments, recomputes the argument hash itself, refuses a mismatch, checks the vault's own `quorumMessage` bytes, and prints what is being signed. The web app's checker does the same in the browser before anyone signs or relays, describes the action from its arguments rather than from the file's own summary, and verifies every share with ML-DSA-87 against the key the chain holds |
 | The precompile switched off | Fails closed, as v1 (`test_sweep_failsClosedWithoutPrecompile`) |
+| The web app | It holds no keys, has no wallet connection and sends nothing; text from the chain and from proposal files is set as text, never as HTML |
 | The linked `TenderBook` library | Its address is fixed in the vault's code at deployment; its state-changing functions refuse direct calls (Solidity's library call guard), and it holds no funds or state of its own |
 
 ### 8.3 Residual risks, stated plainly

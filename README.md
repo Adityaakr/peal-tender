@@ -213,11 +213,26 @@ and closed again in a `finally`. The relayer pays gas and has no authority.
 `sign-action` rebuilds the argument hash from the proposal's arguments and checks
 the exact bytes against the vault's own `quorumMessage` view before signing.
 
-**Dashboard.** `npm run dashboard` serves a read-only page
-([`apps/dashboard`](apps/dashboard)): the vault's balances and allowance, each
-signer's key as `pqcKeyStatus` reports it, the timelock queue with countdowns,
-tenders and sealed sales. It reads the EVM RPC directly, holds no keys and signs
-nothing.
+### The web app
+
+`npm run dashboard` serves the treasury's web app ([`apps/dashboard`](apps/dashboard)),
+in the Peal design language shared by all three entries ([`docs/design.md`](docs/design.md)).
+It reads the EVM RPC directly, **holds no keys and sends nothing**.
+
+| Page | What it shows |
+| --- | --- |
+| Overview | free balances, what is left of today's allowance, changes waiting, recent activity, the signers |
+| Signers | each member's ML-DSA-87 key as `pqcKeyStatus` reports it (registered, possession, a key fingerprint), and what each has signed |
+| Timelock | every queued change with its countdown, who vetoed it, and the command to execute it once ready; the allowance per token |
+| Tenders | each tender; per tender the price ladder (offered and bought at each price, the clearing price marked) and every offer |
+| Sealed sales | each sale with the auction's state, proceeds and the price achieved |
+| Activity | the vault's events in words, with which signers authorised each action |
+| Propose | **build** a proposal (the same file `npm run v2 -- propose` writes, checked against the vault's own `quorumMessage`) and **check** one someone sent: what it does, decoded from its arguments, and every share verified with ML-DSA-87 against the signer's key on chain |
+
+To try it without the testnet: `npm run demo:local` runs the end-to-end check, then
+leaves a local node running with a vault in every state (a waiting signer change, an
+open tender with offers, a running sale) and prints the URL to open after
+`npm run dashboard -- --port 5199`.
 
 ## Build and test
 
