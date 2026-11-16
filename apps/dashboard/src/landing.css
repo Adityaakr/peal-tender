@@ -1070,6 +1070,9 @@
 }
 
 .t-family-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;

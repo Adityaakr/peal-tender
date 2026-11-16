@@ -3,9 +3,11 @@
  *
  * Every piece of text goes in through `textContent` (never innerHTML): addresses,
  * token symbols and proposal files come from the chain or from whoever sent the
- * file, so they are data, not markup. Icons are fixed inline SVG paths defined here.
+ * file, so they are data, not markup. Icons are fixed inline SVG paths defined here, and
+ * the Peal marks come from brand-marks.ts, generated from docs/brand.
  */
 import { formatUnits } from "viem";
+import { MARKS, type MarkVariant, type PealProduct } from "./brand-marks.ts";
 
 type Child = Node | string | number | false | null | undefined;
 type Attrs = Record<string, string | number | boolean | undefined | ((e: Event) => void)>;
@@ -69,33 +71,25 @@ export function icon(name: keyof typeof PATHS | string): SVGSVGElement {
   return svg;
 }
 
-/** The Peal Tender mark: a vault ring with three signer dots, two lit. */
-export function mark(): SVGSVGElement {
+let markSeq = 0;
+
+/** A Peal family mark from docs/brand (generated into brand-marks.ts), with unique mask ids. */
+export function brandMark(product: PealProduct, size = 26, variant: MarkVariant = "light"): SVGSVGElement {
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 26 26");
-  svg.setAttribute("class", "mark");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
   svg.setAttribute("aria-hidden", "true");
-  const ring = document.createElementNS(ns, "circle");
-  for (const [k, v] of Object.entries({ cx: "13", cy: "13", r: "11", fill: "none", stroke: "#1e5b46", "stroke-width": "2" })) {
-    ring.setAttribute(k, v);
-  }
-  svg.append(ring);
-  const dots: [number, number, boolean][] = [
-    [13, 7.5, true],
-    [8.2, 16, true],
-    [17.8, 16, false],
-  ];
-  for (const [cx, cy, on] of dots) {
-    const c = document.createElementNS(ns, "circle");
-    c.setAttribute("cx", String(cx));
-    c.setAttribute("cy", String(cy));
-    c.setAttribute("r", "2.6");
-    c.setAttribute("fill", on ? "#1e5b46" : "#fff");
-    c.setAttribute("stroke", "#1e5b46");
-    c.setAttribute("stroke-width", "1.6");
-    svg.append(c);
-  }
+  // static markup from our own generated module, never from the chain or a user
+  svg.innerHTML = MARKS[product][variant].replaceAll("__ID__", `pm${++markSeq}`);
+  return svg;
+}
+
+/** The Peal Tender mark, for the app's header. */
+export function mark(): SVGSVGElement {
+  const svg = brandMark("tender");
+  svg.setAttribute("class", "mark");
   return svg;
 }
 

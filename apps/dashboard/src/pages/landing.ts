@@ -10,7 +10,7 @@
 import "../landing.css";
 import { REPO } from "../config.ts";
 import { type Ctx } from "../main.ts";
-import { duration, h, hash, icon } from "../ui.ts";
+import { brandMark, duration, h, hash, icon } from "../ui.ts";
 import { walletButton } from "../wallet/panel.ts";
 import { openPanel, state as wallet } from "../wallet/store.ts";
 import { fmt } from "./common.ts";
@@ -598,102 +598,10 @@ function scrollTo(id: string) {
     });
 }
 
-/** Peal Tender's mark: the family construction (26 grid, 22px circle) with two of three seals filled. */
-export function tenderMark(size = 24): SVGSVGElement {
-  const g = s("svg", {
-    viewBox: "0 0 26 26",
-    width: size,
-    height: size,
-    "aria-hidden": "true",
-  }) as SVGSVGElement;
-  g.append(
-    s("circle", {
-      cx: 13,
-      cy: 13,
-      r: 11,
-      fill: "none",
-      stroke: C.accent,
-      "stroke-width": 2,
-    }),
-  );
-  for (const [cx, cy, on] of [
-    [13, 7.5, true],
-    [8.2, 16, true],
-    [17.8, 16, false],
-  ] as const) {
-    g.append(
-      s("circle", {
-        cx,
-        cy,
-        r: 2.6,
-        fill: on ? C.accent : "#fff",
-        stroke: C.accent,
-        "stroke-width": 1.6,
-      }),
-    );
-  }
-  return g;
-}
-
-function auctionMark(size = 22): SVGSVGElement {
-  const g = s("svg", {
-    viewBox: "0 0 26 26",
-    width: size,
-    height: size,
-    "aria-hidden": "true",
-  }) as SVGSVGElement;
-  g.append(
-    s("circle", {
-      cx: 13,
-      cy: 13,
-      r: 11,
-      fill: "none",
-      stroke: C.ink2,
-      "stroke-width": 2,
-    }),
-  );
-  g.append(
-    s("path", {
-      d: "M7 13H19",
-      stroke: C.ink2,
-      "stroke-width": 2,
-      "stroke-linecap": "round",
-    }),
-  );
-  g.append(s("rect", { x: 10, y: 10, width: 6, height: 6, rx: 1, fill: C.ink2 }));
-  return g;
-}
-
-function bidderMark(size = 22): SVGSVGElement {
-  const g = s("svg", {
-    viewBox: "0 0 26 26",
-    width: size,
-    height: size,
-    "aria-hidden": "true",
-  }) as SVGSVGElement;
-  g.append(
-    s("circle", {
-      cx: 13,
-      cy: 13,
-      r: 11,
-      fill: "none",
-      stroke: C.ink2,
-      "stroke-width": 2,
-    }),
-  );
-  g.append(s("circle", { cx: 9, cy: 13, r: 2.6, fill: C.ink2 }));
-  g.append(
-    s("path", {
-      d: "M12 13H19M16 10L19 13L16 16",
-      fill: "none",
-      stroke: C.ink2,
-      "stroke-width": 2,
-      "stroke-linecap": "round",
-      "stroke-linejoin": "round",
-    }),
-  );
-  return g;
-}
+/** The Peal family's marks, from docs/brand (light versions on Tender's paper). */
+export const tenderMark = (size = 24) => brandMark("tender", size);
+const auctionMark = (size = 22) => brandMark("auction", size);
+const bidderMark = (size = 22) => brandMark("bidder", size);
 
 function nav(): HTMLElement {
   const link = (label: string, id: string) => {
@@ -1265,7 +1173,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
       ),
       h(
         "div.t-family",
-        h("span.t-family-label", "The Peal family"),
+        h("span.t-family-label", brandMark("peal", 18), "The Peal family"),
         h("span.t-family-item.is-current", tenderMark(18), "Peal Tender, the treasury"),
         h(
           "a.t-family-item",
