@@ -70,7 +70,7 @@ repositories and addresses:
 | QoreSeal and the encryption key registry | **Yes** (on chain from 19 November, runbook step 1) | each v2 signer publishes an ML-KEM-1024 key (`MsgRegisterKEMKey`) so proposals can be sealed to them |
 | MCP server or qore CLI | **Yes** | `@qorechain/mcp` and `@qorechain/qore-cli` (above) |
 | QoreScan | **Yes** | `@qorechain/qorescan` (above) |
-| Smart accounts and spending rules | **Maybe** (later PR) | a keeper key, linked to the treasury's ops account and limited to the vault's permissionless calls, would run `settle`, `execute` and `collectSealedSale` without an EVM window. Only if time allows after v2 is live |
+| Smart accounts and spending rules | **No** | considered for a keeper key (a classical key linked to a treasury account, fenced by a spending rule to the vault's `settle`, `execute` and `collectSealedSale`). It removes no risk here: every quorum call is gated by the vault's ML-DSA-87 check whoever sends it, the others are permissionless, and `MsgExecuteEVM` still needs a hybrid-signing relayer holding the gas money, so a linked key would only add an account |
 | Sign In With QoreChain | **No** | the web app has no server to sign in to, and QoreX refuses `signArbitrary` today, so a page cannot ask for one |
 | Staking tiers | **No** | the treasury's QOR sits in an EVM contract; staking it would need the cross-VM bridge and an unbonding period the buyback cannot wait for |
 | IBC via QORel, Cross-VM, RDK rollup, sidechain or paychain, light node, Approved Native contracts | **No** | nothing in a buyback vault needs them |
