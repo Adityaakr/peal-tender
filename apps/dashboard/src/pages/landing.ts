@@ -1,609 +1,1296 @@
 /**
- * The Peal Tender landing page, built to docs/design.md "Landing pages".
+ * Peal Tender's landing page. Identity: apps/dashboard/DESIGN.md.
  *
- * Sections: navigation, hero with the mechanism illustration, proof bar, how it
- * works (a step rail that highlights its part of a second illustration), security on
- * the dark band (evidence and a comparison), who uses it, try it, the Peal family,
- * footer. Figures are read from the chain when a vault is known, else labelled.
+ * The metaphor is a bank's payment order and statement of account: an order signed
+ * by two of three signers, checked against the signature card on file
+ * (pqcKeyStatus) and verified (pqcVerify), posted to a ledger; an order signed with a
+ * stolen classical key is stamped refused. The ledger and the refusals on this page
+ * are the drill vault's real records.
  */
 import "../landing.css";
 import { REPO } from "../config.ts";
 import { type Ctx } from "../main.ts";
-import { duration, h, icon } from "../ui.ts";
+import { duration, h, hash, icon } from "../ui.ts";
 import { walletButton } from "../wallet/panel.ts";
 import { openPanel, state as wallet } from "../wallet/store.ts";
 import { fmt } from "./common.ts";
 
-const NS = "http://www.w3.org/2000/svg";
-const REDUCED = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-type Attrs = Record<string, string | number>;
-function s(tag: string, a: Attrs = {}, ...kids: (SVGElement | string)[]): SVGElement {
-  const e = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(a)) e.setAttribute(k, String(v));
-  for (const k of kids) typeof k === "string" ? (e.textContent = k) : e.append(k);
-  return e;
-}
-const card = (x: number, y: number, w: number, hh: number, extra: Attrs = {}) =>
-  s("rect", { x, y, width: w, height: hh, rx: 12, fill: "#fff", stroke: "#dbe3ee", ...extra });
-const text = (x: number, y: number, t: string, a: Attrs = {}) => s("text", { x, y, "font-size": 12, fill: "#374151", ...a }, t);
-const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
-
-// ---------------------------------------------------------------- marks
-
-/** The three Peal marks (docs/design.md "Marks"). */
-export function familyMark(kind: "tender" | "auction" | "bidder", size = 26): SVGSVGElement {
-  const m = s("svg", { viewBox: "0 0 26 26", width: size, height: size, "aria-hidden": "true" }) as SVGSVGElement;
-  m.append(s("circle", { cx: 13, cy: 13, r: 11, fill: "none", stroke: "#2563eb", "stroke-width": 2 }));
-  if (kind === "tender") {
-    for (const [cx, cy, on] of [
-      [13, 7.5, true],
-      [8.2, 16, true],
-      [17.8, 16, false],
-    ] as const) {
-      m.append(s("circle", { cx, cy, r: 2.6, fill: on ? "#2563eb" : "#fff", stroke: "#2563eb", "stroke-width": 1.6 }));
-    }
-  } else if (kind === "auction") {
-    m.append(s("path", { d: "M7 13H19", stroke: "#2563eb", "stroke-width": 2, "stroke-linecap": "round" }));
-    m.append(s("rect", { x: 10, y: 10, width: 6, height: 6, rx: 1, fill: "#2563eb" }));
-  } else {
-    m.append(s("circle", { cx: 9, cy: 13, r: 2.6, fill: "#2563eb" }));
-    m.append(s("path", { d: "M12 13H19M16 10L19 13L16 16", fill: "none", stroke: "#2563eb", "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }));
-  }
-  return m;
-}
-
-// ---------------------------------------------------------------- hero illustration
+import { C, m, s, SERIF, t } from "./svg.ts";
+import { clearingChart, FLOW, flowDiagram, keysSingle, keysSinglePhone, keysTender, keysTenderPhone } from "./tender-diagrams.ts";
 
 /**
- * Two of three signers send ML-DSA-87 signatures to the vault; the chain checks
- * them; a stolen classical key is refused; the action either moves within today's
- * allowance or waits in the timelock where one signer can veto.
+ * A deterministic handwriting-like stroke: a prolate cycloid gives the joined loops of
+ * cursive, a varying height gives tall and short letters, a larger first letter and an
+ * underline finish it. Seeded, so each signer's signature is the same on every load.
  */
-function heroArt(): SVGSVGElement {
+function signaturePath(x0: number, base: number, w: number, seed: number): string {
+  const letters = 5 + seed;
+  const steps = 220;
+  const k = (w * 0.86) / (2 * Math.PI * letters);
+  const pts: string[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    const th0 = 2 * Math.PI * letters * u;
+    // uneven letter widths and heights, a taller capital, an italic slant
+    const th = th0 + 0.9 * Math.sin(th0 * 0.31 + seed * 2.3);
+    const tall = Math.max(0, Math.sin(th0 * 0.5 + seed * 1.3));
+    let amp = 6 + 6 * tall * tall + 4 * (0.5 + 0.5 * Math.sin(th0 * 0.77 + seed));
+    if (u < 1 / letters) amp *= 1.9;
+    const yy = amp * (0.5 - 0.5 * Math.cos(th));
+    const x = x0 + k * th0 - 1.45 * k * Math.sin(th) + yy * 0.32;
+    const y = base - 3 - yy - 4 * u;
+    pts.push(`${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`);
+  }
+  const ex = x0 + w * 0.86;
+  pts.push(`Q${(ex + 8).toFixed(1)} ${(base - 2).toFixed(1)} ${(x0 + w * 0.5).toFixed(1)} ${(base + 1).toFixed(1)}`);
+  pts.push(`T${(x0 + w * 0.06).toFixed(1)} ${(base + 2.5).toFixed(1)}`);
+  return pts.join("");
+}
+
+/** Fine interleaved sine bands, as printed on cheques. Generated, a few hundred points. */
+function guilloche(x0: number, y0: number, w: number, hgt: number): SVGElement {
+  const g = s("g", {
+    stroke: C.guilloche,
+    "stroke-width": 0.6,
+    fill: "none",
+    opacity: 0.9,
+  });
+  for (let k = 0; k < 7; k++) {
+    const pts: string[] = [];
+    for (let i = 0; i <= 160; i++) {
+      const x = x0 + (i / 160) * w;
+      const ph = (i / 160) * Math.PI * 18;
+      const y = y0 + hgt / 2 + (hgt / 2 - 2) * Math.sin(ph + k * 0.9) * Math.cos(ph / 6 + k * 0.4);
+      pts.push(`${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`);
+    }
+    g.append(s("path", { d: pts.join("") }));
+  }
+  return g;
+}
+
+// ---------------------------------------------------------------- the payment order
+
+function paymentOrder(): SVGSVGElement {
   const svg = s("svg", {
-    viewBox: "0 0 560 500",
-    class: "l-art",
+    viewBox: "0 0 640 610",
+    class: "t-instrument",
     role: "img",
     "aria-label":
-      "Two of three signers send ML-DSA-87 signatures to the PealTenderV2 vault, which checks them with pqcKeyStatus and pqcVerify. A stolen classical key is refused. Small amounts move within today's allowance; larger ones wait in the timelock, where any one signer can veto.",
+      "A payment order on PealTenderV2 for 250.00 fUSD, signed by signer 1 and signer 2 with ML-DSA-87, checked against the keys on file with pqcKeyStatus and verified on chain by pqcVerify. Beneath it, an order signed only with a stolen secp256k1 key, stamped refused with PqSignatureInvalid.",
   }) as SVGSVGElement;
+  const defs = s("defs");
+  const mk = s("marker", {
+    id: "t-arrow",
+    viewBox: "0 0 8 8",
+    refX: 7,
+    refY: 4,
+    markerWidth: 7,
+    markerHeight: 7,
+    orient: "auto-start-reverse",
+  });
+  mk.append(s("path", { d: "M0 0L8 4L0 8z", fill: C.ink2 }));
+  defs.append(mk);
+  svg.append(defs);
 
-  // soft panel behind the drawing
-  svg.append(s("rect", { x: 6, y: 6, width: 548, height: 488, rx: 24, fill: "#f8fbff", stroke: "#dbe7f7" }));
+  // the refused order, underneath
+  const slip = s("g", { transform: "rotate(3 170 540)" });
+  slip.append(
+    s("rect", {
+      x: 18,
+      y: 430,
+      width: 330,
+      height: 160,
+      rx: 3,
+      fill: C.sheet,
+      stroke: C.rule,
+    }),
+  );
+  slip.append(t(36, 520, "Pay to", { fill: C.muted, "font-size": 11 }));
+  slip.append(m(92, 520, "0xbad0…f00d", { "font-size": 11.5 }));
+  slip.append(t(36, 542, "Amount", { fill: C.muted, "font-size": 11 }));
+  slip.append(m(92, 542, "67.00 QOR", { "font-size": 11.5 }));
+  slip.append(t(36, 566, "Signed with", { fill: C.muted, "font-size": 11 }));
+  slip.append(m(110, 566, "secp256k1 only", { "font-size": 11.5 }));
+  svg.append(slip);
+  const stamp = s("g", { class: "t-stamp", transform: "rotate(-8 276 548)" });
+  stamp.append(
+    s("rect", {
+      x: 212,
+      y: 522,
+      width: 128,
+      height: 50,
+      rx: 4,
+      fill: C.sheet,
+      "fill-opacity": 0.6,
+      stroke: C.stamp,
+      "stroke-width": 2.2,
+    }),
+  );
+  stamp.append(
+    s("rect", {
+      x: 216,
+      y: 526,
+      width: 120,
+      height: 42,
+      rx: 2,
+      fill: "none",
+      stroke: C.stamp,
+      "stroke-width": 0.8,
+    }),
+  );
+  stamp.append(
+    t(276, 548, "REFUSED", {
+      "text-anchor": "middle",
+      "font-weight": 600,
+      "font-size": 17,
+      "letter-spacing": "0.14em",
+      fill: C.stamp,
+    }),
+  );
+  stamp.append(
+    m(276, 562, "PqSignatureInvalid", {
+      "text-anchor": "middle",
+      "font-size": 9.5,
+      fill: C.stamp,
+    }),
+  );
+  svg.append(stamp);
 
-  // signers
-  const signers: [number, string, boolean][] = [
-    [40, "Signer 1", true],
-    [210, "Signer 2", true],
-    [380, "Signer 3", false],
-  ];
-  for (const [x, name, on] of signers) {
-    const g = s("g");
-    g.append(card(x, 34, 140, 66));
-    g.append(s("circle", { cx: x + 26, cy: 67, r: 13, fill: on ? "#2563eb" : "#fff", stroke: "#2563eb", "stroke-width": 2 }));
-    if (on) g.append(s("path", { d: `M${x + 20} 67.5l4 4 8-8.5`, fill: "none", stroke: "#fff", "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }));
-    g.append(text(x + 48, 61, name, { "font-weight": 600, fill: "#111827", "font-size": 13 }));
-    g.append(text(x + 48, 79, on ? "ML-DSA-87 signed" : "not needed", { fill: on ? "#16a34a" : "#9ca3af", "font-size": 11.5 }));
-    svg.append(g);
-  }
+  // the order that clears
+  const sheet = s("g", { transform: "rotate(-1.2 330 260)" });
+  sheet.append(
+    s("rect", {
+      x: 40,
+      y: 20,
+      width: 572,
+      height: 480,
+      rx: 3,
+      fill: C.sheet,
+      stroke: C.rule,
+      class: "t-sheet",
+    }),
+  );
+  sheet.append(
+    s("rect", {
+      x: 52,
+      y: 32,
+      width: 548,
+      height: 456,
+      rx: 2,
+      fill: "none",
+      stroke: C.guilloche,
+      "stroke-width": 0.8,
+    }),
+  );
+  sheet.append(guilloche(52, 40, 548, 30));
+  sheet.append(
+    t(68, 98, "PAYMENT ORDER", {
+      "font-size": 10.5,
+      "font-weight": 600,
+      "letter-spacing": "0.16em",
+      fill: C.ink2,
+    }),
+  );
+  sheet.append(m(584, 98, "nonce 42", { "text-anchor": "end", fill: C.muted }));
+  sheet.append(s("text", { x: 68, y: 130, "font-family": SERIF, "font-size": 22, fill: C.ink }, "PealTenderV2"));
+  sheet.append(m(584, 130, "QoreChain testnet", { "text-anchor": "end", fill: C.muted }));
 
-  // signature paths into the vault
-  const p1 = "M110 100 C110 140 250 130 262 176";
-  const p2 = "M280 100 C280 130 282 150 282 176";
-  for (const [i, d] of [p1, p2].entries()) {
-    svg.append(s("path", { d, fill: "none", stroke: "#93c5fd", "stroke-width": 2, "stroke-dasharray": "4 5" }));
-    if (!REDUCED) {
-      const dot = s("circle", { r: 5, fill: "#2563eb" });
-      dot.append(s("animateMotion", { dur: "2.4s", repeatCount: "indefinite", begin: `${i * 0.6}s`, path: d, keyPoints: "0;1", keyTimes: "0;1", calcMode: "spline", keySplines: "0.4 0 0.2 1" }));
-      svg.append(dot);
+  const field = (y: number, label: string, value: string, big = false) => {
+    sheet.append(t(68, y, label, { fill: C.muted, "font-size": 11.5 }));
+    sheet.append(m(168, y, value, big ? { "font-size": 24, "font-weight": 500 } : { "font-size": 12.5 }));
+    sheet.append(s("line", { x1: 168, x2: 584, y1: y + 9, y2: y + 9, stroke: C.rule }));
+  };
+  field(170, "Pay to", "0x51cc…a9e2  (ops account)");
+  field(212, "Amount", "250.00 fUSD", true);
+  field(248, "Valid until", "17 Nov 2026 14:00 UTC, once");
+
+  sheet.append(
+    t(68, 314, "Authorised signatories", {
+      "font-size": 11.5,
+      "font-weight": 600,
+      fill: C.ink2,
+    }),
+  );
+  sheet.append(
+    t(584, 314, "2 of 3 required", {
+      "text-anchor": "end",
+      "font-size": 11.5,
+      fill: C.accent,
+      "font-weight": 600,
+    }),
+  );
+  const cols = [68, 244, 420];
+  cols.forEach((x, i) => {
+    const signed = i < 2;
+    sheet.append(
+      s("line", {
+        x1: x,
+        x2: x + 156,
+        y1: 370,
+        y2: 370,
+        stroke: C.ink,
+        "stroke-opacity": 0.6,
+      }),
+    );
+    if (signed) {
+      sheet.append(
+        s("path", {
+          d: signaturePath(x + 8, 360, 134, i + 1),
+          fill: "none",
+          stroke: C.accent,
+          "stroke-width": 1.5,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          pathLength: 1,
+          class: `t-sig t-sig-${i + 1}`,
+        }),
+      );
+    } else {
+      sheet.append(
+        t(x + 78, 362, "not required", {
+          "text-anchor": "middle",
+          "font-size": 11,
+          fill: C.muted,
+        }),
+      );
     }
-  }
-
-  // the vault
-  const vx = 150;
-  const vy = 176;
-  svg.append(card(vx, vy, 260, 150, { stroke: "#2563eb", "stroke-width": 1.5 }));
-  svg.append(s("rect", { x: vx, y: vy, width: 260, height: 38, rx: 12, fill: "#eff6ff" }));
-  svg.append(s("rect", { x: vx, y: vy + 26, width: 260, height: 12, fill: "#eff6ff" }));
-  svg.append(text(vx + 18, vy + 24, "PealTenderV2", { "font-weight": 700, fill: "#1e40af", "font-size": 13.5 }));
-  svg.append(text(vx + 242, vy + 24, "2 of 3", { "text-anchor": "end", fill: "#2563eb", "font-size": 12, "font-weight": 600 }));
-  const rows: [string, string][] = [
-    ["pqcKeyStatus", "ML-DSA-87 key ✓"],
-    ["pqcVerify", "share 1 ✓  share 2 ✓"],
-    ["nonce", "41 → 42"],
-  ];
-  rows.forEach(([k, v], i) => {
-    const y = vy + 66 + i * 28;
-    svg.append(text(vx + 18, y, k, { "font-family": mono, "font-size": 12, fill: "#6b7280" }));
-    svg.append(text(vx + 242, y, v, { "text-anchor": "end", "font-size": 12, fill: "#111827", "font-weight": 500 }));
-    if (i < 2) svg.append(s("line", { x1: vx + 18, x2: vx + 242, y1: y + 10, y2: y + 10, stroke: "#eef2f7" }));
+    sheet.append(t(x, 388, `Signer ${i + 1}`, { "font-size": 12, "font-weight": 600 }));
+    sheet.append(
+      m(x, 404, signed ? "ML-DSA-87, 4,627 B" : "no signature", {
+        "font-size": 10,
+        fill: C.muted,
+      }),
+    );
   });
 
-  // the attacker with a stolen classical key
-  svg.append(card(14, 222, 118, 68, { stroke: "#fecaca", fill: "#fffafa" }));
-  svg.append(s("circle", { cx: 37, cy: 250, r: 5.5, fill: "none", stroke: "#dc2626", "stroke-width": 1.8 }));
-  svg.append(s("path", { d: "M42.5 250H54M49 250v4.5M53 250v3.5", fill: "none", stroke: "#dc2626", "stroke-width": 1.8, "stroke-linecap": "round" }));
-  svg.append(text(62, 248, "Stolen key", { "font-weight": 600, fill: "#991b1b", "font-size": 12 }));
-  svg.append(text(26, 270, "secp256k1", { "font-family": mono, fill: "#b91c1c", "font-size": 11 }));
-  svg.append(text(26, 284, "classical only", { fill: "#b91c1c", "font-size": 11 }));
-  svg.append(s("path", { d: "M132 256 H146", stroke: "#fca5a5", "stroke-width": 2, "stroke-dasharray": "3 4" }));
-  const refused = s("g", { class: "l-refused" });
-  refused.append(s("rect", { x: 32, y: 302, width: 84, height: 24, rx: 12, fill: "#fef2f2", stroke: "#fecaca" }));
-  refused.append(s("path", { d: "M44 310l8 8M52 310l-8 8", stroke: "#dc2626", "stroke-width": 1.8, "stroke-linecap": "round" }));
-  refused.append(text(58, 318, "Refused", { fill: "#991b1b", "font-size": 12, "font-weight": 600 }));
-  svg.append(refused);
+  // the keys on file, checked with the signatures by pqcVerify, give the seal
+  sheet.append(
+    s("rect", {
+      x: 68,
+      y: 426,
+      width: 236,
+      height: 50,
+      rx: 3,
+      fill: "none",
+      stroke: C.ink,
+      "stroke-opacity": 0.5,
+      "stroke-dasharray": "3 3",
+    }),
+  );
+  sheet.append(
+    t(80, 446, "Keys on file for signers 1 to 3", {
+      "font-size": 11.5,
+      "font-weight": 600,
+    }),
+  );
+  sheet.append(m(80, 464, "pqcKeyStatus  0x…0a02", { "font-size": 10.5, fill: C.ink2 }));
+  sheet.append(
+    s("path", {
+      d: "M304 451 H470",
+      fill: "none",
+      stroke: C.ink2,
+      "stroke-width": 1,
+      "marker-end": "url(#t-arrow)",
+    }),
+  );
+  sheet.append(
+    m(387, 443, "pqcVerify  0x…0a01", {
+      "text-anchor": "middle",
+      "font-size": 10.5,
+      fill: C.ink2,
+    }),
+  );
+  sheet.append(
+    t(387, 466, "checks both signatures", {
+      "text-anchor": "middle",
+      "font-size": 10.5,
+      fill: C.muted,
+    }),
+  );
 
-  // outcomes
-  svg.append(s("path", { d: "M230 326 C230 360 140 352 140 380", fill: "none", stroke: "#93c5fd", "stroke-width": 2 }));
-  svg.append(s("path", { d: "M330 326 C330 360 420 352 420 380", fill: "none", stroke: "#93c5fd", "stroke-width": 2 }));
-  // allowance
-  svg.append(card(36, 380, 208, 92));
-  svg.append(text(54, 404, "Within today's allowance", { "font-weight": 600, fill: "#111827", "font-size": 12.5 }));
-  svg.append(s("rect", { x: 54, y: 418, width: 172, height: 8, rx: 4, fill: "#eff6ff" }));
-  svg.append(s("rect", { x: 54, y: 418, width: 104, height: 8, rx: 4, fill: "#2563eb" }));
-  svg.append(text(54, 450, "Moves now", { fill: "#16a34a", "font-size": 12, "font-weight": 600 }));
-  svg.append(text(226, 450, "600 of 1,000", { "text-anchor": "end", fill: "#6b7280", "font-size": 11.5 }));
-  // timelock
-  svg.append(card(316, 380, 208, 92));
-  svg.append(text(334, 404, "Larger, or a rule change", { "font-weight": 600, fill: "#111827", "font-size": 12.5 }));
-  svg.append(s("circle", { cx: 346, cy: 432, r: 11, fill: "none", stroke: "#2563eb", "stroke-width": 1.8 }));
-  svg.append(s("path", { d: "M346 425v7l5 3", fill: "none", stroke: "#2563eb", "stroke-width": 1.8, "stroke-linecap": "round" }));
-  svg.append(text(366, 428, "Waits in public", { fill: "#2563eb", "font-size": 12, "font-weight": 600 }));
-  svg.append(text(366, 445, "any one signer can veto", { fill: "#6b7280", "font-size": 11.5 }));
+  const seal = s("g", { class: "t-seal" });
+  seal.append(
+    s("circle", {
+      cx: 520,
+      cy: 451,
+      r: 40,
+      fill: C.sheet,
+      stroke: C.accent,
+      "stroke-width": 1.6,
+    }),
+  );
+  seal.append(
+    s("circle", {
+      cx: 520,
+      cy: 451,
+      r: 33,
+      fill: "none",
+      stroke: C.accent,
+      "stroke-width": 0.7,
+    }),
+  );
+  seal.append(
+    t(520, 444, "VERIFIED", {
+      "text-anchor": "middle",
+      "font-size": 8.5,
+      "font-weight": 600,
+      "letter-spacing": "0.14em",
+      fill: C.accent,
+    }),
+  );
+  seal.append(
+    s(
+      "text",
+      {
+        x: 520,
+        y: 465,
+        "text-anchor": "middle",
+        "font-family": SERIF,
+        "font-size": 18,
+        fill: C.accent,
+      },
+      "2 / 3",
+    ),
+  );
+  sheet.append(seal);
+
+  svg.append(sheet);
   return svg;
 }
 
-/** The same story drawn vertically, with larger type, for phones (docs/design.md: not a scaled-down desktop drawing). */
-function heroArtPhone(): SVGSVGElement {
+/** The same order drawn for a phone: one column of fields, larger figures. */
+function paymentOrderPhone(): SVGSVGElement {
   const svg = s("svg", {
-    viewBox: "0 0 340 430",
-    class: "l-art",
+    viewBox: "0 0 360 600",
+    class: "t-instrument",
     role: "img",
-    "aria-label": "Two of three signers sign; QoreChain checks with pqcVerify; a stolen classical key is refused; the action moves now or waits in the timelock.",
+    "aria-label":
+      "A payment order for 250.00 fUSD signed by signer 1 and signer 2 with ML-DSA-87 and verified on chain by pqcVerify. Beneath it, an order signed only with a stolen secp256k1 key, stamped refused.",
   }) as SVGSVGElement;
-  svg.append(s("rect", { x: 2, y: 2, width: 336, height: 426, rx: 20, fill: "#f8fbff", stroke: "#dbe7f7" }));
-  // signers row
-  const sx = [24, 124, 224];
-  sx.forEach((x, i) => {
-    const on = i < 2;
-    svg.append(card(x, 22, 92, 58));
-    svg.append(s("circle", { cx: x + 46, cy: 44, r: 11, fill: on ? "#2563eb" : "#fff", stroke: "#2563eb", "stroke-width": 2 }));
-    if (on) svg.append(s("path", { d: `M${x + 41} 44.5l3.5 3.5 6.5-7`, fill: "none", stroke: "#fff", "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }));
-    svg.append(text(x + 46, 70, `Signer ${i + 1}`, { "text-anchor": "middle", "font-size": 13, "font-weight": 600, fill: "#111827" }));
+  const slip = s("g", { transform: "rotate(2.5 170 530)" });
+  slip.append(
+    s("rect", {
+      x: 18,
+      y: 462,
+      width: 316,
+      height: 120,
+      rx: 3,
+      fill: C.sheet,
+      stroke: C.rule,
+    }),
+  );
+  slip.append(t(34, 512, "Pay to", { fill: C.muted, "font-size": 11.5 }));
+  slip.append(m(34, 530, "0xbad0…f00d", { "font-size": 12.5 }));
+  slip.append(t(34, 554, "Signed with", { fill: C.muted, "font-size": 11.5 }));
+  slip.append(m(34, 571, "secp256k1 only", { "font-size": 12.5 }));
+  svg.append(slip);
+  const stamp = s("g", { class: "t-stamp", transform: "rotate(-9 254 538)" });
+  stamp.append(
+    s("rect", {
+      x: 188,
+      y: 512,
+      width: 132,
+      height: 50,
+      rx: 4,
+      fill: "none",
+      stroke: C.stamp,
+      "stroke-width": 2.2,
+    }),
+  );
+  stamp.append(
+    s("rect", {
+      x: 192,
+      y: 516,
+      width: 124,
+      height: 42,
+      rx: 2,
+      fill: "none",
+      stroke: C.stamp,
+      "stroke-width": 0.8,
+    }),
+  );
+  stamp.append(
+    t(254, 539, "REFUSED", {
+      "text-anchor": "middle",
+      "font-weight": 600,
+      "font-size": 17,
+      "letter-spacing": "0.14em",
+      fill: C.stamp,
+    }),
+  );
+  stamp.append(
+    m(254, 553, "PqSignatureInvalid", {
+      "text-anchor": "middle",
+      "font-size": 9.5,
+      fill: C.stamp,
+    }),
+  );
+  svg.append(stamp);
+
+  const sheet = s("g", { transform: "rotate(-1 180 240)" });
+  sheet.append(
+    s("rect", {
+      x: 12,
+      y: 12,
+      width: 336,
+      height: 452,
+      rx: 3,
+      fill: C.sheet,
+      stroke: C.rule,
+      class: "t-sheet",
+    }),
+  );
+  sheet.append(
+    s("rect", {
+      x: 20,
+      y: 20,
+      width: 320,
+      height: 436,
+      rx: 2,
+      fill: "none",
+      stroke: C.guilloche,
+      "stroke-width": 0.8,
+    }),
+  );
+  sheet.append(guilloche(20, 26, 320, 22));
+  sheet.append(
+    t(30, 74, "PAYMENT ORDER", {
+      "font-size": 10.5,
+      "font-weight": 600,
+      "letter-spacing": "0.16em",
+      fill: C.ink2,
+    }),
+  );
+  sheet.append(m(330, 74, "nonce 42", { "text-anchor": "end", fill: C.muted }));
+  sheet.append(s("text", { x: 30, y: 102, "font-family": SERIF, "font-size": 20, fill: C.ink }, "PealTenderV2"));
+  const field = (y: number, label: string, value: string, big = false) => {
+    sheet.append(t(30, y, label, { fill: C.muted, "font-size": 11.5 }));
+    sheet.append(m(30, y + (big ? 26 : 18), value, big ? { "font-size": 24, "font-weight": 500 } : { "font-size": 13 }));
+    sheet.append(
+      s("line", {
+        x1: 30,
+        x2: 330,
+        y1: y + (big ? 34 : 26),
+        y2: y + (big ? 34 : 26),
+        stroke: C.rule,
+      }),
+    );
+  };
+  field(130, "Pay to", "0x51cc…a9e2 (ops account)");
+  field(178, "Amount", "250.00 fUSD", true);
+  field(234, "Valid until", "17 Nov 2026 14:00 UTC");
+  sheet.append(
+    t(30, 290, "Signatories", {
+      "font-size": 12,
+      "font-weight": 600,
+      fill: C.ink2,
+    }),
+  );
+  sheet.append(
+    t(330, 290, "2 of 3 required", {
+      "text-anchor": "end",
+      "font-size": 12,
+      fill: C.accent,
+      "font-weight": 600,
+    }),
+  );
+  [30, 132, 234].forEach((x, i) => {
+    const signed = i < 2;
+    sheet.append(
+      s("line", {
+        x1: x,
+        x2: x + 92,
+        y1: 344,
+        y2: 344,
+        stroke: C.ink,
+        "stroke-opacity": 0.6,
+      }),
+    );
+    if (signed)
+      sheet.append(
+        s("path", {
+          d: signaturePath(x + 4, 334, 80, i + 1),
+          fill: "none",
+          stroke: C.accent,
+          "stroke-width": 1.4,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          pathLength: 1,
+          class: `t-sig t-sig-${i + 1}`,
+        }),
+      );
+    else
+      sheet.append(
+        t(x + 46, 336, "not needed", {
+          "text-anchor": "middle",
+          "font-size": 11,
+          fill: C.muted,
+        }),
+      );
+    sheet.append(t(x, 362, `Signer ${i + 1}`, { "font-size": 12.5, "font-weight": 600 }));
+    sheet.append(
+      m(x, 378, signed ? "ML-DSA-87" : "idle", {
+        "font-size": 10.5,
+        fill: C.muted,
+      }),
+    );
   });
-  svg.append(s("path", { d: "M70 80 C70 104 150 100 160 120M170 80V120", fill: "none", stroke: "#93c5fd", "stroke-width": 2, "stroke-dasharray": "4 5" }));
-  // the vault
-  svg.append(card(24, 120, 292, 112, { stroke: "#2563eb", "stroke-width": 1.5 }));
-  svg.append(text(42, 148, "PealTenderV2", { "font-weight": 700, fill: "#1e40af", "font-size": 15 }));
-  svg.append(text(298, 148, "2 of 3", { "text-anchor": "end", fill: "#2563eb", "font-size": 14, "font-weight": 600 }));
-  svg.append(text(42, 178, "pqcVerify", { "font-family": mono, "font-size": 14, fill: "#6b7280" }));
-  svg.append(text(298, 178, "✓  ✓", { "text-anchor": "end", "font-size": 15, fill: "#16a34a", "font-weight": 700 }));
-  svg.append(text(42, 210, "Stolen classical key", { "font-size": 14, fill: "#991b1b" }));
-  svg.append(text(298, 210, "✕ refused", { "text-anchor": "end", "font-size": 14, fill: "#dc2626", "font-weight": 600 }));
-  // outcomes
-  svg.append(s("path", { d: "M110 232V262M230 232V262", stroke: "#93c5fd", "stroke-width": 2 }));
-  svg.append(card(24, 262, 136, 144));
-  svg.append(text(40, 290, "Within the", { "font-size": 14, "font-weight": 600, fill: "#111827" }));
-  svg.append(text(40, 308, "allowance", { "font-size": 14, "font-weight": 600, fill: "#111827" }));
-  svg.append(s("rect", { x: 40, y: 326, width: 104, height: 8, rx: 4, fill: "#eff6ff" }));
-  svg.append(s("rect", { x: 40, y: 326, width: 62, height: 8, rx: 4, fill: "#2563eb" }));
-  svg.append(text(40, 382, "Moves now", { "font-size": 14, fill: "#16a34a", "font-weight": 600 }));
-  svg.append(card(180, 262, 136, 144));
-  svg.append(text(196, 290, "Larger, or a", { "font-size": 14, "font-weight": 600, fill: "#111827" }));
-  svg.append(text(196, 308, "rule change", { "font-size": 14, "font-weight": 600, fill: "#111827" }));
-  svg.append(s("circle", { cx: 208, cy: 336, r: 11, fill: "none", stroke: "#2563eb", "stroke-width": 1.8 }));
-  svg.append(s("path", { d: "M208 329v7l5 3", fill: "none", stroke: "#2563eb", "stroke-width": 1.8, "stroke-linecap": "round" }));
-  svg.append(text(196, 370, "Waits; one", { "font-size": 14, fill: "#2563eb", "font-weight": 600 }));
-  svg.append(text(196, 388, "signer can veto", { "font-size": 14, fill: "#2563eb", "font-weight": 600 }));
+  sheet.append(t(30, 414, "Checked against the keys", { "font-size": 12, fill: C.ink2 }));
+  sheet.append(t(30, 431, "on file, by pqcKeyStatus", { "font-size": 12, fill: C.ink2 }));
+  sheet.append(m(30, 447, "and pqcVerify", { "font-size": 11.5, fill: C.ink2 }));
+  const seal = s("g", { class: "t-seal" });
+  seal.append(
+    s("circle", {
+      cx: 292,
+      cy: 420,
+      r: 32,
+      fill: C.sheet,
+      stroke: C.accent,
+      "stroke-width": 1.6,
+    }),
+  );
+  seal.append(
+    s("circle", {
+      cx: 292,
+      cy: 420,
+      r: 26,
+      fill: "none",
+      stroke: C.accent,
+      "stroke-width": 0.7,
+    }),
+  );
+  seal.append(
+    t(292, 416, "VERIFIED", {
+      "text-anchor": "middle",
+      "font-size": 8,
+      "font-weight": 600,
+      "letter-spacing": "0.12em",
+      fill: C.accent,
+    }),
+  );
+  seal.append(
+    s(
+      "text",
+      {
+        x: 292,
+        y: 433,
+        "text-anchor": "middle",
+        "font-family": SERIF,
+        "font-size": 14,
+        fill: C.accent,
+      },
+      "2 / 3",
+    ),
+  );
+  sheet.append(seal);
+  svg.append(sheet);
   return svg;
 }
 
-// ---------------------------------------------------------------- how-it-works illustration
-
-const STEPS: { title: string; body: string }[] = [
-  {
-    title: "Someone proposes an action",
-    body: "A signer builds it in the app or the CLI: what to do, the vault's current nonce and a deadline. The file holds no secret.",
-  },
-  {
-    title: "Two of three sign it",
-    body: "Each signer adds an ML-DSA-87 signature on their own machine. Treasury keys never touch a web page.",
-  },
-  {
-    title: "QoreChain checks every signature",
-    body: "The vault reads each signer's key from the chain's registry (pqcKeyStatus) and checks each share with pqcVerify. Being the sender is never enough.",
-  },
-  {
-    title: "It moves now, or it waits",
-    body: "Up to a daily allowance moves at once. More, and every rule change, waits in a public timelock; any one signer can veto, then anyone can execute.",
-  },
-];
-
-function stepsArt(): { svg: SVGSVGElement; groups: SVGElement[] } {
-  const svg = s("svg", {
-    viewBox: "0 0 480 540",
-    class: "l-art l-steps-art",
-    role: "img",
-    "aria-label": "A proposal file is signed by two signers, checked on chain by pqcKeyStatus and pqcVerify, and then either moves within the allowance or waits in the timelock.",
-  }) as SVGSVGElement;
-  svg.append(s("rect", { x: 4, y: 4, width: 472, height: 532, rx: 22, fill: "#f8fbff", stroke: "#dbe7f7" }));
-  const groups: SVGElement[] = [];
-
-  // 1 proposal
-  const g1 = s("g", { class: "l-g" });
-  g1.append(card(120, 30, 240, 92));
-  g1.append(s("path", { d: "M140 50h18l8 8v24h-26z", fill: "#eff6ff", stroke: "#2563eb", "stroke-width": 1.5, "stroke-linejoin": "round" }));
-  g1.append(text(180, 56, "proposal.json", { "font-family": mono, "font-weight": 600, fill: "#111827" }));
-  g1.append(text(180, 76, "sweep 250 fUSD → 0x51cc…", { fill: "#374151", "font-size": 11.5 }));
-  g1.append(text(180, 94, "nonce 42 · deadline 2h", { fill: "#6b7280", "font-size": 11.5 }));
-  g1.append(text(140, 112, "no secret inside", { fill: "#16a34a", "font-size": 11 }));
-  groups.push(g1);
-
-  // 2 signers
-  const g2 = s("g", { class: "l-g" });
-  for (const [x, n] of [
-    [40, "Signer 1"],
-    [300, "Signer 2"],
-  ] as const) {
-    g2.append(card(x, 158, 140, 70));
-    g2.append(s("circle", { cx: x + 24, cy: 193, r: 12, fill: "#2563eb" }));
-    g2.append(s("path", { d: `M${x + 18} 193.5l4 4 8-8.5`, fill: "none", stroke: "#fff", "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }));
-    g2.append(text(x + 44, 188, n, { "font-weight": 600, fill: "#111827" }));
-    g2.append(text(x + 44, 206, "ML-DSA-87 share", { fill: "#2563eb", "font-size": 11.5 }));
-  }
-  g2.append(s("path", { d: "M180 193 C210 193 220 140 240 122", fill: "none", stroke: "#93c5fd", "stroke-width": 2 }));
-  g2.append(s("path", { d: "M300 193 C270 193 260 140 240 122", fill: "none", stroke: "#93c5fd", "stroke-width": 2 }));
-  g2.append(text(240, 250, "4,627-byte signatures, made off chain", { "text-anchor": "middle", fill: "#6b7280", "font-size": 11.5 }));
-  groups.push(g2);
-
-  // 3 chain check
-  const g3 = s("g", { class: "l-g" });
-  g3.append(card(80, 272, 320, 106, { stroke: "#2563eb", "stroke-width": 1.5 }));
-  g3.append(text(100, 298, "QoreChain", { "font-weight": 700, fill: "#1e40af" }));
-  g3.append(text(100, 322, "pqcKeyStatus(signer)", { "font-family": mono, "font-size": 11.5, fill: "#374151" }));
-  g3.append(text(380, 322, "key ✓", { "text-anchor": "end", fill: "#16a34a", "font-size": 12, "font-weight": 600 }));
-  g3.append(text(100, 344, "pqcVerify(key, share, msg)", { "font-family": mono, "font-size": 11.5, fill: "#374151" }));
-  g3.append(text(380, 344, "✓ ✓", { "text-anchor": "end", fill: "#16a34a", "font-size": 12, "font-weight": 600 }));
-  g3.append(text(100, 366, "nonce used once", { fill: "#6b7280", "font-size": 11.5 }));
-  groups.push(g3);
-
-  // 4 outcomes
-  const g4 = s("g", { class: "l-g" });
-  g4.append(s("path", { d: "M200 378 C200 410 130 404 130 424", fill: "none", stroke: "#93c5fd", "stroke-width": 2 }));
-  g4.append(s("path", { d: "M280 378 C280 410 350 404 350 424", fill: "none", stroke: "#93c5fd", "stroke-width": 2 }));
-  g4.append(card(36, 424, 188, 84));
-  g4.append(text(52, 448, "Allowance", { "font-weight": 600, fill: "#111827" }));
-  g4.append(s("rect", { x: 52, y: 460, width: 156, height: 8, rx: 4, fill: "#eff6ff" }));
-  g4.append(s("rect", { x: 52, y: 460, width: 62, height: 8, rx: 4, fill: "#2563eb" }));
-  g4.append(text(52, 492, "moves now", { fill: "#16a34a", "font-size": 11.5, "font-weight": 600 }));
-  g4.append(card(256, 424, 188, 84));
-  g4.append(text(272, 448, "Timelock", { "font-weight": 600, fill: "#111827" }));
-  g4.append(text(272, 470, "waits 15 min in public", { fill: "#2563eb", "font-size": 11.5 }));
-  g4.append(text(272, 492, "one signer can veto", { fill: "#6b7280", "font-size": 11.5 }));
-  groups.push(g4);
-
-  svg.append(...groups);
-  return { svg, groups };
-}
-
-// ---------------------------------------------------------------- small line drawings for roles
-
-function roleArt(kind: "signer" | "holder" | "anyone"): SVGSVGElement {
-  const m = s("svg", { viewBox: "0 0 40 40", width: 40, height: 40, "aria-hidden": "true", class: "l-role-art" }) as SVGSVGElement;
-  m.append(s("rect", { x: 1, y: 1, width: 38, height: 38, rx: 10, fill: "#eff6ff" }));
-  const st = { fill: "none", stroke: "#2563eb", "stroke-width": 1.8, "stroke-linecap": "round", "stroke-linejoin": "round" };
-  if (kind === "signer") {
-    m.append(s("circle", { cx: 15, cy: 20, r: 5, ...st }));
-    m.append(s("path", { d: "M20 20H31M27 20v4M31 20v3", ...st }));
-  }
-  if (kind === "holder") {
-    m.append(s("ellipse", { cx: 20, cy: 15, rx: 8, ry: 3, ...st }));
-    m.append(s("path", { d: "M12 15v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5M12 20v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5", ...st }));
-  }
-  if (kind === "anyone") {
-    m.append(s("path", { d: "M9 20s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z", ...st }));
-    m.append(s("circle", { cx: 20, cy: 20, r: 3, ...st }));
-  }
-  return m;
-}
-
-// ---------------------------------------------------------------- the page
-
-function kicker(t: string): HTMLElement {
-  return h("div.l-kicker", t);
-}
+// ---------------------------------------------------------------- pieces
 
 function scrollTo(id: string) {
-  return () => document.getElementById(id)?.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+  const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return () =>
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: "start",
+    });
+}
+
+/** Peal Tender's mark: the family construction (26 grid, 22px circle) with two of three seals filled. */
+export function tenderMark(size = 24): SVGSVGElement {
+  const g = s("svg", {
+    viewBox: "0 0 26 26",
+    width: size,
+    height: size,
+    "aria-hidden": "true",
+  }) as SVGSVGElement;
+  g.append(
+    s("circle", {
+      cx: 13,
+      cy: 13,
+      r: 11,
+      fill: "none",
+      stroke: C.accent,
+      "stroke-width": 2,
+    }),
+  );
+  for (const [cx, cy, on] of [
+    [13, 7.5, true],
+    [8.2, 16, true],
+    [17.8, 16, false],
+  ] as const) {
+    g.append(
+      s("circle", {
+        cx,
+        cy,
+        r: 2.6,
+        fill: on ? C.accent : "#fff",
+        stroke: C.accent,
+        "stroke-width": 1.6,
+      }),
+    );
+  }
+  return g;
+}
+
+function auctionMark(size = 22): SVGSVGElement {
+  const g = s("svg", {
+    viewBox: "0 0 26 26",
+    width: size,
+    height: size,
+    "aria-hidden": "true",
+  }) as SVGSVGElement;
+  g.append(
+    s("circle", {
+      cx: 13,
+      cy: 13,
+      r: 11,
+      fill: "none",
+      stroke: C.ink2,
+      "stroke-width": 2,
+    }),
+  );
+  g.append(
+    s("path", {
+      d: "M7 13H19",
+      stroke: C.ink2,
+      "stroke-width": 2,
+      "stroke-linecap": "round",
+    }),
+  );
+  g.append(s("rect", { x: 10, y: 10, width: 6, height: 6, rx: 1, fill: C.ink2 }));
+  return g;
+}
+
+function bidderMark(size = 22): SVGSVGElement {
+  const g = s("svg", {
+    viewBox: "0 0 26 26",
+    width: size,
+    height: size,
+    "aria-hidden": "true",
+  }) as SVGSVGElement;
+  g.append(
+    s("circle", {
+      cx: 13,
+      cy: 13,
+      r: 11,
+      fill: "none",
+      stroke: C.ink2,
+      "stroke-width": 2,
+    }),
+  );
+  g.append(s("circle", { cx: 9, cy: 13, r: 2.6, fill: C.ink2 }));
+  g.append(
+    s("path", {
+      d: "M12 13H19M16 10L19 13L16 16",
+      fill: "none",
+      stroke: C.ink2,
+      "stroke-width": 2,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+    }),
+  );
+  return g;
 }
 
 function nav(): HTMLElement {
-  const fam = h(
-    "div.l-family-switch",
-    { role: "group", "aria-label": "Peal products" },
-    h("span.l-fam.is-current", { title: "Peal Tender (you are here)" }, familyMark("tender", 18)),
-    h("a.l-fam", { href: "https://github.com/Adityaakr/peal-sealed-auction", target: "_blank", rel: "noopener", title: "Peal Sealed Auction" }, familyMark("auction", 18)),
-    h("a.l-fam", { href: "https://github.com/Adityaakr/peal-bidder", target: "_blank", rel: "noopener", title: "Peal Bidder" }, familyMark("bidder", 18)),
-  );
   const link = (label: string, id: string) => {
-    const b = h("button.l-navlink", { type: "button" }, label);
+    const b = h("button.t-navlink", { type: "button" }, label);
     b.addEventListener("click", scrollTo(id));
     return b;
   };
   const bar = h(
-    "header.l-nav",
+    "header.t-nav",
     h(
-      "div.l-wrap.l-nav-inner",
-      h("div.l-brand", h("a.wordmark", { href: "#/" }, familyMark("tender"), "Peal Tender"), fam),
-      h("nav.l-links", { "aria-label": "On this page" }, link("How it works", "how"), link("Security", "security"), link("Try it", "try"), h("a.l-navlink", { href: REPO, target: "_blank", rel: "noopener" }, "GitHub")),
-      h("div.l-nav-ctas", h("a.btn.btn-primary.btn-small", { href: "#/vault" }, "Open the app"), walletButton()),
+      "div.t-wrap.t-nav-inner",
+      h("a.t-wordmark", { href: "#/" }, tenderMark(24), h("span", "Peal Tender")),
+      h(
+        "nav.t-links",
+        { "aria-label": "On this page" },
+        link("How it works", "how"),
+        link("Security", "attacks"),
+        link("Proof", "statement"),
+        link("Requirements", "requirements"),
+        link("Try it", "try"),
+      ),
+      h("div.t-nav-ctas", walletButton(), h("a.btn.btn-primary.btn-small", { href: "#/vault" }, "Open the treasury")),
     ),
   );
-  const onScroll = () => bar.classList.toggle("is-scrolled", window.scrollY > 8);
+  const onScroll = () => bar.classList.toggle("is-scrolled", window.scrollY > 4);
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
   return bar;
 }
 
-function reveal(root: HTMLElement): void {
-  if (REDUCED || typeof IntersectionObserver !== "function") return;
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          e.target.classList.add("is-in");
-          io.unobserve(e.target);
-        }
-      }
-    },
-    { rootMargin: "0px 0px -10% 0px" },
-  );
-  root.querySelectorAll(".l-reveal").forEach((el) => io.observe(el));
-}
+const num = (v: string, unit: string, cls = "") => h(`td.t-num${v ? "" : ".t-empty"}${cls}`, { "data-unit": unit }, v || "·");
+
+// ---------------------------------------------------------------- the page
 
 export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
   const snap = ctx.snap;
-  const openTender = snap?.tenders.find((t) => t.id === snap.openTenderId);
+  const openTender = snap?.tenders.find((x) => x.id === snap.openTenderId);
 
   // ---- hero
-  const tryBtn = h("button.btn.l-btn", { type: "button" }, wallet.guest ? "Open your wallet" : "Try it with a guest account");
-  tryBtn.addEventListener("click", () => openPanel());
+  const guestBtn = h("button.btn.t-btn", { type: "button" }, wallet.guest ? "Open your wallet" : "Try it on testnet");
+  guestBtn.addEventListener("click", () => openPanel());
   const hero = h(
-    "section.l-hero",
+    "section.t-hero",
     h(
-      "div.l-wrap.l-hero-grid",
+      "div.t-wrap.t-hero-grid",
       h(
-        "div.l-hero-copy",
-        kicker("Post-quantum treasury on QoreChain"),
-        h("h1.l-display", "A treasury a stolen key ", h("span.l-accent", "cannot drain.")),
+        "div.t-hero-copy",
+        h("p.t-kicker", "Treasury vault · QoreChain"),
+        h("h1.t-display", "Nothing leaves this treasury without ", h("em", "two signatures"), " the chain can verify."),
         h(
-          "p.l-lead",
-          "Peal Tender holds a project's treasury behind ML-DSA-87 signatures that QoreChain checks on chain. Two of three signers approve every move, anything large waits in a public timelock, and buybacks clear at one fair price.",
+          "p.t-lead",
+          "Peal Tender holds a project's funds in a vault contract. Every payment is an order signed by two of three signers with ML-DSA-87, a post-quantum signature that QoreChain checks itself. An order signed with a stolen classical key is refused.",
         ),
-        h("div.l-ctas", h("a.btn.btn-primary.l-btn", { href: "#/vault" }, "Open the app", icon("arrow")), tryBtn),
-        h("p.l-proof-line", "Testnet · Apache-2.0 · 132 Foundry tests · a Q-Day Drill entry"),
+        h("div.t-ctas", h("a.btn.btn-primary.t-btn", { href: "#/vault" }, "Open the treasury", icon("arrow")), guestBtn),
+        h(
+          "dl.t-terms",
+          h("div", h("dt", "Signers"), h("dd", snap ? `${snap.threshold} of ${snap.members.length}` : "2 of 3")),
+          h("div", h("dt", "Signature"), h("dd", "ML-DSA-87")),
+          h("div", h("dt", "Hold above limit"), h("dd", snap ? duration(snap.delay) : "15 min")),
+        ),
       ),
-      h("div.l-hero-art", h("div.l-only-wide", heroArt()), h("div.l-only-phone", heroArtPhone())),
+      h(
+        "figure.t-hero-art",
+        h("div.t-only-wide", paymentOrder()),
+        h("div.t-only-phone", paymentOrderPhone()),
+        h("figcaption.t-figcap", "An order clears when two signatures verify against the keys on file. The order beneath carries only a stolen classical key."),
+      ),
     ),
   );
 
-  // ---- proof bar
-  const cell = (label: string, value: string, live = false) =>
-    h("div.l-proof-cell", h("span.l-proof-label", live ? h("span.l-live", { title: "read from the chain now" }) : null, label), h("strong.l-figure", value));
-  const proof = h(
-    "section.l-wrap.l-proof-wrap",
-    snap
-      ? h(
-          "div.l-proof",
-          cell(`${snap.pay.symbol} held`, fmt(snap.pay.balance, snap.pay), true),
-          cell(`${snap.buy.symbol} bought back`, fmt(snap.buy.balance - snap.escrowedBuy, snap.buy), true),
-          cell("Signers", `${snap.threshold} of ${snap.members.length}`, true),
-          cell("Timelock", duration(snap.delay), true),
-          cell("Tenders run", String(snap.tenders.length), true),
-        )
-      : h(
-          "div.l-proof",
-          cell("Signers", "2 of 3"),
-          cell("Signature", "ML-DSA-87"),
-          cell("Checked by", "pqcVerify"),
-          cell("Live vault", "19 Nov 2026"),
-        ),
-  );
-
-  // ---- how it works: step rail synced to the illustration
-  const art = stepsArt();
-  const items = STEPS.map((st, i) =>
+  // ---- why: who holds which key
+  const head = (title: string, lead: string) => h("header.t-section-head", h("h2.t-title", title), h("p.t-lead", lead));
+  const gh = (label: string, file: string) => h("a", { href: `${REPO}/blob/main/${file}`, target: "_blank", rel: "noopener" }, label);
+  const why = h(
+    "section.t-section",
+    { id: "why" },
     h(
-      "button.l-step",
-      { type: "button", "aria-pressed": i === 0 ? "true" : "false", "data-step": i },
-      h("span.l-step-n", String(i + 1)),
-      h("span.l-step-text", h("span.l-step-title", st.title), h("span.l-step-body", st.body)),
+      "div.t-wrap",
+      head(
+        "Why a treasury needs this",
+        "A blockchain account is a secp256k1 key, and its public key is on chain from the account's first transaction. A large enough quantum computer can derive the private key from it; the day that becomes possible is called Q-Day. A treasury that answers to one such key loses everything on that day.",
+      ),
+      h(
+        "div.t-compare",
+        h(
+          "figure.t-fig",
+          h("figcaption.t-fig-q", h("span.t-fig-tag", "Today"), "A treasury held by one key"),
+          h("div.t-only-wide", keysSingle()),
+          h("div.t-only-phone", keysSinglePhone()),
+        ),
+        h(
+          "figure.t-fig",
+          h("figcaption.t-fig-q", h("span.t-fig-tag.is-accent", "Peal Tender"), "A treasury held by three post-quantum keys"),
+          h("div.t-only-wide", keysTender()),
+          h("div.t-only-phone", keysTenderPhone()),
+        ),
+      ),
+      h(
+        "p.t-note",
+        "The account's classical key still exists in Peal Tender: it pays fees and opens the transaction window. It cannot authorise a payment. Only ML-DSA-87 signatures, from keys each signer registered on QoreChain with proof of possession, can.",
+      ),
     ),
   );
-  const activate = (i: number) => {
-    items.forEach((b, k) => b.setAttribute("aria-pressed", k === i ? "true" : "false"));
-    art.groups.forEach((g, k) => g.classList.toggle("is-dim", k !== i));
-  };
-  items.forEach((b, i) => {
-    b.addEventListener("mouseenter", () => activate(i));
-    b.addEventListener("focus", () => activate(i));
-    b.addEventListener("click", () => activate(i));
-  });
-  activate(0);
+
+  // ---- how a payment clears
   const how = h(
-    "section.l-band.l-band-white",
+    "section.t-section",
     { id: "how" },
     h(
-      "div.l-wrap",
-      h("div.l-section-head.l-reveal", kicker("How it works"), h("h2.l-title", "Four steps from an idea to moved funds."), h("p.l-lead", "Every treasury action goes the same way. Hover or tap a step to see where it happens.")),
-      h("div.l-steps.l-reveal", h("div.l-step-list", { role: "group", "aria-label": "Steps" }, ...items), h("div.l-steps-art-wrap", art.svg)),
+      "div.t-wrap",
+      head("How a payment clears", "Six steps in four places. Treasury keys sign off chain, on the signers' own machines. The chain checks every signature before the vault pays."),
+      h(
+        "figure.t-fig.t-flow-fig",
+        h("div.t-only-wide.t-scroll", flowDiagram()),
+        h(
+          "ol.t-flow-list.t-only-phone",
+          ...FLOW.map((st, i) => h("li", h("span.t-step-n", String(i + 1)), h("div", h("span.t-lane", st.lane), h("h3", st.title), ...st.lines.map((ln) => h("p", ln))))),
+        ),
+        h(
+          "figcaption.t-figcap",
+          "The scoped EVM window and the two precompiles are QoreChain's own. A window lets one account call only the listed contracts until it closes; the vault calls both precompiles for every order.",
+        ),
+      ),
     ),
   );
 
-  // ---- security on the dark band
-  const row = (what: string, ordinary: [boolean, string], ours: [boolean, string]) =>
+  // ---- what an attacker can and cannot do
+  type Tone = "bad" | "warn" | "ok";
+  const attack = (holds: string, sub: string, check: string, tone: Tone, outcome: string) =>
     h(
-      "tr",
-      h("th", { scope: "row" }, what),
-      h("td", h(`span.l-verdict${ordinary[0] ? ".ok" : ".bad"}`, icon(ordinary[0] ? "check" : "cross"), ordinary[1])),
-      h("td", h(`span.l-verdict${ours[0] ? ".ok" : ".bad"}`, icon(ours[0] ? "check" : "cross"), ours[1])),
+      "li.t-attack",
+      h("div.t-att-holds", h("h3", holds), h("p", sub)),
+      h("div.t-att-check", h("span.t-att-label", "Checked by"), h("p", check)),
+      h(`div.t-att-out.${tone}`, h("span.t-att-mark", tone === "bad" ? "Refused" : tone === "warn" ? "Limited" : "Still works"), h("p", outcome)),
     );
-  const security = h(
-    "section.l-band.l-band-dark",
-    { id: "security" },
+  const attacks = h(
+    "section.t-section",
+    { id: "attacks" },
     h(
-      "div.l-wrap",
+      "div.t-wrap",
+      head(
+        "What an attacker can and cannot do",
+        "Each row is something an attacker might hold, the check that stops it, and the most it can achieve. The contract enforces every check, and the Foundry suite tests each one, with invariants over random sequences of actions and attacks.",
+      ),
+      h("div.t-att-headings", { "aria-hidden": "true" }, h("span", "The attacker holds"), h("span", "What the chain checks"), h("span", "The most it achieves")),
       h(
-        "div.l-security-grid.l-reveal",
-        h(
-          "div.l-section-head",
-          { style: "margin-bottom:0" },
-          kicker("Security"),
-          h("h2.l-title", "A stolen classical key moves nothing."),
-          h(
-            "p.l-lead",
-            "A large quantum computer could recover a secp256k1 private key from its public key. Funds guarded only by that key would belong to whoever ran it. In QoreChain's Q-Day Drill the attacker was handed our signer's classical key. Every attempt was refused.",
-          ),
+        "ol.t-attacks",
+        attack(
+          "The account's classical key",
+          "secp256k1, stolen today or derived after Q-Day",
+          "Two of three ML-DSA-87 signatures, each verified by pqcVerify",
+          "bad",
+          "Nothing moves. In the drill rehearsal, 9 of 9 attempts were refused.",
         ),
+        attack(
+          "One signer's ML-DSA-87 key",
+          "a single post-quantum key",
+          "A quorum of two different registered signers",
+          "bad",
+          "Nothing moves. It can only stop a held order, in public.",
+        ),
+        attack("An order already used", "a valid order, sent again", "The vault's nonce, and a deadline at most 24 hours ahead", "bad", "Nothing moves. Each order works once."),
+        attack(
+          "An order for another vault",
+          "valid signatures, a different target",
+          "The signed message names the chain and the vault",
+          "bad",
+          "Nothing moves. Signatures do not transfer.",
+        ),
+        attack(
+          "Two signers' keys",
+          "a quorum, stolen or colluding",
+          "Today's allowance per token; anything larger is held in public",
+          "warn",
+          "At most one day's allowance. The third signer can stop anything held.",
+        ),
+        attack("Signers who disappear", "no one left to sign", "Settle, execute and collect need no signature", "ok", "Tenders still settle and sellers are still paid."),
+      ),
+    ),
+  );
+
+  // ---- statement of account (the drill vault's real ledger)
+  type Entry = [string, string, string, string, string, string];
+  const entries: Entry[] = [
+    ["Opening deposit", "0x6f13abf1881778082cef33d6982df02535c6a4c816ddfc1155257b05b4233b4a", "+70.000", "", "", "plain transfer"],
+    ["Sweep to the ops account", "0x3801d22e00ed7d6be98cfa77972b7ea4488c89dc7833d083cf6b9fa1a8bc82eb", "−3.000", "", "", "ML-DSA-87"],
+    ["fUSD converted into the vault", "191073279F92FF8D5BC15299C67E3BB9C4C2FD3D0A59060BDCACEFCF0A70589A", "", "+0.202817", "", "native convert"],
+    ["Tender 1 opened, budget 0.1 fUSD", "0x501ace7d5040b16fc147c4290f8aed80c10fc293d9f19e50b52746167af3bc76", "", "(0.100000)", "", "ML-DSA-87"],
+    ["Tender 1 settled at 0.0013 fUSD", "0x39c0cc40ebd12f4e9bfcc453a245d290efb762def3c387802d23b6eef5ca3cc4", "", "", "+76.92", "ML-DSA-87"],
+    ["Seller paid: 60 tPEAL at 0.0013", "0x2084f9436017c57596168569a0d40254e8e0095e00006779559b73f1873638fb", "", "−0.078000", "", "seller's claim"],
+    ["Seller paid: 16.92 tPEAL at 0.0013", "0xed5a808ff4dbefa5910d326768a5a6b5e18bd8f1641c1e63b03fcfd2a177ca1c", "", "−0.021999", "", "seller's claim"],
+  ];
+  const ledger = h(
+    "div.t-ledger-scroll",
+    h(
+      "table.t-ledger",
+      h(
+        "thead",
         h(
-          "div",
-          h(
-            "pre.l-terminal",
-            h("span.l-c", "# drill rehearsal, 15 Nov 2026\n# the attacker holds only the classical key\n"),
-            ...[
-              ["native transfer", "pqc code 20"],
-              ["open an EVM window", "pqc code 21"],
-              ["re-register PQ key", "pqc code 234"],
-              ["fUSD approval", "no window"],
-              ["vault.sweep, forged", "PqSignatureInvalid"],
-            ].flatMap(([a, b]) => [h("span.l-refused-word", "REFUSED"), `  ${a.padEnd(20)}${b}\n`]),
-          ),
-          h("a.l-dark-link", { href: `${REPO}/blob/main/THREAT_MODEL.md`, target: "_blank", rel: "noopener" }, "The threat model and the full log"),
+          "tr",
+          h("th", { scope: "col" }, "Entry"),
+          h("th", { scope: "col" }, "Transaction"),
+          h("th.t-num", { scope: "col" }, "QOR"),
+          h("th.t-num", { scope: "col" }, "fUSD"),
+          h("th.t-num", { scope: "col" }, "tPEAL"),
+          h("th", { scope: "col" }, "Authorised by"),
         ),
       ),
       h(
-        "div.l-reveal",
-        { style: "margin-top:56px" },
+        "tbody",
+        ...entries.map(([e, tx, q, f, p, a]) =>
+          h(
+            "tr",
+            h("th", { scope: "row" }, e),
+            h("td", hash(tx, { label: "transaction hash" })),
+            num(q, "QOR"),
+            num(f, "fUSD", f.startsWith("(") ? ".t-held" : ""),
+            num(p, "tPEAL"),
+            h("td.t-auth", a),
+          ),
+        ),
+      ),
+      h("tfoot", h("tr", h("th", { scope: "row" }, "Closing balance"), h("td"), num("67.000", "QOR"), num("0.102818", "fUSD"), num("76.92", "tPEAL"), h("td"))),
+    ),
+  );
+  const refusals: [string, string, string][] = [
+    ["Native transfer", "classical signature only", "pqc code 20"],
+    ["Native transfer", "attacker's own ML-DSA-87 key", "pqc code 21"],
+    ["Open an EVM window", "classical signature only", "pqc code 20"],
+    ["Open an EVM window", "attacker's own key", "pqc code 21"],
+    ["Re-register the signer's key", "classical", "pqc code 234"],
+    ["EVM transfer", "no window", "no open window"],
+    ["fUSD approval", "no window", "no open window"],
+    ["vault.sweep, forged signature", "sent", "no open window"],
+    ["vault.sweep, forged signature", "simulated", "PqSignatureInvalid"],
+  ];
+  const statement = h(
+    "section.t-section",
+    { id: "statement" },
+    h(
+      "div.t-wrap",
+      h(
+        "header.t-section-head",
+        h("h2.t-title", "Statement of account"),
         h(
-          "table.l-compare",
-          h("thead", h("tr", h("th", ""), h("th", { scope: "col" }, "An ordinary treasury"), h("th", { scope: "col" }, "Peal Tender"))),
+          "p.t-lead",
+          "The first vault, deployed for QoreChain's Q-Day Drill, on 15 November 2026. Every entry is a real transaction; the closing balance is what the vault held that evening. That vault had one signer; the current version requires two of three.",
+        ),
+      ),
+      h(
+        "div.t-statement-meta",
+        h(
+          "span",
+          "Account ",
+          hash("0xc3EA5683C1f8D8594A1865D169D98B509b057D41", {
+            label: "drill vault address",
+          }),
+        ),
+        h("span", "Network qorechain-diana, EVM chain 9800"),
+        h("span", "Period 15 Nov 2026"),
+      ),
+      ledger,
+      h(
+        "p.t-source",
+        "Source: ",
+        h(
+          "a",
+          {
+            href: `${REPO}#deployed-testnet-qorechain-diana-evm-chain-id-9800`,
+            target: "_blank",
+            rel: "noopener",
+          },
+          "the repository's deployment record",
+        ),
+        ". Native-lane hashes are upper case; EVM hashes start with 0x.",
+      ),
+      h(
+        "div.t-rejected",
+        h(
+          "div.t-rejected-head",
+          h("h3.t-subtitle", "Instructions refused"),
+          h(
+            "p",
+            "For the drill, the signer's classical secp256k1 key was handed over, as an attacker would hold it after Q-Day. A rehearsal with that key alone tried every route to the funds. None moved anything.",
+          ),
+        ),
+        h(
+          "ol.t-refused-list",
+          ...refusals.map(([what, how, code]) => h("li", h("span.t-refused-what", what), h("span.t-refused-how", how), h("span.t-refused-stamp", "Refused"), h("code", code))),
+        ),
+        h(
+          "p.t-source",
+          "Source: ",
+          h(
+            "a",
+            {
+              href: `${REPO}/blob/main/THREAT_MODEL.md`,
+              target: "_blank",
+              rel: "noopener",
+            },
+            "THREAT_MODEL.md, section 7",
+          ),
+          ", run of 15 November 2026.",
+        ),
+      ),
+    ),
+  );
+
+  // ---- one clearing price
+  const fact = (k: string, v: Node | string) => h("div", h("dt", k), h("dd", v));
+  const buyback = h(
+    "section.t-section",
+    { id: "buyback" },
+    h(
+      "div.t-wrap",
+      head(
+        "How a buyback clears at one price",
+        "The treasury sets a budget and a price ladder; holders offer tokens at the lowest price they accept. The price climbs while the budget can pay every offer at or below it, and stops where it cannot. Everyone who sells is paid that one price, never less than their own offer.",
+      ),
+      h(
+        "div.t-buyback",
+        h(
+          "figure.t-fig",
+          h("figcaption.t-fig-q", h("span.t-fig-tag", "15 Nov 2026"), "Tender 1 of the drill vault"),
+          h("div.t-only-wide", clearingChart()),
+          h("div.t-only-phone", clearingChart(true)),
+          h(
+            "div.t-legend",
+            h("span", h("i.t-sw.offered"), "Offered at or below the price"),
+            h("span", h("i.t-sw.bought"), "Bought"),
+            h("span", h("i.t-sw.line"), "What the budget buys at the price"),
+          ),
+        ),
+        h(
+          "dl.t-facts",
+          fact("Budget", "0.1 fUSD"),
+          fact("Offer 1", "60 tPEAL at 0.0010"),
+          fact("Offer 2", "50 tPEAL at 0.0013"),
+          fact("Clearing price", "0.0013 fUSD, for everyone"),
+          fact("Bought", "76.92 tPEAL"),
+          fact("Paid to sellers", "0.099999 fUSD"),
+          fact("Settled in", hash("0x39c0cc40ebd12f4e9bfcc453a245d290efb762def3c387802d23b6eef5ca3cc4", { label: "settle transaction" })),
+          h(
+            "p.t-note",
+            "PealTenderV2 can also sell through Peal Sealed Auction, where bids stay sealed until the close: startSealedSale draws on the same daily allowance, and anyone can collect the result.",
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // ---- the mandate
+  const live = (v: string, note?: string) => h("div.t-clause-value", h("span", v), note ? h("small", note) : null);
+  const clause = (n: number, title: string, body: string, value?: HTMLElement) =>
+    h("li.t-clause", h("span.t-clause-n", `§ ${n}`), h("div.t-clause-text", h("h3", title), h("p", body)), value ?? h("div"));
+  const valueNote = snap ? "read live" : "testnet setting";
+  const mandate = h(
+    "section.t-section.t-mandate-section",
+    { id: "mandate" },
+    h(
+      "div.t-wrap",
+      h(
+        "header.t-section-head",
+        h("h2.t-title", "The mandate"),
+        h("p.t-lead", "The rules the vault enforces, written the way a company files them with its bank. The contract, not a person, applies each one."),
+      ),
+      h(
+        "ol.t-mandate",
+        clause(
+          1,
+          "Signatories",
+          "Three accounts, each with its own ML-DSA-87 key registered on QoreChain. Any two of them sign an instruction.",
+          live(snap ? `${snap.threshold} of ${snap.members.length}` : "2 of 3", valueNote),
+        ),
+        clause(
+          2,
+          "Verification",
+          "Each signature is checked on chain: the key comes from pqcKeyStatus, the signature from pqcVerify. Who sends the transaction grants nothing.",
+          live("pqcVerify", "precompile 0x…0a01"),
+        ),
+        clause(3, "Single use", "Every instruction carries the vault's nonce and a deadline at most 24 hours ahead. It works once, and only before its deadline.", live("≤ 24 h")),
+        clause(
+          4,
+          "Daily limit",
+          "Payments, tender budgets and sealed sales draw on one allowance per token per UTC day, and leave at once while it lasts.",
+          live(snap ? `${fmt(snap.pay.cap, snap.pay)} ${snap.pay.symbol}` : "1 fUSD", valueNote),
+        ),
+        clause(
+          5,
+          "Hold",
+          "Anything above the limit, and any change to the signatories, the hold, the limits or the auction factory, waits in public for the hold period.",
+          live(snap ? duration(snap.delay) : "15 min", valueNote),
+        ),
+        clause(6, "Stop", "During a hold, any one signatory can stop the instruction with a single signature.", live("1 signature")),
+        clause(
+          7,
+          "Release",
+          "When the hold ends, anyone may carry the instruction out. Settling a tender, paying its sellers and collecting a sealed sale are open to anyone too.",
+          live("anyone"),
+        ),
+      ),
+    ),
+  );
+
+  // ---- the category's requirements
+  const reqRow = (need: string, how: (Node | string)[], state: string) => h("tr", h("th", { scope: "row" }, need), h("td", ...how), h("td.t-req-state", state));
+  const requirements = h(
+    "section.t-section",
+    { id: "requirements" },
+    h(
+      "div.t-wrap",
+      head(
+        "The category's requirements",
+        "QoreChain's Post-Quantum dApp category asks for a scoped EVM window, pqcVerify, a two-stage QCAI audit and Foundry or Hardhat tests. Each one, where it lives in the repository, and its state on 16 November.",
+      ),
+      h(
+        "div.t-ledger-scroll.t-req-scroll",
+        h(
+          "table.t-req",
+          h("thead", h("tr", h("th", { scope: "col" }, "Requirement"), h("th", { scope: "col" }, "In Peal Tender"), h("th", { scope: "col" }, "State"))),
           h(
             "tbody",
-            row("Its signing key is stolen", [false, "funds move"], [true, "refused: the key is post-quantum and needs 2 of 3"]),
-            row("A quantum computer meets its public key", [false, "the key can be derived"], [true, "ML-DSA-87, checked by pqcVerify"]),
-            row("One key holder turns", [false, "moves everything"], [true, "a single share is refused"]),
-            row("Two signers turn", [false, "everything at once"], [true, "capped per day; more waits, any honest signer vetoes"]),
-            row("Nobody with a key is around", [false, "buybacks stall"], [true, "anyone settles, executes, collects"]),
+            reqRow(
+              "Scoped EVM window",
+              ["Each action opens a window scoped to the vault, fUSD, PEAL-T and the auction factory, sends, and closes it. ", gh("scripts/v2/window.ts", "scripts/v2/window.ts")],
+              "In use by the drill vault; v2 deploys on 19 Nov",
+            ),
+            reqRow(
+              "pqcVerify",
+              [
+                "Every order needs two of three ML-DSA-87 signatures: keys from pqcKeyStatus, signatures checked by pqcVerify. ",
+                gh("src/PealTenderV2.sol", "src/PealTenderV2.sol"),
+              ],
+              "Live in the drill vault since 15 Nov",
+            ),
+            reqRow(
+              "Two-stage QCAI audit",
+              [
+                "The Contract Auditor on the flattened source, the findings fixed, the frozen source audited again. ",
+                h(
+                  "a",
+                  {
+                    href: `${REPO}/tree/main/audits`,
+                    target: "_blank",
+                    rel: "noopener",
+                  },
+                  "audits/",
+                ),
+              ],
+              "Stage 1 about 22 Nov, stage 2 on 29 Nov",
+            ),
+            reqRow(
+              "Foundry tests",
+              [
+                "132 tests. For v2: 57 unit, 8 fuzz, 7 invariant, 4 cross-language vectors, 6 gas. ",
+                h(
+                  "a",
+                  {
+                    href: `${REPO}/tree/main/test`,
+                    target: "_blank",
+                    rel: "noopener",
+                  },
+                  "test/",
+                ),
+              ],
+              "Passing in CI on every pull request",
+            ),
+            reqRow(
+              "Q-Day Drill",
+              ["The drill vault's classical key goes to the organisers; every path to the funds was refused in rehearsal. ", gh("DRILL.md", "DRILL.md")],
+              "Drill day 18 Nov",
+            ),
           ),
         ),
-      ),
-    ),
-  );
-
-  // ---- roles
-  const role = (kind: "signer" | "holder" | "anyone", title: string, body: string, href: string, cta: string) =>
-    h("div.l-card.l-reveal", roleArt(kind), h("h3.l-card-title", title), h("p.l-card-body", body), h("a.l-card-link", { href }, cta, icon("arrow")));
-  const roles = h(
-    "section.l-band",
-    h(
-      "div.l-wrap",
-      h("div.l-section-head.l-reveal", kicker("Who uses it"), h("h2.l-title", "Three kinds of people, one set of rules.")),
-      h(
-        "div.l-grid-3",
-        role("signer", "Treasury signers", "Propose actions in the app or the CLI, sign them with npm run sign-action, and veto anything queued that they do not like.", "#/propose", "Build a proposal"),
-        role("holder", "Token holders", "Offer PEAL-T into a buyback at the lowest price you accept. Everyone who sells is paid one clearing price, never less than they asked.", "#/tenders", "See the tenders"),
-        role("anyone", "Anyone", "Watch every signature and queued change, settle a finished tender, execute a change once its wait is over, check a proposal's signatures.", "#/activity", "Watch the vault"),
       ),
     ),
   );
 
   // ---- try it
-  const tryStep = (n: number, title: string, body: string, cta?: HTMLElement) =>
-    h("li.l-try-step", h("span.l-try-n", String(n)), h("h3.l-card-title", title), h("p.l-card-body", body), cta ?? null);
-  const createBtn = h("button.btn.btn-primary.btn-small", { type: "button" }, wallet.guest ? "Open your wallet" : "Create it");
+  const createBtn = h("button.btn.btn-primary.btn-small", { type: "button" }, wallet.guest ? "Open your wallet" : "Create a guest account");
   createBtn.addEventListener("click", () => openPanel());
+  const step = (n: number, title: string, body: string, action?: HTMLElement) =>
+    h("li.t-step", h("span.t-step-n", String(n)), h("div", h("h3", title), h("p", body)), action ?? h("div"));
   const tryIt = h(
-    "section.l-band.l-band-white",
+    "section.t-section",
     { id: "try" },
     h(
-      "div.l-wrap",
+      "div.t-wrap",
       h(
-        "div.l-section-head.l-reveal",
-        kicker("Try it"),
-        h("h2.l-title", "Sell into a buyback in about five minutes."),
-        h("p.l-lead", "On the testnet, with an account made in your browser. QoreX can fund it; MetaMask can connect, but it cannot make the post-quantum signature QoreChain asks for."),
-      ),
-      h(
-        "ol.l-try.l-reveal",
-        tryStep(1, "Make a guest account", "A fresh testnet account with its own ML-DSA-87 key, kept only in this browser.", createBtn),
-        tryStep(2, "Fund it", "Send a little test QOR from QoreX in one approval, or use the QoreChain dashboard faucet."),
-        tryStep(3, "Get test PEAL-T", "One click claims it from Peal Sealed Auction's demo faucet."),
-        tryStep(
-          4,
-          "Offer into the tender",
-          "Pick an amount and your lowest price. Your account registers its key and opens a window scoped to the vault.",
-          openTender ? h("a.btn.btn-small", { href: `#/tenders/${openTender.id}` }, `Tender #${openTender.id}`) : h("a.btn.btn-small", { href: "#/tenders" }, "Tenders"),
+        "div.t-try",
+        h(
+          "header.t-try-head",
+          h("h2.t-title", "Sell into a buyback"),
+          h(
+            "p.t-lead",
+            "On the testnet, with an account created in your browser. It takes about five minutes. QoreX can fund the account; MetaMask can connect but cannot make the post-quantum signature QoreChain requires.",
+          ),
+        ),
+        h(
+          "ol.t-steps",
+          step(1, "Create a guest account", "A new testnet account with its own ML-DSA-87 key, stored only in this browser.", createBtn),
+          step(2, "Fund it", "Send a little test QOR from QoreX, or claim it from the QoreChain dashboard faucet."),
+          step(3, "Get test PEAL-T", "Claim it from Peal Sealed Auction's demo faucet in one click."),
+          step(
+            4,
+            "Make an offer",
+            "Choose an amount and the lowest price you accept. Everyone who sells is paid the same clearing price.",
+            openTender
+              ? h("a.btn.btn-small", { href: `#/tenders/${openTender.id}` }, `Offer into tender ${openTender.id}`)
+              : h("a.btn.btn-small", { href: "#/tenders" }, "See the tenders"),
+          ),
         ),
       ),
     ),
   );
 
-  // ---- the Peal family
-  const fam = (kind: "tender" | "auction" | "bidder", name: string, body: string, href: string, current = false) =>
-    h(
-      `div.l-card.l-fam-card.l-reveal${current ? ".is-current" : ""}`,
-      h("div.l-fam-head", familyMark(kind, 32), current ? h("span.chip.wait", "You are here") : null),
-      h("h3.l-card-title", name),
-      h("p.l-card-body", body),
-      current ? null : h("a.l-card-link", { href, target: "_blank", rel: "noopener" }, "On GitHub", icon("arrow")),
-    );
-  const family = h(
-    "section.l-band",
-    h(
-      "div.l-wrap",
-      h("div.l-section-head.l-reveal", kicker("The Peal family"), h("h2.l-title", "One product story, three entries.")),
-      h(
-        "div.l-grid-3",
-        fam("tender", "Peal Tender", "The treasury: post-quantum signatures, a timelock and buybacks at one price.", "#/", true),
-        fam("auction", "Peal Sealed Auction", "The venue: bids sealed with ML-KEM-1024 that no single key holder can open before the close.", "https://github.com/Adityaakr/peal-sealed-auction"),
-        fam("bidder", "Peal Bidder", "The participant: an AI agent that bids for you, held to a mandate the chain enforces.", "https://github.com/Adityaakr/peal-bidder"),
-      ),
-    ),
-  );
-
-  // ---- footer
-  const col = (title: string, links: [string, string, boolean?][]) =>
-    h("div.l-foot-col", h("div.l-foot-title", title), ...links.map(([t, href, ext]) => h("a", { href, ...(ext ? { target: "_blank", rel: "noopener" } : {}) }, t)));
+  // ---- footer: the shared Peal family line
   const footer = h(
-    "footer.l-footer",
+    "footer.t-footer",
     h(
-      "div.l-wrap",
+      "div.t-wrap",
       h(
-        "div.l-foot-grid",
-        h("div", h("a.wordmark", { href: "#/" }, familyMark("tender"), "Peal Tender"), h("p.l-foot-text", "A treasury held by post-quantum signatures, built for QoreChain's Build Before Q-Day.")),
-        col("Product", [
-          ["Open the app", "#/vault"],
-          ["Tenders", "#/tenders"],
-          ["Propose", "#/propose"],
-          ["Activity", "#/activity"],
-        ]),
-        col("Developers", [
-          ["Source", REPO, true],
-          ["Threat model", `${REPO}/blob/main/THREAT_MODEL.md`, true],
-          ["Audits", `${REPO}/tree/main/audits`, true],
-          ["qore-pq-kit", "https://github.com/Adityaakr/qore-pq-kit", true],
-        ]),
-        col("Hackathon", [
-          ["Build Before Q-Day", "https://docs.qorechain.io", true],
-          ["Q-Day Drill runbook", `${REPO}/blob/main/DRILL.md`, true],
-        ]),
+        "div.t-foot-grid",
+        h(
+          "div",
+          h("a.t-wordmark", { href: "#/" }, tenderMark(22), h("span", "Peal Tender")),
+          h("p.t-foot-text", "A treasury vault on QoreChain whose every payment needs two post-quantum signatures."),
+        ),
+        h(
+          "div.t-foot-col",
+          h("div.t-foot-title", "Treasury"),
+          h("a", { href: "#/vault" }, "Overview"),
+          h("a", { href: "#/tenders" }, "Tenders"),
+          h("a", { href: "#/propose" }, "Propose"),
+          h("a", { href: "#/activity" }, "Activity"),
+        ),
+        h(
+          "div.t-foot-col",
+          h("div.t-foot-title", "Records"),
+          h("a", { href: REPO, target: "_blank", rel: "noopener" }, "Source"),
+          h(
+            "a",
+            {
+              href: `${REPO}/blob/main/THREAT_MODEL.md`,
+              target: "_blank",
+              rel: "noopener",
+            },
+            "Threat model",
+          ),
+          h(
+            "a",
+            {
+              href: `${REPO}/tree/main/audits`,
+              target: "_blank",
+              rel: "noopener",
+            },
+            "Audits",
+          ),
+          h(
+            "a",
+            {
+              href: `${REPO}/blob/main/DRILL.md`,
+              target: "_blank",
+              rel: "noopener",
+            },
+            "Q-Day Drill",
+          ),
+        ),
       ),
-      h("div.l-foot-base", "Apache-2.0 · Testnet only · Design language from Peal · Treasury keys never touch this page"),
+      h(
+        "div.t-family",
+        h("span.t-family-label", "The Peal family"),
+        h("span.t-family-item.is-current", tenderMark(18), "Peal Tender, the treasury"),
+        h(
+          "a.t-family-item",
+          {
+            href: "https://github.com/Adityaakr/peal-sealed-auction",
+            target: "_blank",
+            rel: "noopener",
+          },
+          auctionMark(18),
+          "Peal Sealed Auction, the venue",
+        ),
+        h(
+          "a.t-family-item",
+          {
+            href: "https://github.com/Adityaakr/peal-bidder",
+            target: "_blank",
+            rel: "noopener",
+          },
+          bidderMark(18),
+          "Peal Bidder, the participant",
+        ),
+      ),
+      h("div.t-foot-base", h("span", "Apache-2.0. Testnet only. Treasury keys never enter this page."), h("span", "Design language started from Peal.")),
     ),
   );
 
-  const page = h("div.l-page", nav(), h("main", hero, proof, how, security, roles, tryIt, family), footer);
-  queueMicrotask(() => reveal(page));
-  return page;
+  return h("div.t-page", nav(), h("main", hero, why, how, attacks, statement, buyback, mandate, requirements, tryIt), footer);
 }

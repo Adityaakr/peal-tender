@@ -1,38 +1,39 @@
-/* Peal Tender, in the Peal design language (see docs/design.md).
-   White surfaces on one sky wash, Satoshi for the interface, Josefin Sans for
-   titles, one accent (#2563eb), hairline borders over fills, tabular numerals,
-   sentence case, motion only for state changes. */
+/* Peal Tender's app, in its own identity (apps/dashboard/DESIGN.md): security paper,
+   banknote ink, one treasury green for verification and primary actions, stamp red for
+   refusals, IBM Plex Serif / Sans / Mono, tabular figures, motion only for state. */
 
 :root {
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
-  --accent-weak: #eff6ff;
-  --accent-border: #bfdbfe;
-  --text: #111827;
-  --text-2: #374151;
-  --muted: #6b7280;
-  --muted-soft: #9ca3af;
-  --border: #e5e7eb;
-  --border-strong: #d1d5db;
-  --surface: #ffffff;
-  --surface-2: #f9fafb;
-  --green: #16a34a;
-  --green-weak: #f0fdf4;
-  --green-border: #bbf7d0;
-  --green-text: #166534;
-  --red: #dc2626;
-  --red-weak: #fef2f2;
-  --red-border: #fecaca;
-  --red-text: #991b1b;
-  --amber-text: #92400e;
-  --amber-weak: #fffbeb;
-  --amber-border: #fde68a;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: "Satoshi", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --title: "Josefin Sans", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+  --accent: #1e5b46;
+  --accent-strong: #164536;
+  --accent-weak: #e2ece7;
+  --accent-border: #b7cec3;
+  --text: #10231d;
+  --text-2: #3d4d47;
+  --muted: #677770;
+  --muted-soft: #93a19b;
+  --border: #d3dcd7;
+  --border-strong: #b9c6bf;
+  --surface: #fcfdfc;
+  --surface-2: #f6f8f7;
+  --paper: #f1f4f2;
+  --green: #1e7a4c;
+  --green-weak: #e9f4ee;
+  --green-border: #b5d9c4;
+  --green-text: #165a39;
+  --red: #a3261a;
+  --red-weak: #f9ebe9;
+  --red-border: #e8c2bd;
+  --red-text: #84200f;
+  --amber-text: #8a520c;
+  --amber-weak: #fbf3e4;
+  --amber-border: #ecd3a6;
+  --shadow: 0 1px 2px rgb(16 35 29 / 0.06);
+  --radius: 4px;
+  --radius-sm: 3px;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --title: "IBM Plex Serif", Georgia, "Times New Roman", serif;
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 }
 
@@ -42,14 +43,13 @@
 
 html {
   min-height: 100%;
-  background: linear-gradient(180deg, #dcebfa 0%, #eaf3fc 45%, #f6f9fd 100%) no-repeat;
-  background-color: #f6f9fd;
+  background: var(--paper);
 }
 
 body {
   margin: 0;
   color: var(--text);
-  background: transparent;
+  background: var(--paper);
   font-family: var(--sans);
   font-size: 15px;
   line-height: 1.6;
@@ -719,8 +719,8 @@ textarea.input {
 
 pre.code {
   margin: 0;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--text);
+  color: #e4ece8;
   border-radius: var(--radius-sm);
   padding: 14px 16px;
   font-family: var(--mono);
@@ -731,7 +731,7 @@ pre.code {
 }
 
 pre.code .c {
-  color: #94a3b8;
+  color: #8fa59b;
 }
 
 /* ---------------------------------------------------------------- signers */
@@ -979,7 +979,7 @@ pre.code .c {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+  box-shadow: 0 4px 12px rgb(16 35 29 / 0.08);
   padding: 8px 10px;
   font-size: 12px;
   line-height: 1.5;
@@ -1049,7 +1049,7 @@ pre.code .c {
 
 .skeleton {
   border-radius: 6px;
-  background: linear-gradient(90deg, #eef2f7 0%, #f6f8fb 50%, #eef2f7 100%);
+  background: linear-gradient(90deg, #e6ece9 0%, #f0f4f2 50%, #e6ece9 100%);
   background-size: 200% 100%;
   min-height: 14px;
 }
@@ -1119,7 +1119,7 @@ pre.code .c {
   width: min(420px, 100vw);
   background: var(--surface);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 24px rgb(15 23 42 / 0.08);
+  box-shadow: -8px 0 24px rgb(16 35 29 / 0.08);
   overflow-y: auto;
   z-index: 30;
   transform: translateX(100%);
@@ -1136,7 +1136,7 @@ body.wallet-open .wallet {
 .wallet-scrim {
   position: fixed;
   inset: 0;
-  background: rgb(15 23 42 / 0.18);
+  background: rgb(16 35 29 / 0.18);
   opacity: 0;
   pointer-events: none;
   z-index: 29;
