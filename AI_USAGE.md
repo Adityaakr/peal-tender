@@ -141,3 +141,15 @@ and opened one pull request. What it did, in order:
 **Human contribution so far:** the design decisions above, and review and merge of
 the pull request. Still to come (owner only): faucet funding for the v2 accounts
 after 19 November, and the two dashboard audits (about 22 and 29 November).
+
+### 16 November 2026: v2, second pull request (the CLI end to end)
+
+The first v2 pull request was merged by the owner. The same worker then ran the
+operator CLI, which had only been typechecked, end to end on a local anvil node
+(`scripts/v2/e2e-local.ts`, in CI as `e2e-local`), and checked every relayed
+ML-DSA-87 share off chain against the vault's exact message. Found and fixed: the
+deploy script's 6M gas limit for the vault was too tight (it used 5.87M; now 8M),
+and refusals printed only a raw error selector (the CLI now names the vault's
+error, e.g. `OverDailyCap(…)`). The run also caught the harness's own arithmetic
+being wrong about the daily cap, which the vault enforced correctly; the harness
+now asserts that refusal.

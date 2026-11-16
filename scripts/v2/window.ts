@@ -15,6 +15,7 @@ import { closeEvmWindowMsg, fetchEvmWindow, openEvmWindowMsg, type UnifiedAccoun
 import { evmWindowCost } from "@qorechain/evm";
 import { broadcast, network } from "pqkit";
 import { refuseDrill } from "./accounts.ts";
+import { LOCAL_RPC } from "./vault.ts";
 
 export interface ScopedWindow {
   targets: string[]; // 1 to 4 addresses
@@ -53,6 +54,10 @@ export async function closeWindowFor(acc: UnifiedAccount): Promise<string | unde
 
 /** Run `body` inside a scoped window and always close the window afterwards. */
 export async function withScopedWindow<T>(acc: UnifiedAccount, w: ScopedWindow, body: () => Promise<T>): Promise<T> {
+  if (LOCAL_RPC) {
+    console.log(`local node: no window (would be scoped to ${w.targets.join(" ")})`);
+    return body();
+  }
   await openScopedWindow(acc, w);
   try {
     return await body();

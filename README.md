@@ -195,6 +195,16 @@ npm run v2 -- status
 npm run v2 -- refusal-demo     # the scoped window refuses an off-target transaction
 ```
 
+**Locally, end to end.** `forge build && npm run e2e:local` starts anvil, creates
+throwaway accounts in a temporary directory, deploys with the real deploy script and
+drives the vault only through the commands above: a sweep, the refusals (one share,
+a tampered proposal, a stale one, a non-member), a queued sweep vetoed by one signer
+and another executed after the delay, a tender settled by anyone, a sealed sale
+refused over the daily cap and started the next day, and its collection (31 checks,
+also in CI). Foundry's EVM cannot run ML-DSA-87, so the local `pqcVerify` stand-in
+accepts any signature; the harness instead checks every relayed share itself with
+the SDK's ML-DSA-87 verifier against the exact bytes the vault verifies.
+
 Every v2 transaction goes from the relayer inside a window scoped to at most
 [vault, fUSD, PEAL-T, auction factory], for one transaction and about two minutes,
 and closed again in a `finally`. The relayer pays gas and has no authority.
