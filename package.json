@@ -26,14 +26,16 @@
     "dashboard": "vite apps/dashboard",
     "dashboard:build": "vite build apps/dashboard",
     "snapshot": "forge test --match-contract GasTest",
-    "e2e:local": "forge build && tsx scripts/v2/e2e-local.ts"
+    "e2e:local": "forge build && tsx scripts/v2/e2e-local.ts",
+    "demo:local": "forge build && tsx scripts/v2/e2e-local.ts --keep"
   },
   "dependencies": {
     "qore-pq-kit": "*",
     "viem": "^2.21.0",
     "@qorechain/sdk": "0.14.0",
     "pqkit": "git+https://github.com/Adityaakr/qore-pq-kit.git#v0.3.0",
-    "@qorechain/evm": "0.14.0"
+    "@qorechain/evm": "0.14.0",
+    "@qorechain/pqc": "0.2.3"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",

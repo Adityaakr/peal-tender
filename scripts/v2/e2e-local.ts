@@ -41,7 +41,9 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-const PORT = 8547;
+/** --keep (npm run demo:local): leave the node running with a lively vault, for the web app. */
+const KEEP = process.argv.includes("--keep");
+const PORT = KEEP ? 8546 : 8547;
 const RPC = `http://127.0.0.1:${PORT}`;
 const tmp = mkdtempSync(join(tmpdir(), "peal-tender-e2e-"));
 process.env.PEAL_TENDER_LOCAL_RPC = RPC;
@@ -68,6 +70,18 @@ const helper = createWalletClient({
   chain,
   transport: http(RPC),
   account: privateKeyToAccount("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"),
+});
+
+// anvil's second and third default keys: two more test-only holders.
+const holder2 = createWalletClient({
+  chain,
+  transport: http(RPC),
+  account: privateKeyToAccount("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"),
+});
+const holder3 = createWalletClient({
+  chain,
+  transport: http(RPC),
+  account: privateKeyToAccount("0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"),
 });
 
 let checks = 0;
@@ -164,7 +178,7 @@ async function verifyRelayed(hash: Hex, before: { nonce: bigint; factory: Addres
 
 async function main(): Promise<void> {
   console.log(`temporary directory: ${tmp}`);
-  const anvil = spawn("anvil", ["--port", String(PORT), "--chain-id", "9800", "--silent"], { stdio: "ignore" });
+  const anvil = spawn("anvil", ["--port", String(PORT), "--chain-id", "9800", "--silent"], { stdio: "ignore", detached: KEEP });
   try {
     for (let i = 0; ; i++) {
       try {
@@ -302,19 +316,33 @@ async function main(): Promise<void> {
     check((await bal(fusd, sink)) - sinkBefore === 500_000_000n, "after the delay anyone executes the queued 500 fUSD sweep");
 
     // ---------------------------------------------------------------- tender
-    console.log("\n7. a tender: open (quorum), a holder offers, anyone settles");
+    console.log("\n7. a tender: open (quorum), three holders offer, anyone settles");
+    // Budget 50 fUSD; prices 1.00 + 0.10 a tick. Offers: 20 at 1.00, 30 at 1.20, 25 at 1.50.
+    // At 1.20 the budget pays the 20 cheaper tokens but not all 30 more: it clears at 1.20,
+    // the 1.00 offer fills in full and is paid 1.20 each, the 1.50 offer sells nothing.
     await quorum(["open-tender", "50000000", "1000000", "100000", "10", "3600", "10", "10000000000000000"]);
-    const holder = helper.account.address;
-    await send(peal, encodeFunctionData({ abi: erc20, functionName: "mint", args: [holder, 20n * 10n ** 18n] }));
-    await send(peal, encodeFunctionData({ abi: erc20, functionName: "approve", args: [vault, 20n * 10n ** 18n] }));
-    await send(vault, encodeFunctionData({ abi: vaultAbi, functionName: "offer", args: [20n * 10n ** 18n, 0] }));
+    const offerFrom = async (w: typeof helper, qty: bigint, tick: number) => {
+      await send(peal, encodeFunctionData({ abi: erc20, functionName: "mint", args: [w.account.address, qty] }));
+      const a = await w.sendTransaction({ to: peal, data: encodeFunctionData({ abi: erc20, functionName: "approve", args: [vault, qty] }) });
+      await pub.waitForTransactionReceipt({ hash: a });
+      const o = await w.sendTransaction({ to: vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "offer", args: [qty, tick] }) });
+      await pub.waitForTransactionReceipt({ hash: o });
+    };
+    const E18 = 10n ** 18n;
+    await offerFrom(helper, 20n * E18, 0);
+    await offerFrom(holder2, 30n * E18, 2);
+    await offerFrom(holder3, 25n * E18, 5);
     await warp(3601);
     cli("settle");
-    const tender = await read<{ state: number; price: bigint; bought: bigint }>("getTender", [1n]);
-    check(tender.state === 2 && tender.price === 1_000_000n, "the tender settled at 1.00 fUSD");
+    const tender = await read<{ state: number; price: bigint; bought: bigint; clearingTick: number }>("getTender", [1n]);
+    check(tender.state === 2 && tender.price === 1_200_000n && tender.clearingTick === 2, "the tender cleared at 1.20 fUSD (tick 2)");
+    const holder = helper.account.address;
     const holderFusd = await bal(fusd, holder);
     await send(vault, encodeFunctionData({ abi: vaultAbi, functionName: "claim", args: [1n, 0] }));
-    check((await bal(fusd, holder)) - holderFusd === 20_000_000n, "the holder was paid 20 fUSD for 20 PEAL-T");
+    check((await bal(fusd, holder)) - holderFusd === 24_000_000n, "the 1.00 seller was paid the clearing price: 24 fUSD for 20 PEAL-T");
+    const h3Peal = await bal(peal, holder3.account.address);
+    await send(vault, encodeFunctionData({ abi: vaultAbi, functionName: "claim", args: [1n, 2] }));
+    check((await bal(peal, holder3.account.address)) - h3Peal === 25n * E18, "the 1.50 seller got all 25 PEAL-T back");
 
     // ---------------------------------------------------------------- sealed sale
     console.log("\n8. a sealed buyback on the (mock) auction factory, collected by anyone");
@@ -349,10 +377,55 @@ async function main(): Promise<void> {
     check(true, "status prints");
 
     console.log(`\ne2e: all ${checks} checks passed`);
+    if (KEEP) await lively(accts, { vault, fusd, peal, erc20, offerFrom, quorum, saleFile });
   } finally {
-    anvil.kill();
-    rmSync(tmp, { recursive: true, force: true });
+    if (KEEP) {
+      anvil.unref();
+    } else {
+      anvil.kill();
+      rmSync(tmp, { recursive: true, force: true });
+    }
   }
+}
+
+/** --keep: leave something in every state for the web app to show, then print its URL. */
+async function lively(
+  accts: Record<string, { evm: string; pqc: { publicKey: Uint8Array } }>,
+  x: {
+    vault: Address;
+    fusd: Address;
+    peal: Address;
+    erc20: readonly unknown[];
+    offerFrom: (w: typeof helper, qty: bigint, tick: number) => Promise<void>;
+    quorum: (args: string[], signers?: string[]) => Promise<string>;
+    saleFile: string;
+  },
+): Promise<void> {
+  console.log("\n10. keeping the node running with a lively vault (--keep)");
+  // A signer rotation waiting in the timelock: replace signer C with a fresh account.
+  await newV2Account("v2-signer-d");
+  const d = await loadV2Account("v2-signer-d");
+  await send("0x0000000000000000000000000000000000000a02", encodeFunctionData({
+    abi: parseAbi(["function set(address,bool,uint8,bytes,bool)"]),
+    functionName: "set",
+    args: [d.evm as Address, true, 1, toHex(d.pqc.publicKey), true],
+  }));
+  const set = [accts["v2-signer-a"]!.evm, accts["v2-signer-b"]!.evm, d.evm].join(",");
+  await x.quorum(["queue", "signers", "2", set]);
+  // A second tender, open for a day, with offers across the ladder.
+  await x.quorum(["open-tender", "20000000", "900000", "50000", "12", "86400", "20", "10000000000000000"]);
+  const E18 = 10n ** 18n;
+  await x.offerFrom(helper, 6n * E18, 0);
+  await x.offerFrom(holder2, 9n * E18, 3);
+  await x.offerFrom(holder3, 4n * E18, 3);
+  await x.offerFrom(holder2, 12n * E18, 7);
+  await x.offerFrom(holder3, 5n * E18, 10);
+  // A second sealed sale, still taking bids.
+  await x.quorum(["start-sale", x.saleFile]);
+  const url = `http://localhost:5199/?rpc=${encodeURIComponent(RPC)}&vault=${x.vault}`;
+  console.log(`\nanvil keeps running on ${RPC} (stop it with: pkill -f "anvil --port ${PORT}")`);
+  console.log(`accounts and proposals: ${tmp}`);
+  console.log(`web app:  npm run dashboard -- --port 5199   then open\n  ${url}`);
 }
 
 main().catch((err: unknown) => {

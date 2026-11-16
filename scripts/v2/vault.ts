@@ -9,19 +9,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  decodeAbiParameters,
-  encodeAbiParameters,
-  type Abi,
-  type AbiFunction,
-  type AbiParameter,
-  type Address,
-  type Hex,
-} from "viem";
+import { type Abi, type Address, type Hex } from "viem";
 import { publicClient } from "pqkit";
 import { vaultAbi } from "./abi.ts";
 import { SECRETS_DIR } from "./accounts.ts";
-import { argsHash, OP_KINDS, type OpenParams, type SaleConfig } from "./encode.ts";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -79,68 +70,9 @@ export function reader(vault: Address) {
     client().readContract({ address: vault, abi: vaultAbi, functionName, args } as never) as Promise<T>;
 }
 
-/** The ABI inputs of `fn` without its trailing `Auth` argument. */
-export function callInputs(fn: string): readonly AbiParameter[] {
-  const f = vaultAbi.find((x) => x.type === "function" && x.name === fn) as AbiFunction | undefined;
-  if (!f) throw new Error(`no function ${fn} in the vault ABI`);
-  const last = f.inputs[f.inputs.length - 1];
-  if (!last || last.name !== "auth") throw new Error(`${fn} is not a quorum action`);
-  return f.inputs.slice(0, -1);
-}
-
-export interface Proposal {
-  format: "peal-tender-v2/proposal/1";
-  chainId: string;
-  vault: Address;
-  fn: string; // the vault function, also the action name in encode.ts
-  summary: string;
-  args: Hex; // abi.encode of the arguments before `auth`
-  argsHash: Hex;
-  nonce: string;
-  deadline: string;
-  createdAt: string;
-  shares: { signer: Address; signature: Hex }[];
-}
-
-export function encodeArgs(fn: string, args: readonly unknown[]): Hex {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return encodeAbiParameters(callInputs(fn) as any, args as any);
-}
-
-export function decodeArgs(p: Proposal): readonly unknown[] {
-  return decodeAbiParameters(callInputs(p.fn), p.args);
-}
-
-/**
- * Recompute the argument hash from the decoded arguments, independently of what
- * the proposal file claims, so a signer never signs a hash that does not match
- * what will be sent. `ctx` is the vault state some hashes bind: its current
- * auction factory and its open tender.
- */
-export function argsHashFor(
-  fn: string,
-  args: readonly unknown[],
-  ctx: { factory: Address; openTenderId: bigint },
-): Hex {
-  switch (fn) {
-    case "deposit":
-      return argsHash.deposit(args[0] as Address, args[1] as bigint);
-    case "sweep":
-      return argsHash.sweep(args[0] as Address, args[1] as Address, args[2] as bigint);
-    case "openTender":
-      return argsHash.openTender(args[0] as OpenParams);
-    case "cancelTender":
-      return argsHash.cancelTender(ctx.openTenderId);
-    case "queue":
-      return argsHash.queue(OP_KINDS[Number(args[0])]!, args[1] as Hex);
-    case "startSealedSale":
-      return argsHash.startSealedSale(ctx.factory, args[0] as SaleConfig, args[1] as string, args[2] as string);
-    case "cancelSealedSale":
-      return argsHash.cancelSealedSale(args[0] as Address);
-    default:
-      throw new Error(`unknown quorum action ${fn}`);
-  }
-}
+// The proposal format and its encoders are browser-safe and shared with the web app.
+export * from "./proposal.ts";
+import { type Proposal } from "./proposal.ts";
 
 export const PROPOSALS_DIR = join(SECRETS_DIR, "proposals");
 
