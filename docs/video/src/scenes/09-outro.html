@@ -1,0 +1,33 @@
+<!-- {"id":"outro","start":170.7,"dur":8.3} -->
+<style>
+  #s9-lock { position: absolute; left: 691px; top: 250px; width: 538px; height: 120px; }
+  #s9-head { position: absolute; left: 260px; width: 1400px; top: 430px; text-align: center; font-family: "IBM Plex Serif", serif; font-weight: 300; font-size: 58px; line-height: 1.18; }
+  #s9-head em { color: var(--accent); font-style: italic; }
+  #s9-url { position: absolute; left: 0; right: 0; top: 640px; text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 30px; }
+  #s9-cat { position: absolute; left: 0; right: 0; top: 692px; text-align: center; font-size: 28px; color: var(--ink-2); }
+  #s9-fam { position: absolute; left: 260px; width: 1400px; top: 830px; border-top: 1px solid var(--rule); padding-top: 30px; display: flex; justify-content: space-between; }
+  .s9-p { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .s9-p img { height: 36px; }
+  .s9-p span { font-size: 26px; color: var(--muted); }
+  .s9-p.cur span { color: var(--accent); }
+</style>
+<div class="stage" id="s9-stage">
+  <img id="s9-lock" src="assets/brand/lockup.svg" alt="Peal Tender" />
+  <div id="s9-head" data-split>Nothing leaves this treasury without <em>two signatures</em> the chain can verify.</div>
+  <div id="s9-url">github.com/Adityaakr/peal-tender</div>
+  <div id="s9-cat">QoreChain “Build Before Q-Day” · Post-Quantum dApp</div>
+  <div id="s9-fam">
+    <div class="s9-p cur"><img src="assets/brand/lockup.svg" alt="Peal Tender" /><span>the treasury · this entry</span></div>
+    <div class="s9-p"><img src="assets/brand/auction-lockup.svg" alt="Peal Sealed Auction" /><span>the venue</span></div>
+    <div class="s9-p"><img src="assets/brand/bidder-lockup.svg" alt="Peal Bidder" /><span>the participant</span></div>
+  </div>
+</div>
+<script>
+  // "Peal Tender."
+  tl.fromTo("#s9-lock", { opacity: 0, filter: "blur(10px)", scale: 0.97 }, { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.7, ease: "expo.out" }, 0.3);
+  // "Nothing leaves this treasury without signatures the chain can verify."
+  words("#s9-head", 1.5, 0.09);
+  inn("#s9-url", 4.3);
+  inn("#s9-cat", 4.6);
+  inn("#s9-fam", 5.3, { y: 10 });
+</script>

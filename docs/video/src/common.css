@@ -1,0 +1,60 @@
+/* Peal Tender identity (apps/dashboard/DESIGN.md), set for a 1920x1080 frame. */
+#root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f1f4f2;
+  color: #10231d;
+  font-family: "IBM Plex Sans", sans-serif;
+  --paper: #f1f4f2;
+  --sheet: #fcfdfc;
+  --ink: #10231d;
+  --ink-2: #3d4d47;
+  --muted: #5d6d66;
+  --rule: #d3dcd7;
+  --accent: #1e5b46;
+  --accent-weak: #e2ece7;
+  --stamp: #a3261a;
+  --stamp-weak: #f9ebe9;
+  --amber: #8a520c;
+  --amber-weak: #fbf3e4;
+}
+#root * { box-sizing: border-box; }
+.stage { position: absolute; inset: 0; }
+.serif { font-family: "IBM Plex Serif", serif; font-weight: 300; }
+.mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+.chap {
+  position: absolute; left: 120px; top: 62px;
+  font-family: "IBM Plex Mono", monospace; font-size: 26px; letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.chap b { color: var(--ink); font-weight: 500; }
+.brandmark { position: absolute; right: 120px; top: 52px; height: 44px; }
+.title {
+  font-family: "IBM Plex Serif", serif; font-weight: 300;
+  font-size: 68px; line-height: 1.08; letter-spacing: -0.01em; color: var(--ink);
+}
+.lead { font-size: 30px; line-height: 1.45; color: var(--ink-2); }
+.label { font-size: 26px; color: var(--muted); }
+.w { display: inline-block; }
+/* A screen held in a clipping viewport; the camera moves .cam inside it. */
+.view { position: absolute; overflow: hidden; }
+.cam { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.cam img { display: block; }
+.shot-sheet { background: var(--sheet); border: 1px solid var(--rule); }
+/* Focus frames sit in image coordinates inside .cam and move with it. */
+.hl {
+  position: absolute; border: 2px solid var(--accent); border-radius: 6px;
+  box-shadow: 0 0 0 4000px rgba(241, 244, 242, 0.62);
+  opacity: 0;
+}
+.hl.red { border-color: var(--stamp); }
+.hl.plain { box-shadow: none; }
+.tag {
+  display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 23px;
+  letter-spacing: 0.06em; padding: 4px 12px; border-radius: 4px;
+  border: 1.5px solid currentColor;
+}
+.tag.ok { color: var(--accent); background: var(--accent-weak); }
+.tag.no { color: var(--stamp); background: var(--stamp-weak); }
+.tag.hold { color: var(--amber); background: var(--amber-weak); }

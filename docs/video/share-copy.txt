@@ -1,0 +1,1 @@
+Introducing Peal Tender: a treasury buyback vault on QoreChain where nothing leaves without ML-DSA-87 signatures the chain checks with pqcVerify. A stolen classical key moves nothing: 9 of 9 rehearsed drill attacks refused, live on testnet. github.com/Adityaakr/peal-tender

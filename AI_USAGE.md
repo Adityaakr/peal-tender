@@ -280,3 +280,26 @@ marks four times:
 
 The Tender app and landing page now use the new mark and favicon. The auction and
 Bidder pages adopt theirs in their own repositories.
+
+### 17 November 2026: the submission video (owner request)
+
+The owner asked for a demo and explainer video of about 2:59 with a clean voice-over,
+for the hackathon submission (the category allows three minutes). The orchestrator
+briefed a worker to make it with the `/brag` workflow and HyperFrames. The worker:
+- read the README, DRILL.md, THREAT_MODEL.md, `deployments/`, `audits/` and both
+  design documents, and wrote a plan and a nine-scene storyboard in the order a judge
+  asks: the Q-Day threat, the product, how a buyback clears, why a stolen key moves
+  nothing, the drill, the live ledger, v2, and the category's requirements;
+- screenshotted the real landing page (testnet data) and the real app against
+  `npm run demo:local` (a local node with throwaway accounts in a temporary folder), and
+  framed those screens in the film rather than redrawing them;
+- wrote the narration, synthesised it on the machine with Kokoro (`af_heart`),
+  transcribed it back to check pronunciation (it re-voiced one line where "nonce" came
+  out wrong) and timed every reveal to the word that names it;
+- rendered 179 s at 1920x1080, normalised the sound to -16 LUFS, and checked frames
+  from the rendered file. Every figure on screen comes from the repository; only
+  public addresses and hashes appear.
+
+The source is in [`docs/video/`](docs/video/README.md); the rendered video, the
+screenshots and the audio stay outside the repository. Publishing the video and
+submitting it are the owner's.
