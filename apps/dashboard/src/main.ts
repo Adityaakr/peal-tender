@@ -123,6 +123,10 @@ function footer(): HTMLElement {
 async function render(force = false): Promise<void> {
   const id = ++rendering;
   const { r, arg } = route();
+  if (!force && r.tab === false && app.dataset.route === location.hash) {
+    // Do not redraw the landing page under a reader (animations, scroll); live figures update on the next visit.
+    return;
+  }
   if (!force && !r.live && app.dataset.route === location.hash) {
     // Do not redraw a form under someone's fingers; refresh only the chrome.
     app.firstElementChild?.replaceWith(header());
@@ -150,8 +154,13 @@ async function render(force = false): Promise<void> {
     }
   }
   if (id !== rendering) return;
-  const main = h("main.wrap.page-enter", body);
-  app.replaceChildren(header(), main, footer());
+  if (r.tab === false) {
+    // The landing page brings its own navigation bar and footer.
+    app.replaceChildren(body);
+  } else {
+    const main = h("main.wrap.page-enter", body);
+    app.replaceChildren(header(), main, footer());
+  }
   app.dataset.route = location.hash;
 }
 

@@ -204,3 +204,21 @@ execute, collect). It checked the guest flow in a real browser on a local node, 
 the QoreX and MetaMask paths with stand-in providers that follow the documented
 interfaces. It left the browser's first real testnet transactions for the deploy day,
 to save the 10 QOR budget.
+
+### 16 November 2026: the landing page, redesigned in depth (owner request)
+
+The owner asked for a deeper landing-page design. The orchestrator asked for the
+shared design language first, in its own pull request, because the auction and
+Bidder workers were building their landing pages from it at the time. The worker
+wrote it into `docs/design.md`: grid and rhythm, a type scale, the section order,
+illustration rules, marks for all three products, components, motion and a checklist.
+It then rebuilt Peal Tender's landing page to that spec:
+- two hand-drawn illustrations of the real mechanism, one with a phone-specific
+  version;
+- a step rail that highlights each step's part of the drawing;
+- a dark security band with the drill's refused attempts and a comparison table.
+
+It reviewed screenshots at 1280, 768 and 390 pixels and fixed what they showed: a
+cramped comparison table, a clipped terminal, unclear icons and a badge colliding with
+a card. It also removed a blurred navigation background and a coloured glow, which
+the spec rules out.

@@ -158,8 +158,8 @@ Adapt the words, keep the order:
 1. **Navigation bar.** The wordmark, a family switcher (the three Peal marks), anchor
    links (How it works, Security, Try it), GitHub, then "Open the app" (primary) and
    Connect. Sticky; once scrolled it gets a white 85% background with a hairline.
-2. **Hero.** Kicker (category), display headline of at most two lines, lead of at most
-   two sentences, a primary and a secondary button, a proof line in caption type
+2. **Hero.** Kicker (category), display headline of at most three short lines, lead
+   of at most three sentences, a primary and a secondary button, a proof line in caption type
    ("Testnet · Apache-2.0 · 132 tests"), and the **mechanism illustration** beside it
    (below it on a phone).
 3. **Proof bar.** Four or five figures in one white strip with hairline dividers: label
