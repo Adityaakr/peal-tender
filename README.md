@@ -173,7 +173,9 @@ It keeps v1's tender and accounting rules and changes who holds the authority.
 ### Operating v2
 
 Accounts live in `~/.qore-peal-tender/<name>.env` (mode 0600), never in the drill's
-directory; every v2 script refuses the drill account and the drill contracts.
+directory; every v2 script refuses the drill account and the drill contracts. The
+testnet deployment, from 19 November, follows [`docs/v2-runbook.md`](docs/v2-runbook.md);
+`npm run v2 -- preflight` prints a read-only checklist of what is still missing.
 
 ```sh
 npm run v2 -- account new v2-signer-a      # and -b, -c, v2-relayer, v2-deployer
@@ -200,8 +202,8 @@ throwaway accounts in a temporary directory, deploys with the real deploy script
 drives the vault only through the commands above: a sweep, the refusals (one share,
 a tampered proposal, a stale one, a non-member), a queued sweep vetoed by one signer
 and another executed after the delay, a tender settled by anyone, a sealed sale
-refused over the daily cap and started the next day, and its collection (31 checks,
-also in CI). Foundry's EVM cannot run ML-DSA-87, so the local `pqcVerify` stand-in
+refused over the daily cap and started the next day, and its collection, plus the
+deploy preflight (34 checks, also in CI). Foundry's EVM cannot run ML-DSA-87, so the local `pqcVerify` stand-in
 accepts any signature; the harness instead checks every relayed share itself with
 the SDK's ML-DSA-87 verifier against the exact bytes the vault verifies.
 

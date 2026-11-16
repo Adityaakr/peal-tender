@@ -230,6 +230,10 @@ async function main(): Promise<void> {
       openTenderId: await read<bigint>("openTenderId"),
     });
     check((await read<bigint>("threshold")) === 2n, "deployed vault is 2-of-3");
+    const pre = cli("preflight", "--buy", peal, "--factory", factory);
+    check(/ok {3}auction factory .*answers like SealedAuctionFactory/.test(pre), "preflight recognises the auction factory");
+    check(/ok {3}PEAL-T .*PEAL-T, 18 decimals/.test(pre), "preflight reads the PEAL-T token");
+    check(/ok {3}PealTenderV2 .*members are the three v2 signers/.test(pre), "preflight matches the deployed members to the v2 signers");
     await send(fusd, encodeFunctionData({ abi: erc20, functionName: "mint", args: [vault, 1_000_000_000n] }));
 
     const quorum = async (proposeArgs: string[], signers = ["v2-signer-a", "v2-signer-b"]) => {
