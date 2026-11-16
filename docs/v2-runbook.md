@@ -19,11 +19,11 @@ repository.
 
 | Role | Name | Address | Needs |
 | --- | --- | --- | --- |
-| Deploys the library and the vault | `v2-deployer` | `qor16z0zu9avvxxs5e5n2u0xmfcza07942zyjvcc9y` (`0xd09E2e17ac618d0A6693571E6DA702EBFC5aa844`) | 5 QOR |
-| Relays every action; pays gas, has no authority | `v2-relayer` | `qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc` (`0xCFF82d1Eff98be3873cb4C3C5ecA2daeA60d9a07`) | 8 QOR |
-| Treasury signer A | `v2-signer-a` | `qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn` (`0x29a1b196e3cb98Aa5f01Dc8788Bedf04D5b0c8D7`) | 0.5 QOR |
-| Treasury signer B | `v2-signer-b` | `qor1ynz8d7q3l6rgnsvrytxhzw6jrjg4xwmy80h0u9` (`0x24c476f811FE8689c18322CD713b521c91533B64`) | 0.5 QOR |
-| Treasury signer C | `v2-signer-c` | `qor1qy60eg0nuwq54n9w6xmppsrkan58lfhzh4f7ga` (`0x0134fca1F3E3814aCcaEd1B610C076ECe87fA6E2`) | 0.5 QOR |
+| Deploys the library and the vault | `v2-deployer` | `qor16z0zu9avvxxs5e5n2u0xmfcza07942zyjvcc9y` (`0xd09E2e17ac618d0A6693571E6DA702EBFC5aa844`) | 3 QOR |
+| Relays every action; pays gas, has no authority | `v2-relayer` | `qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc` (`0xCFF82d1Eff98be3873cb4C3C5ecA2daeA60d9a07`) | keeps the rest, at least 5 QOR |
+| Treasury signer A | `v2-signer-a` | `qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn` (`0x29a1b196e3cb98Aa5f01Dc8788Bedf04D5b0c8D7`) | 0.25 QOR |
+| Treasury signer B | `v2-signer-b` | `qor1ynz8d7q3l6rgnsvrytxhzw6jrjg4xwmy80h0u9` (`0x24c476f811FE8689c18322CD713b521c91533B64`) | 0.25 QOR |
+| Treasury signer C | `v2-signer-c` | `qor1qy60eg0nuwq54n9w6xmppsrkan58lfhzh4f7ga` (`0x0134fca1F3E3814aCcaEd1B610C076ECe87fA6E2`) | 0.25 QOR |
 
 Signers only sign off chain; their QOR pays for the one key registration. In the
 demo the owner holds all three signer keys, as separate accounts, disclosed as
@@ -31,17 +31,21 @@ demo-only.
 
 ## 1. Fund and register (from 19 November)
 
-1. **(owner)** Claim the dashboard faucet for `v2-relayer`
-   (`qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc`). One claim (90 QOR in November)
-   covers all five accounts.
+1. **Funds.** 10 QOR was sent to `v2-relayer`
+   (`qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc`) on 16 November from the auction's
+   deployer account. The budget below fits it: the deployer 3 QOR, each signer
+   0.25 QOR, and the relayer keeps about 6.2 QOR (about 5.5 after its own
+   registration and the four sends), enough for about a dozen relayed actions.
+   Spend it sparingly: every step here is in the runbook for a reason. If more is
+   needed, **(owner)** a dashboard faucet claim for the same address.
 2. Register the relayer's key, then pass QOR on and register the others:
 
    ```sh
    npm run v2 -- account register v2-relayer
-   npm run v2 -- account fund v2-relayer v2-deployer 5
-   npm run v2 -- account fund v2-relayer v2-signer-a 0.5
-   npm run v2 -- account fund v2-relayer v2-signer-b 0.5
-   npm run v2 -- account fund v2-relayer v2-signer-c 0.5
+   npm run v2 -- account fund v2-relayer v2-deployer 3
+   npm run v2 -- account fund v2-relayer v2-signer-a 0.25
+   npm run v2 -- account fund v2-relayer v2-signer-b 0.25
+   npm run v2 -- account fund v2-relayer v2-signer-c 0.25
    for n in v2-deployer v2-signer-a v2-signer-b v2-signer-c; do npm run v2 -- account register $n; done
    ```
 
@@ -63,8 +67,11 @@ npm run deploy:v2 -- --buy <PEAL-T> --factory <factory> --delay 900 --cap 100000
   treasury would use days (see `THREAT_MODEL.md` 8.3).
 - `--cap 1000000`: 1 fUSD a day leaves without the timelock; the vault will hold
   only tenths of an fUSD (step 3).
-- The deploy opens one unscoped window for exactly two creations (a scoped window
-  refuses creation), closes it, and writes `deployments/qorechain-diana-v2.json`.
+- The deploy first asks the node what both creations cost (which also fails early
+  if a signer's key is not registered, because the constructor reads every key),
+  opens one unscoped window capped at exactly those two transactions (a scoped
+  window refuses creation; the cap is about 2 QOR), closes it, and writes
+  `deployments/qorechain-diana-v2.json`.
   Then run `npm run v2 -- preflight --buy … --factory …` again: the deployment line
   must say the members are the three v2 signers.
 
@@ -76,7 +83,7 @@ for v2, converting straight into the vault so no account ever holds the ERC-20 o
 approves anyone:
 
 ```sh
-npm run v2 -- fusd swap v2-relayer 2500000 1     # 2.5 QOR for about 0.2 fUSD (pool 2)
+npm run v2 -- fusd swap v2-relayer 1000000 1     # 1 QOR for about 0.08 fUSD (pool 2, at November's rate)
 npm run v2 -- fusd convert v2-relayer            # all of it into the vault
 npm run v2 -- status
 ```

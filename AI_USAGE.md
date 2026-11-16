@@ -163,3 +163,12 @@ deployment without touching the chain: a read-only `preflight` command, `fund` /
 (keys in `~/.qore-peal-tender/`, addresses in the runbook) and ran `preflight`
 against the testnet read-only; nothing was signed or sent. **Still the owner's:**
 the faucet claim for `v2-relayer` from 19 November.
+
+### 16 November 2026: v2, fourth pull request (a 10 QOR budget)
+
+The orchestrator relayed that 10 QOR, not a faucet claim of 90, was being sent to
+`v2-relayer`, to be spent sparingly. The worker re-budgeted the runbook and
+`preflight` to fit (deployer 3, signers 0.25 each, the relayer the rest) and made the
+deploy script size its window from the node's own gas estimates instead of a fixed
+2 × 8M gas at 250 gwei, which had reserved about 4 QOR for a deploy that needs about
+1 QOR. Nothing was sent.
