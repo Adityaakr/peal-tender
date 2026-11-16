@@ -15,8 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: foundry-rs/foundry-toolchain@v1
         with:
-          # Pinned: the flattened audit source must match what this release writes.
-          version: v1.7.0
+          version: stable
       - name: Dependencies (forge-std, OpenZeppelin, qore-pq-kit v0.3.0 into lib/)
         run: |
           forge install foundry-rs/forge-std@v1.9.7 --no-git
@@ -28,6 +27,12 @@ jobs:
       - run: forge build --sizes
       - run: forge test
       - run: (cd kit && forge test)
+      # `forge flatten`'s output differs between releases: check the committed
+      # audit source with the release it was made with (tests run faster on stable).
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.0
+          cache: false
       - name: Flattened audit source matches src/
         run: sh audits/flatten.sh --check
 
