@@ -222,3 +222,36 @@ It reviewed screenshots at 1280, 768 and 390 pixels and fixed what they showed: 
 cramped comparison table, a clipped terminal, unclear icons and a badge colliding with
 a card. It also removed a blurred navigation background and a coloured glow, which
 the spec rules out.
+
+### 16 November 2026: Peal Tender's own identity, and diagrams first (owner requests)
+
+The owner asked for landing pages that look premium rather than generated, that differ
+from one product to the next, and that explain the product mainly through diagrams.
+The orchestrator relayed each request. The worker first cut `docs/design.md` down to
+the shared family layer, in its own pull request. It then wrote a concept for Peal
+Tender into `apps/dashboard/DESIGN.md`:
+- the visitor;
+- the idea to land in five seconds;
+- the metaphor, a bank's payment order and statement of account.
+
+From that concept it built the new identity: security paper, banknote green, stamp red
+and IBM Plex. It restyled the app through its tokens and rebuilt the landing page around
+diagrams of the real mechanism:
+- the payment order;
+- a treasury held by one key next to one held by three post-quantum keys;
+- a four-lane drawing of how a payment clears;
+- the attacker rows;
+- a chart of the drill vault's real tender.
+
+It also added a statement of account from the drill vault's real transactions and a
+table of the category's requirements. Every figure on the page was checked against the
+README, `THREAT_MODEL.md`, `TenderClearing.sol` or the test suite.
+
+The worker reviewed screenshots at 1440, 1280, 768 and 390 pixels over three rounds and
+fixed what they showed:
+- signatures that read as zigzags;
+- a seal whose ring text overlapped itself;
+- a stamp over text;
+- a phone ledger whose figures scrolled out of view;
+- diagram labels shrunk to 6px on phones (each diagram now has its own phone drawing);
+- clipped and colliding labels in the flow drawing.

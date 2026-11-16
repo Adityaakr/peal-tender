@@ -77,7 +77,7 @@ export function mark(): SVGSVGElement {
   svg.setAttribute("class", "mark");
   svg.setAttribute("aria-hidden", "true");
   const ring = document.createElementNS(ns, "circle");
-  for (const [k, v] of Object.entries({ cx: "13", cy: "13", r: "11", fill: "none", stroke: "#2563eb", "stroke-width": "2" })) {
+  for (const [k, v] of Object.entries({ cx: "13", cy: "13", r: "11", fill: "none", stroke: "#1e5b46", "stroke-width": "2" })) {
     ring.setAttribute(k, v);
   }
   svg.append(ring);
@@ -91,8 +91,8 @@ export function mark(): SVGSVGElement {
     c.setAttribute("cx", String(cx));
     c.setAttribute("cy", String(cy));
     c.setAttribute("r", "2.6");
-    c.setAttribute("fill", on ? "#2563eb" : "#fff");
-    c.setAttribute("stroke", "#2563eb");
+    c.setAttribute("fill", on ? "#1e5b46" : "#fff");
+    c.setAttribute("stroke", "#1e5b46");
     c.setAttribute("stroke-width", "1.6");
     svg.append(c);
   }
@@ -216,7 +216,7 @@ export function short(a: string): string {
 export function fingerprint(hex: string): HTMLElement {
   const box = h("div.fingerprint", { "aria-hidden": "true" });
   const b = hex.replace(/^0x/, "");
-  const shades = ["#eff6ff", "#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1e40af"];
+  const shades = ["#eff6ff", "#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#1e5b46", "#1e40af"];
   for (let i = 0; i < 16; i++) {
     box.append(h("i", { style: `background:${shades[parseInt(b[i * 2] ?? "0", 16) % shades.length]}` }));
   }
