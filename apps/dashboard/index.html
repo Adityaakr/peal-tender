@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Peal Tender v2</title>
+    <style>
+      :root {
+        --bg: #f7f7f4;
+        --panel: #ffffff;
+        --ink: #1d1d1b;
+        --muted: #6b6b66;
+        --line: #e3e3dd;
+        --ok: #1f7a4d;
+        --warn: #a15c00;
+        --bad: #b42318;
+        --accent: #2d4bd8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121211;
+          --panel: #1b1b1a;
+          --ink: #ecece8;
+          --muted: #9a9a94;
+          --line: #2c2c2a;
+          --ok: #4cc38a;
+          --warn: #e0a24a;
+          --bad: #f2786d;
+          --accent: #8ea2ff;
+        }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+      main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+      header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+      h1 { font-size: 22px; margin: 0; }
+      h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 10px; }
+      .sub { color: var(--muted); font-size: 13px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-top: 20px; }
+      section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+      section.wide { grid-column: 1 / -1; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th, td { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+      th { color: var(--muted); font-weight: 500; }
+      .scroll { overflow-x: auto; }
+      code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+      .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid currentColor; }
+      .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .muted { color: var(--muted); }
+      .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; font-size: 13px; }
+      .kv div:nth-child(odd) { color: var(--muted); }
+      form { display: flex; gap: 8px; flex-wrap: wrap; }
+      input { font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); width: min(100%, 420px); }
+      button { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; }
+      #error { color: var(--bad); margin-top: 12px; }
+      footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Peal Tender v2</h1>
+          <div class="sub">A 2-of-3 post-quantum treasury on QoreChain testnet. Read-only: this page holds no keys and signs nothing.</div>
+        </div>
+        <form id="pick">
+          <input id="vault" placeholder="vault address 0x…" spellcheck="false" />
+          <button type="submit">Load</button>
+        </form>
+      </header>
+      <div id="error"></div>
+      <div class="grid">
+        <section><h2>Vault</h2><div id="overview" class="kv"></div></section>
+        <section><h2>Daily allowance</h2><div class="scroll"><table id="caps"></table></div></section>
+        <section class="wide"><h2>Signers (read from <code>pqcKeyStatus</code>)</h2><div class="scroll"><table id="signers"></table></div></section>
+        <section class="wide"><h2>Timelock queue</h2><div class="scroll"><table id="ops"></table></div></section>
+        <section class="wide"><h2>Tenders</h2><div class="scroll"><table id="tenders"></table></div></section>
+        <section class="wide"><h2>Sealed sales</h2><div class="scroll"><table id="sales"></table></div></section>
+      </div>
+      <footer>
+        Reads the QoreChain EVM RPC directly; refreshes every 15 s. Signing happens only in the operator CLI
+        (<code>npm run sign-action</code>).
+        <span id="updated"></span>
+      </footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -9,23 +9,35 @@
     "kit"
   ],
   "scripts": {
-    "setup": "forge install foundry-rs/forge-std@v1.9.7 --no-git && forge install OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git && npm --workspace kit run setup",
+    "setup": "forge install foundry-rs/forge-std@v1.9.7 --no-git && forge install OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git && forge install Adityaakr/qore-pq-kit@v0.3.0 --no-git && npm --workspace kit run setup",
     "build": "forge build",
     "test": "forge test && npm --workspace kit run test",
     "typecheck": "tsc --noEmit && npm --workspace kit run typecheck",
     "deploy": "forge build && tsx scripts/deploy.ts",
     "pq": "npm --workspace kit run pq --",
     "tender": "tsx scripts/tender.ts",
-    "holder": "tsx scripts/holder.ts"
+    "holder": "tsx scripts/holder.ts",
+    "v2": "tsx scripts/v2/cli.ts",
+    "sign-action": "tsx scripts/v2/cli.ts sign-action",
+    "deploy:v2": "forge build && tsx scripts/v2/deploy.ts",
+    "abi:v2": "forge build && tsx scripts/v2/gen-abi.ts",
+    "vectors:v2": "tsx scripts/v2/vectors.ts",
+    "flatten": "sh audits/flatten.sh",
+    "dashboard": "vite apps/dashboard",
+    "dashboard:build": "vite build apps/dashboard",
+    "snapshot": "forge test --match-contract GasTest"
   },
   "dependencies": {
     "qore-pq-kit": "*",
     "viem": "^2.21.0",
-    "@qorechain/sdk": "0.14.0"
+    "@qorechain/sdk": "0.14.0",
+    "pqkit": "git+https://github.com/Adityaakr/qore-pq-kit.git#v0.3.0",
+    "@qorechain/evm": "0.14.0"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vite": "8.3.5"
   }
 }

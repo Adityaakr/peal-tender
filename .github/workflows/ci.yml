@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Dependencies (forge-std, OpenZeppelin, qore-pq-kit v0.3.0 into lib/)
+        run: |
+          forge install foundry-rs/forge-std@v1.9.7 --no-git
+          forge install OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git
+          forge install Adityaakr/qore-pq-kit@v0.3.0 --no-git
+          (cd kit && forge install foundry-rs/forge-std@v1.9.7 --no-git)
+      # v2 sources only: the drill vault's files stay exactly as deployed.
+      - run: forge fmt --check src/PealTenderV2.sol src/TenderBook.sol src/interfaces test/v2
+      - run: forge build --sizes
+      - run: forge test
+      - run: (cd kit && forge test)
+      # `forge flatten`'s output differs between releases: check the committed
+      # audit source with the release it was made with (tests run faster on stable).
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.0
+          cache: false
+      - name: Flattened audit source matches src/
+        run: sh audits/flatten.sh --check
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # npm records the qore-pq-kit git dependency as git+ssh; fetch it over https.
+      - run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Vectors match the TypeScript encoders
+        run: npm run vectors:v2 && git diff --exit-code vectors/
+      - run: npm run dashboard:build

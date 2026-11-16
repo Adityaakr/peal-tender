@@ -88,3 +88,56 @@ order:
 **Human contribution in this version:** the decision to enter and what to build, the
 faucet claim, review of the pull request, and (still to come) the drill registration
 on the project page and the drill-day proof transaction hash.
+
+### 15 to 16 November 2026: the combined design (owner decisions D1 to D9)
+
+A design worker wrote one design for the three Peal entries and the shared toolkit,
+read-only. **Owner decisions:** all nine recommendations approved, among them D2 (a
+buyback runs as the vault selling fUSD for PEAL-T on Peal Sealed Auction), D6 (the
+toolkit is used by git tag, nothing on npm) and D9 (Tender's treasury becomes a
+2-of-3 ML-DSA signer set with a timelock).
+
+### 16 November 2026: Peal Tender v2 (the full build), first pull request
+
+One worker, one brief ("the full Peal Tender per the design's section 5, as new
+contracts beside the drill vault; never touch the drill account or the drill
+contracts; no testnet deploys before 19 November"). It worked in its own worktree
+and opened one pull request. What it did, in order:
+
+1. Read the design, the drill vault and `qore-pq-kit` v0.3.0, and confirmed by
+   `diff` that the tag's `PqAuth` and test mocks are byte-identical to the in-repo
+   `kit/`; installed the tag beside it (`pqkit/` remapping, `pqkit` npm alias), so
+   the drill's build and runbook stay exactly as they were.
+2. Wrote `PealTenderV2`: the `PqAuthSet` signer set, the timelock queue with
+   single-signer veto and epoch voiding, the per-token daily allowance,
+   permissionless settlement, and `startSealedSale` / `cancelSealedSale` /
+   `collectSealedSale` against a small `ISealedAuction` interface read from the
+   auction repository's `main`.
+3. Found the vault 2.6 KB over the contract size limit, measured the alternatives
+   (`via_ir`, fewer optimizer runs, dropping views) and moved the tender engine into
+   the linked library `TenderBook`; checked deployment, linking and the library
+   calls on a local anvil node.
+4. Wrote 82 tests: unit, fuzz, a random-actor invariant suite, TypeScript/Solidity
+   vectors and per-call gas. Ran a buyback end to end against the real Peal Sealed
+   Auction contracts in a scratch checkout (not committed).
+5. Wrote the operator CLI (propose, `sign-action` per signer, relay in a scoped
+   window, veto, execute, a refusal demo), the deploy script (date guard, fresh
+   accounts only), the read-only dashboard (checked in a headless browser against
+   the local vault), `audits/` for the owner's two QCAI audit stages, CI, and these
+   documents.
+
+**Where the agent was wrong, and how it was caught:**
+
+- Its first invariant handler barely reached settled tenders or timelocked
+  executions (cancels too frequent, amounts too large for the cap, tenders ending
+  between calls); counting what the handler actually did showed it, and the
+  handler was tuned until settled tenders, paid claims and executed sweeps appeared
+  in every run.
+- Its first gas snapshot measured the Solidity mock signer, not the vault (millions
+  of gas per call). The gas test now uses near-free precompile stand-ins and builds
+  signatures outside the measured call, and the live precompile costs from the
+  kit's spike are added on top.
+
+**Human contribution so far:** the design decisions above, and review and merge of
+the pull request. Still to come (owner only): faucet funding for the v2 accounts
+after 19 November, and the two dashboard audits (about 22 and 29 November).

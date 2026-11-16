@@ -20,8 +20,18 @@ category, and its Q-Day Drill.
 
 ## Status
 
-A minimal first version, deployed on the testnet for the Q-Day Drill (18 November
-2026). Not audited. The full Peal Tender (sealed offers, a factory) comes later.
+- **v1, the drill vault** (`PealTender`): a minimal first version with one signer,
+  deployed on the testnet for the Q-Day Drill (18 November 2026). It stays exactly
+  as deployed; the drill judges it as it is.
+- **v2, the full build** (`PealTenderV2`): a 2-of-3 post-quantum signer set, a
+  timelock with a daily cap, permissionless settlement, and buybacks run as sealed
+  sales on [Peal Sealed Auction](https://github.com/Adityaakr/peal-sealed-auction).
+  Written and tested (unit, fuzz, invariant, cross-language vectors), checked end to
+  end against the real auction contracts, **not deployed yet**: no testnet deploys
+  before 19 November 2026 00:00 UTC. [See below](#peal-tender-v2-the-full-build).
+
+Neither version is audited yet; the two-stage QCAI audit of v2 is prepared in
+[`audits/`](audits/README.md).
 
 ## Deployed (testnet `qorechain-diana`, EVM chain id 9800)
 
@@ -60,7 +70,7 @@ Native-lane hashes are upper-case, EVM hashes are `0x…`. Every window opened f
 steps was closed again; the drill account has no live window, holds no ERC-20 tokens
 and has granted no approvals.
 
-## How it works
+## How it works (v1, the drill vault)
 
 ```
  treasury signer (drill account)            anyone (relayer, holder, attacker)
@@ -98,18 +108,128 @@ and has granted no approvals.
 The drill and the other threats are worked through in [THREAT_MODEL.md](THREAT_MODEL.md);
 the registration and drill-day steps are in [DRILL.md](DRILL.md).
 
+## Peal Tender v2: the full build
+
+v2 is a new contract beside the drill vault, with new addresses and new accounts.
+It keeps v1's tender and accounting rules and changes who holds the authority.
+
+```
+ 3 treasury signers, each with its own                anyone (relayer, holder, keeper)
+ ML-DSA-87 key on chain                                      │ sends the transaction
+   │ npm run sign-action (each on its own machine)           ▼
+   └─ 2 shares over message(chain, vault, member,     PealTenderV2.sweep(token, to, amount, auth)
+        quorum(action), set nonce, deadline, args)           │
+                                     PqAuthSet.authorizeQuorum│ for each share, strictly ascending signers:
+                                                             │   pqcKeyStatus(member): ML-DSA-87, possession proven
+                                                             │   pqcVerify(key, share, message)
+                                                             │ set nonce += 1
+                                                             ▼
+                              within today's allowance? ── yes ──► funds move now
+                                                         no ──► refused: queue it, wait the delay,
+                                                                any one signer can veto meanwhile
+```
+
+| Action | Needs |
+| --- | --- |
+| `sweep` (within the daily cap), `deposit`, `openTender`, `cancelTender` | 2 of 3 signatures |
+| `startSealedSale`, `cancelSealedSale` | 2 of 3 signatures |
+| `queue` a change: the signer set, the delay, a daily cap, the auction factory, or a sweep above the cap | 2 of 3 signatures, then the delay |
+| `execute` a queued change after its delay | anyone |
+| `veto` a queued change | **any one** signer's signature |
+| `settle` a tender after its end, `claim`, `collectSealedSale` | anyone |
+| `offer` | a holder, with their own tokens |
+
+- **The signer set** is `qore-pq-kit`'s [`PqAuthSet`](https://github.com/Adityaakr/qore-pq-kit/blob/v0.3.0/src/PqAuthSet.sol)
+  (tag v0.3.0): every member's key is read live from `pqcKeyStatus` at each check;
+  all members sign the same set nonce, consumed once per action; quorum shares and
+  single-member vetoes are signed under different domains, so one can never pass as
+  the other, and neither can v1's single-signer format.
+- **Bounding a key compromise.** Even two stolen post-quantum keys can only move
+  the payment token at the daily cap's rate: sweeps, tender budgets and sealed-sale
+  supplies all draw on one per-token allowance (`dailyCap`, 0 for tokens without
+  one). Anything larger, and every rule change, waits in the queue for `delay`,
+  where any single honest signer can veto it. Executing a signer-set change voids
+  every other queued change.
+- **Permissionless settlement.** The clearing is deterministic, so anyone may
+  settle a tender once it ends; settlement no longer depends on a key holder.
+  `cancelTender` stays gated.
+- **Sealed buybacks** (design decision D2). `startSealedSale` makes the vault the
+  issuer of a Peal Sealed Auction that sells fUSD for PEAL-T: a bid of "X PEAL-T per
+  fUSD" is an offer to sell PEAL-T at 1/X fUSD, so the forward auction clears the
+  buyback at one price. The vault checks the config (issuer = vault, sale token =
+  fUSD, quote token = PEAL-T, no fee), approves exactly the supply to the factory
+  and clears the approval in the same call, and records the auction only if the
+  factory lists it. The factory itself is set through the timelock. Proceeds and
+  unsold fUSD can only go to the issuer, so `collectSealedSale` is open to anyone.
+  Peal Tender imports nothing from the auction repository: only
+  [`src/interfaces/ISealedAuction.sol`](src/interfaces/ISealedAuction.sol).
+- **Size.** The tender engine lives in a linked library,
+  [`src/TenderBook.sol`](src/TenderBook.sol), that runs on the vault's own storage
+  by DELEGATECALL; everything else is in
+  [`src/PealTenderV2.sol`](src/PealTenderV2.sol) (23.1 KB of the 24 KB limit).
+  Measurements and the end-to-end check against the real auction are in
+  [`docs/spikes.md`](docs/spikes.md).
+
+### Operating v2
+
+Accounts live in `~/.qore-peal-tender/<name>.env` (mode 0600), never in the drill's
+directory; every v2 script refuses the drill account and the drill contracts.
+
+```sh
+npm run v2 -- account new v2-signer-a      # and -b, -c, v2-relayer, v2-deployer
+npm run v2 -- account register v2-signer-a # once funded: ML-DSA-87 key, proof of possession
+npm run deploy:v2 -- --buy <PEAL-T> --factory <SealedAuctionFactory> --delay 900 --cap 1000000
+
+# a quorum action: propose, two signers sign (on their own machines), relay
+npm run v2 -- propose sweep fusd <to> 250000        # prints the proposal file's path
+npm run sign-action -- <proposal.json> --as v2-signer-a
+npm run sign-action -- <proposal.json> --as v2-signer-b
+npm run v2 -- relay <proposal.json>                 # in a window scoped to the vault's targets
+
+npm run v2 -- propose queue signers 2 <a>,<b>,<c>   # timelocked: queue, wait, execute
+npm run v2 -- execute <opId>
+npm run v2 -- veto <opId> --as v2-signer-c          # any one signer, alone
+npm run v2 -- propose start-sale sale.json          # a sealed buyback
+npm run v2 -- collect <auction>
+npm run v2 -- status
+npm run v2 -- refusal-demo     # the scoped window refuses an off-target transaction
+```
+
+Every v2 transaction goes from the relayer inside a window scoped to at most
+[vault, fUSD, PEAL-T, auction factory], for one transaction and about two minutes,
+and closed again in a `finally`. The relayer pays gas and has no authority.
+`sign-action` rebuilds the argument hash from the proposal's arguments and checks
+the exact bytes against the vault's own `quorumMessage` view before signing.
+
+**Dashboard.** `npm run dashboard` serves a read-only page
+([`apps/dashboard`](apps/dashboard)): the vault's balances and allowance, each
+signer's key as `pqcKeyStatus` reports it, the timelock queue with countdowns,
+tenders and sealed sales. It reads the EVM RPC directly, holds no keys and signs
+nothing.
+
 ## Build and test
 
 Needs Foundry and Node.js 20 or later.
 
 ```sh
 npm install
-npm run setup        # forge-std and OpenZeppelin into lib/ and kit/lib/
+npm run setup        # forge-std, OpenZeppelin and qore-pq-kit v0.3.0 into lib/; forge-std into kit/lib/
 forge build
-forge test           # the vault: 50 tests (unit, fuzz, invariant)
-npm --workspace kit run test   # the kit: 30 tests
+forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
+npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
+npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```
+
+v2's tests ([`test/v2/`](test/v2)):
+
+| Suite | Tests | What |
+| --- | --- | --- |
+| `PealTenderV2.t.sol` | 57 | each action and each refusal: too few, outsider, repeated, unsorted, replayed, expired or foreign-chain signatures; single-member and v1-format shares; the precompile switched off; the daily cap; the timelock (queue, wait, execute, veto, lapse, a signer-set change voiding older changes, keys checked at execution); tenders with permissionless settlement; sealed sales against a mock auction, including a factory that under-pulls, an unlisted auction and re-entry |
+| `PealTenderV2Fuzz.t.sol` | 8 | amounts against the free balance and the cap, deadlines, nonces, argument binding, every signer subset, the cap over random days, the execution window, delay bounds |
+| `PealTenderV2Invariant.t.sol` | 7 | a random-actor handler (signed actions by random member pairs, forged attempts from members' own accounts, time, donations, tenders, sealed sales, the queue): no forged action succeeds; both tokens conserved; always solvent; no day above the cap; nothing executed early; no approval left behind |
+| `Vectors.t.sol` | 4 | the CLI's TypeScript encoders against Solidity, byte for byte (`vectors/v2-actions.json`) |
+| `Gas.t.sol` | 6 | the gas of each call |
 
 The tests run on Foundry's local EVM with the precompiles mocked
 ([`kit/test/mocks/`](kit/test/mocks)), including their failure modes. The live
@@ -119,7 +239,7 @@ counterpart runs against the real precompiles, read-only:
 (cd kit && forge build) && npm run pq -- probe drill
 ```
 
-## Deploy and operate
+## Deploy and operate v1 (the drill vault)
 
 Secrets live outside the repository, in `~/.qore-drill/<name>.env` (mode 0600),
 created by `npm run pq -- new-account <name>`. Nothing prints them.
@@ -144,6 +264,24 @@ npm run pq -- rehearse drill <vault> <fUSD>   # the drill's attacks, with the cl
 QoreChain precompiles, so the vault's constructor, which checks the signer's key,
 fails closed there. The scripts use viem and the node's own gas estimation.
 
+## Prior work
+
+The design and the clearing rule come from the author's own earlier project,
+**Peal** (private, started 6 July 2026, Apache-2.0). Everything in this repository
+was written during the hackathon; Peal's code itself is not part of it. What was
+ported, as rules and test cases re-written here:
+
+| Here | From Peal (`plan/017-peal-redesign`) |
+| --- | --- |
+| [`src/TenderClearing.sol`](src/TenderClearing.sol): the uniform-price buyback clearing rule and its test cases | `contracts/src/auctionkit/TenderClearing.sol`, `contracts/test/auctionkit/TenderClearing.t.sol` |
+| The tender's escrow, settle and pull-based claim flow ([`src/PealTender.sol`](src/PealTender.sol), [`src/TenderBook.sol`](src/TenderBook.sol)) | `contracts/src/auctionkit/SealedTender.sol` |
+| Sealed buybacks through a forward auction (v2) | the product link between Peal's tender and auction kits |
+
+New for QoreChain, with no Peal counterpart: the post-quantum authorisation of
+every treasury action (`qore-pq-kit`'s `PqAuth` and `PqAuthSet`), the 2-of-3
+signer set with its timelock, daily cap and single-signer veto, the scoped-window
+tooling, the drill rehearsal, the dashboard and the audit artefacts.
+
 ## Credits
 
 - **Peal**, the author's earlier project (started July 2026), is the origin of this
@@ -153,8 +291,10 @@ fails closed there. The scripts use viem and the node's own gas estimation.
 - The QoreChain `create-qorechain-dapp` foundry template (0.14.0) was the starting
   point for the project layout and the window helper; `@qorechain/sdk` and
   `@qorechain/evm` 0.14.0 do the hybrid signing, key registration and window messages.
+- `qore-pq-kit` v0.3.0 (our toolkit, by git tag): `PqAuth`, `PqAuthSet` and the
+  TypeScript helpers v2 uses.
 - OpenZeppelin Contracts 5.1.0 (SafeERC20, ReentrancyGuard, Math, ERC20), forge-std
-  1.9.7, viem and cosmjs.
+  1.9.7, viem, cosmjs and Vite (the dashboard).
 - How the code was written (AI agents and the human owner): [AI_USAGE.md](AI_USAGE.md).
 
 ## Licence

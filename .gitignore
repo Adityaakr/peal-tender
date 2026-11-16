@@ -12,3 +12,4 @@ kit/cache/
 *.secret
 *.mnemonic
 .claude/
+apps/dashboard/dist/
