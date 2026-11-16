@@ -4,7 +4,8 @@
  *   npm run test:ts
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { describe, it } from "node:test";
@@ -54,8 +55,19 @@ describe("evidence: judge", () => {
     assert.equal(judge(entry({ expect: "enrollment" }), tx({ security: { tier: "enrollment", pqc_layer_count: 0 } }), undefined).ok, true);
     assert.equal(judge(entry({ expect: "enrollment" }), tx(), undefined).ok, false);
     const evmTx = tx({ messages: [{ type_url: "/cosmos.evm.vm.v1.MsgEthereumTx" }], security: { tier: "classical", pqc_layer_count: 0 } });
-    assert.equal(judge(entry({ expect: "evm" }), evmTx, undefined).ok, true);
-    assert.equal(judge(entry({ expect: "evm" }), { ...evmTx, success: false }, undefined).ok, false);
+    assert.equal(judge(entry({ expect: "evm" }), evmTx, undefined, "success").ok, true);
+    assert.equal(judge(entry({ expect: "evm" }), { ...evmTx, success: false }, undefined, "success").ok, false);
+  });
+  it("refuses an EVM call that reverted inside a code-0 Cosmos transaction, or with no receipt read", () => {
+    const evmTx = tx({ messages: [{ type_url: "/cosmos.evm.vm.v1.MsgEthereumTx" }], security: { tier: "classical", pqc_layer_count: 0 } });
+    const reverted = judge(entry({ expect: "evm" }), evmTx, undefined, "reverted");
+    assert.equal(reverted.ok, false);
+    assert.match(reverted.problems.join(" "), /EVM receipt says reverted/);
+    assert.equal(judge(entry({ expect: "evm" }), evmTx, undefined).ok, false);
+  });
+  it("keeps the MCP's notes when a layer does not verify against the current key", () => {
+    const v = judge(entry(), tx(), { ...pq(false), notes: ["the account rotated its key at height 5"] });
+    assert.match(v.problems.join(" "), /current key .*rotated its key/);
   });
   it("the committed evidence list is well formed", () => {
     const list = loadEvidence(join(root, "deployments", "evidence.json"));
@@ -90,6 +102,19 @@ describe("template-check", () => {
     const bad = checks.filter((c) => !c.ok);
     assert.deepEqual(bad, [], bad.map((c) => `${c.what}: ${c.expected} vs ${c.actual}`).join("\n"));
     assert.ok(checks.length >= 15);
+  });
+  it("fails when the hosted app's REST or RPC rewrite is removed", () => {
+    const dir = mkdtempSync(join(tmpdir(), "tender-tpl-"));
+    try {
+      for (const f of ["package.json", "foundry.toml", "kit/scripts/qore.ts", "apps/dashboard/src/config.ts", "apps/dashboard/src/data.ts", "apps/dashboard/vite.config.ts"]) {
+        cpSync(join(root, f), join(dir, f), { recursive: true });
+      }
+      const vercel = JSON.parse(readFileSync(join(root, "vercel.json"), "utf8")) as { rewrites: { source: string }[] };
+      writeFileSync(join(dir, "vercel.json"), JSON.stringify({ ...vercel, rewrites: vercel.rewrites.filter((r) => !r.source.startsWith("/api/qore/rest")) }));
+      assert.throws(() => tenderFacts(dir), /no \/api\/qore\/rest rewrite/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
   it("catches drift", () => {
     const require = createRequire(import.meta.url);
