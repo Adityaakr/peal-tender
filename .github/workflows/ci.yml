@@ -51,3 +51,25 @@ jobs:
       - name: Vectors match the TypeScript encoders
         run: npm run vectors:v2 && git diff --exit-code vectors/
       - run: npm run dashboard:build
+
+  e2e-local:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - run: npm ci
+      - name: Dependencies (forge-std, OpenZeppelin, qore-pq-kit v0.3.0 into lib/)
+        run: |
+          forge install foundry-rs/forge-std@v1.9.7 --no-git
+          forge install OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git
+          forge install Adityaakr/qore-pq-kit@v0.3.0 --no-git
+      # The operator CLI end to end on anvil: deploy, propose, sign-action, relay,
+      # timelock and veto, a tender, a sealed sale; every share checked with ML-DSA-87.
+      - run: npm run e2e:local

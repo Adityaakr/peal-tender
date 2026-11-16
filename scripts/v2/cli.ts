@@ -34,10 +34,10 @@
  * transaction, closed again afterwards. The relayer pays gas and has no authority.
  */
 import { readFileSync } from "node:fs";
-import { encodeFunctionData, keccak256, type Address, type Hex } from "viem";
+import { BaseError, decodeErrorResult, encodeFunctionData, keccak256, type Address, type Hex } from "viem";
 import { FUSD, estimate, sendEvm } from "pqkit";
 import { quorumMessage, signAnyAction, signQuorumShare, orderShares } from "pqkit/pqauthset";
-import { erc20Abi, pqcKeyStatusAbi, vaultAbi } from "./abi.ts";
+import { erc20Abi, pqcKeyStatusAbi, tenderBookAbi, vaultAbi } from "./abi.ts";
 import { loadV2Account, newV2Account, refuseDrill, registerV2, statusV2 } from "./accounts.ts";
 import { ACTIONS, OP_KINDS, OP_STATES, actionIdOf, argsHash, metadataHash, opData, type OpenParams, type SaleConfig } from "./encode.ts";
 import {
@@ -92,10 +92,31 @@ async function targets(): Promise<string[]> {
   return t;
 }
 
+/** Name the vault's custom error in a failed estimate, e.g. "OverDailyCap(fUSD, 40000000, 39000000)". */
+function explain(err: unknown): Error {
+  if (err instanceof BaseError) {
+    const found = err.walk((e) => typeof (e as { data?: unknown }).data === "string") as { data?: Hex } | null;
+    if (found?.data && found.data.length >= 10) {
+      for (const abi of [vaultAbi, tenderBookAbi]) {
+        try {
+          const d = decodeErrorResult({ abi, data: found.data });
+          return new Error(`the vault refused: ${d.errorName}(${(d.args ?? []).map(String).join(", ")})`);
+        } catch {
+          // not this ABI's error
+        }
+      }
+    }
+    return new Error(err.shortMessage);
+  }
+  return err instanceof Error ? err : new Error(String(err));
+}
+
 /** Send one transaction to the vault from the relayer inside a one-transaction scoped window. */
 async function relayCall(data: Hex, label: string): Promise<Hex> {
   const relayer = await loadV2Account(RELAYER);
-  const gas = await estimate(relayer, { to: VAULT(), data });
+  const gas = await estimate(relayer, { to: VAULT(), data }).catch((e: unknown) => {
+    throw explain(e);
+  });
   console.log(`${label}: estimated gas ${gas}`);
   return withScopedWindow(relayer, { targets: await targets(), maxTxs: 1, blocks: 120, gasPerTx: gas }, async () => {
     const r = await sendEvm(relayer, { to: VAULT(), data, gas });

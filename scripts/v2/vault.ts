@@ -24,7 +24,22 @@ import { SECRETS_DIR } from "./accounts.ts";
 import { argsHash, OP_KINDS, type OpenParams, type SaleConfig } from "./encode.ts";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const DEPLOYMENT_FILE = join(ROOT, "deployments", "qorechain-diana-v2.json");
+
+/**
+ * Local mode, for `npm run e2e:local`: PEAL_TENDER_LOCAL_RPC names a local node
+ * (anvil with mock precompiles). Every EVM call then goes there, no window is
+ * opened (anvil has none), and the deploy date guard does not apply. Only a
+ * localhost URL is accepted, so local mode can never point at the testnet.
+ */
+export const LOCAL_RPC = process.env.PEAL_TENDER_LOCAL_RPC?.trim() || undefined;
+if (LOCAL_RPC) {
+  const host = new URL(LOCAL_RPC).hostname;
+  if (host !== "127.0.0.1" && host !== "localhost") throw new Error(`PEAL_TENDER_LOCAL_RPC must be localhost, not ${host}`);
+  process.env.QORE_EVM_RPC_URL = LOCAL_RPC; // read by the kit's network()
+}
+
+export const DEPLOYMENT_FILE =
+  process.env.PEAL_TENDER_V2_DEPLOYMENT?.trim() || join(ROOT, "deployments", "qorechain-diana-v2.json");
 export const CHAIN_ID = 9800n;
 
 export interface Deployment {

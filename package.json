@@ -25,7 +25,8 @@
     "flatten": "sh audits/flatten.sh",
     "dashboard": "vite apps/dashboard",
     "dashboard:build": "vite build apps/dashboard",
-    "snapshot": "forge test --match-contract GasTest"
+    "snapshot": "forge test --match-contract GasTest",
+    "e2e:local": "forge build && tsx scripts/v2/e2e-local.ts"
   },
   "dependencies": {
     "qore-pq-kit": "*",
