@@ -7,7 +7,8 @@
 #
 # The flattened file holds PealTenderV2 and everything it compiles with:
 # TenderBook, TenderClearing, ISealedAuction, qore-pq-kit v0.3.0's PqAuth and
-# PqAuthSet, and the OpenZeppelin pieces.
+# PqAuthSet, and the OpenZeppelin pieces. `forge flatten`'s output can differ
+# between Foundry releases, so CI pins the release this file was made with.
 set -eu
 cd "$(dirname "$0")/.."
 out=audits/flattened/PealTenderV2.flat.sol
@@ -20,6 +21,7 @@ if [ "${1:-}" = "--check" ]; then
     exit 0
   fi
   echo "audits: $out is out of date; run npm run flatten and commit it" >&2
+  diff -u "$out" "$tmp" | head -40 >&2 || true
   rm -f "$tmp"
   exit 1
 fi
