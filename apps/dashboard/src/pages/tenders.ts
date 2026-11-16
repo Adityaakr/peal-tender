@@ -1,4 +1,7 @@
+import { encodeFunctionData, parseUnits, type Address } from "viem";
+import { erc20Abi, vaultAbi } from "../../../../scripts/v2/abi.ts";
 import { tenderDetail, type Offer, type Snapshot, type Tender } from "../data.ts";
+import { act, state as wallet } from "../wallet/store.ts";
 import { type Ctx } from "../main.ts";
 import { chip, dateTime, duration, h, hash, stat, table } from "../ui.ts";
 import { fmt, fmtPrice, header } from "./common.ts";
@@ -76,23 +79,82 @@ async function detail(ctx: Ctx, t: Tender): Promise<HTMLElement> {
       `Holders offered ${s.buy.symbol} at a price tick each; the price climbs from the cheapest offer while the budget pays every offer at or below it.`,
     ),
     tiles,
+    actions(ctx, t),
     h("h2.section-title", "Price ladder", h("span.aside", `${s.buy.symbol} offered at each price, in ${s.pay.symbol}`)),
     h("section.card", ladder(t, supply, s)),
     h("h2.section-title", "Offers", h("span.aside", t.state === "Open" ? "sold amounts appear after settlement" : `${t.claimedCount} of ${t.offerCount} claimed`)),
-    offersTable(t, offers, s),
+    offersTable(ctx, t, offers, s),
   );
 }
 
-function offersTable(t: Tender, offers: Offer[], s: Snapshot): HTMLElement {
+/** What a visitor can do on this tender: offer while it runs, settle once it ends. */
+function actions(ctx: Ctx, t: Tender): HTMLElement | null {
+  const s = ctx.snap;
+  const now = s.block.timestamp;
+  if (t.state === "Open" && now < t.endTime) {
+    const qty = h("input.input", { value: "10", inputmode: "decimal", "aria-label": `${s.buy.symbol} to offer` }) as HTMLInputElement;
+    const tick = h("select.input", { "aria-label": "lowest price" }) as HTMLSelectElement;
+    for (let k = 0; k < t.numTicks; k++) tick.append(h("option", { value: String(k) }, `${fmtPrice(price(t, k), s.pay)} ${s.pay.symbol}`));
+    const go = h("button.btn.btn-primary", { type: "button" }, `Offer ${s.buy.symbol}`);
+    go.addEventListener("click", async () => {
+      const q = parseUnits(qty.value.trim() || "0", s.buy.decimals);
+      if (q < t.minQuantity) return alert(`The smallest offer is ${fmt(t.minQuantity, s.buy)} ${s.buy.symbol}.`);
+      const k = Number(tick.value);
+      await act(`Offer ${fmt(q, s.buy)} ${s.buy.symbol} at ${fmtPrice(price(t, k), s.pay)} or more`, [
+        { to: s.buy.address, data: encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [ctx.vault, q] }), label: `Allow the vault to escrow ${fmt(q, s.buy)} ${s.buy.symbol}` },
+        { to: ctx.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "offer", args: [q, k] }), label: "Place the offer" },
+      ], ctx.reload);
+    });
+    return h(
+      "section.card",
+      { style: "margin-top:16px" },
+      h("div.card-head", h("h3", `Sell ${s.buy.symbol} into this buyback`), h("span.small.muted", "with your guest account")),
+      h(
+        "div.act",
+        h("label.field", h("span", `Quantity (${s.buy.symbol})`), qty),
+        h("label.field", h("span", "Lowest price you accept"), tick),
+        go,
+      ),
+      h(
+        "p.small.muted",
+        { style: "margin:10px 0 0" },
+        `Your tokens stay in the vault's escrow until the tender ends. Everyone who sells is paid the same clearing price, never below the price you pick; whatever does not sell comes back to you.`,
+      ),
+    );
+  }
+  if (t.state === "Open" && now >= t.endTime) {
+    const go = h("button.btn.btn-primary", { type: "button" }, "Settle it");
+    go.addEventListener("click", () =>
+      void act(`Settle tender #${t.id}`, [{ to: ctx.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "settle", args: [] }), label: "Settle at one clearing price" }], ctx.reload),
+    );
+    return h(
+      "section.card",
+      { style: "margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap" },
+      h("div", h("h3", "This tender has ended"), h("div.small.muted", "Anyone may settle it: the clearing rule is fixed, so no key holder is needed.")),
+      go,
+    );
+  }
+  return null;
+}
+
+function offersTable(ctx: Ctx, t: Tender, offers: Offer[], s: Snapshot): HTMLElement {
+  const mine = (a: Address) => wallet.guest && a.toLowerCase() === wallet.guest.evm.toLowerCase();
+  const claimBtn = (o: Offer) => {
+    const b = h("button.btn.btn-small", { type: "button" }, "Claim");
+    b.addEventListener("click", () =>
+      void act(`Claim offer #${o.id}`, [{ to: ctx.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "claim", args: [t.id, o.id] }), label: `Pay out offer #${o.id} to its seller` }], ctx.reload),
+    );
+    return b;
+  };
   return table(
     ["Offer", "Seller", { text: "Quantity", num: true }, { text: "Lowest price", num: true }, { text: "Sold", num: true }, "Claim"],
     offers.map((o) => [
       `#${o.id}`,
-      hash(o.seller, { label: "seller" }),
+      [hash(o.seller, { label: "seller" }), mine(o.seller) ? chip("You", "wait", "key") : null],
       fmt(o.quantity, s.buy),
       `${fmtPrice(price(t, o.tick), s.pay)} ${s.pay.symbol}`,
       t.state === "Settled" ? (o.allocation > 0n ? fmt(o.allocation, s.buy) : h("span.muted", "0")) : h("span.muted", "–"),
-      o.claimed ? chip("Claimed", "ok") : t.state === "Open" ? chip("Escrowed", "plain", "lock") : chip("Claimable", "wait"),
+      o.claimed ? chip("Claimed", "ok") : t.state === "Open" ? chip("Escrowed", "plain", "lock") : claimBtn(o),
     ]),
     "No offers yet.",
   );

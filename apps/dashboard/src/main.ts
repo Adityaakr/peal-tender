@@ -15,6 +15,8 @@ import { sales } from "./pages/sales.ts";
 import { activityPage } from "./pages/activity.ts";
 import { propose } from "./pages/propose.ts";
 import { connect } from "./pages/connect.ts";
+import { landing } from "./pages/landing.ts";
+import { mountPanel, setBuyToken, walletButton } from "./wallet/panel.ts";
 
 export interface Ctx {
   vault: Address;
@@ -23,12 +25,15 @@ export interface Ctx {
   activity: () => Promise<Activity[]>;
   /** Re-render the current page. */
   refresh: () => void;
+  /** Read the vault again, then re-render (after an action). */
+  reload: () => void;
 }
 
 type Page = (ctx: Ctx, arg?: string) => HTMLElement | Promise<HTMLElement>;
 
-const ROUTES: { path: string; label: string; page: Page; live: boolean }[] = [
-  { path: "", label: "Overview", page: overview, live: true },
+const ROUTES: { path: string; label: string; page: Page; live: boolean; tab?: false }[] = [
+  { path: "", label: "Home", page: landing, live: true, tab: false },
+  { path: "vault", label: "Overview", page: overview, live: true },
   { path: "signers", label: "Signers", page: signers, live: true },
   { path: "timelock", label: "Timelock", page: timelock, live: true },
   { path: "tenders", label: "Tenders", page: tenders, live: true },
@@ -72,7 +77,7 @@ function header(): HTMLElement {
   const tabs = h(
     "nav.tabs",
     { "aria-label": "Sections" },
-    ...ROUTES.map((x) =>
+    ...ROUTES.filter((x) => x.tab !== false).map((x) =>
       h(
         "a",
         { href: `#/${x.path}`, "aria-current": x === r ? "page" : undefined },
@@ -90,9 +95,14 @@ function header(): HTMLElement {
         h("a.wordmark", { href: "#/" }, mark(), "Peal Tender"),
         h("div.tagline", "A treasury held by post-quantum signatures, on QoreChain."),
       ),
-      h("div.header-meta", pill, vault ? hash(vault, { label: "vault address" }) : null),
+      h(
+        "div.header-meta",
+        pill,
+        r.tab === false ? h("a.btn.btn-small", { href: "#/vault" }, "Open the app") : vault ? hash(vault, { label: "vault address" }) : null,
+        walletButton(),
+      ),
     ),
-    vault ? tabs : null,
+    vault && r.tab !== false ? tabs : null,
   );
 }
 
@@ -101,9 +111,9 @@ function footer(): HTMLElement {
     "footer.wrap",
     h(
       "div.site-footer",
-      "Read-only. This page holds no keys and sends nothing; signers sign proposals with ",
+      "Treasury keys never touch this page: signers sign proposals with ",
       h("span.mono", "npm run sign-action"),
-      ". Refreshes every 15 seconds. ",
+      ". A guest account, if you make one, lives only in this browser. Refreshes every 15 seconds. ",
       h("a", { href: "https://github.com/Adityaakr/peal-tender", target: "_blank", rel: "noopener" }, "Source"),
       error ? h("div", { style: "color:var(--red);margin-top:6px" }, error) : null,
     ),
@@ -119,7 +129,9 @@ async function render(force = false): Promise<void> {
     return;
   }
   let body: HTMLElement;
-  if (!vault) {
+  if (r.tab === false) {
+    body = await landing({ vault, snap, activity: getActivity, refresh: () => void render(true), reload: () => void load(true) } as Ctx);
+  } else if (!vault) {
     body = connect((v) => {
       vault = v;
       const q = new URLSearchParams(location.search);
@@ -130,7 +142,7 @@ async function render(force = false): Promise<void> {
   } else if (!snap) {
     body = h("div.empty", error || "Reading the vault…");
   } else {
-    const ctx: Ctx = { vault, snap, activity: getActivity, refresh: () => void render(true) };
+    const ctx: Ctx = { vault, snap, activity: getActivity, refresh: () => void render(true), reload: () => void load(true) };
     try {
       body = await r.page(ctx, arg);
     } catch (e) {
@@ -147,6 +159,7 @@ async function load(force = false): Promise<void> {
   if (!vault) return void render(true);
   try {
     snap = await snapshot(vault);
+    setBuyToken(snap.buy);
     error = "";
   } catch (e) {
     error = `Could not read the vault at ${vault}: ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`;
@@ -154,6 +167,10 @@ async function load(force = false): Promise<void> {
   await render(force);
 }
 
-window.addEventListener("hashchange", () => void render(true));
+mountPanel();
+window.addEventListener("hashchange", () => {
+  window.scrollTo(0, 0);
+  void render(true);
+});
 void load(true);
 setInterval(() => void load(false), 15_000);

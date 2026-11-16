@@ -1,4 +1,6 @@
-import { decodeAbiParameters, type Address } from "viem";
+import { decodeAbiParameters, encodeFunctionData, type Address } from "viem";
+import { vaultAbi } from "../../../../scripts/v2/abi.ts";
+import { act } from "../wallet/store.ts";
 import { describeOp, type Op, type Snapshot } from "../data.ts";
 import { type Ctx } from "../main.ts";
 import { ago, chip, dateTime, duration, h, hash, meter, short, stat } from "../ui.ts";
@@ -30,6 +32,13 @@ function what(op: Op, s: Snapshot): HTMLElement {
 
 export async function timelock(ctx: Ctx): Promise<HTMLElement> {
   const s = ctx.snap;
+  const executeRow = (op: Op) => {
+    const b = h("button.btn.btn-small.btn-primary", { type: "button" }, "Execute");
+    b.addEventListener("click", () =>
+      void act(`Execute change #${op.id}`, [{ to: ctx.vault, data: encodeFunctionData({ abi: vaultAbi, functionName: "execute", args: [op.id] }), label: `Execute change #${op.id}` }], ctx.reload),
+    );
+    return h("div.small.muted", { style: "margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap" }, b, "Anyone may execute it now; or ", h("span.mono", `npm run v2 -- execute ${op.id}`));
+  };
   const now = s.block.timestamp;
   const WINDOW = 7n * 86400n;
 
@@ -74,7 +83,7 @@ export async function timelock(ctx: Ctx): Promise<HTMLElement> {
         h("div.op-title", kindTitle(op.kind)),
         what(op, s),
         progress,
-        runnable && now >= op.eta ? h("div.small.muted", { style: "margin-top:8px" }, "Execute: ", h("span.mono", `npm run v2 -- execute ${op.id}`)) : null,
+        runnable && now >= op.eta ? executeRow(op) : null,
         runnable && now < op.eta ? h("div.small.muted", { style: "margin-top:8px" }, "Veto (any one signer): ", h("span.mono", `npm run v2 -- veto ${op.id} --as <signer>`)) : null,
       ),
       h("div.op-side", state, h("span.muted", timing)),

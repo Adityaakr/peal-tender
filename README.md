@@ -217,7 +217,24 @@ the exact bytes against the vault's own `quorumMessage` view before signing.
 
 `npm run dashboard` serves the treasury's web app ([`apps/dashboard`](apps/dashboard)),
 in the Peal design language shared by all three entries ([`docs/design.md`](docs/design.md)).
-It reads the EVM RPC directly, **holds no keys and sends nothing**.
+It opens on a **landing page** (what Peal Tender is, why post-quantum now, how it
+works, who does what, and how to try it in four steps), then the app below.
+
+**Wallets.** QoreChain admits an EVM transaction only from an account with a
+registered ML-DSA-87 key and a live window opened by a hybrid-signed native message.
+
+| Way in | What it does here |
+| --- | --- |
+| **Guest account** | A fresh testnet account made in the visitor's browser (random recovery phrase, both keys derived by `@qorechain/sdk`, kept only in that browser, with backup and forget). It is the one that acts: on first use it registers its ML-DSA-87 key, then each action opens a window scoped to the contracts it calls, sends, and closes the window. It can claim test PEAL-T, offer into a tender, claim, settle, execute a ready change and collect a sale |
+| **QoreX** | Connects through `window.qorex` and funds the guest account with one QOR transfer the visitor approves in QoreX. QoreX does not send EVM transactions or open windows for pages yet (its docs, 16 November 2026), so the guest account does the contract calls |
+| **MetaMask** | Connects (EIP-6963) and adds the QoreChain testnet network. It cannot make the post-quantum signature a QoreChain transaction needs, so actions go through the guest account |
+
+**Treasury keys never enter the page**: signers build or check proposals here and sign
+with `npm run sign-action`. The REST API and CometBFT RPC send no CORS headers, so the
+page reaches them through same-origin `/api/qore/*` paths: the Vite dev server forwards
+them locally, and [`vercel.json`](vercel.json)'s rewrites forward them when hosted on
+Vercel, only ever to the two public testnet endpoints. The hosted site sets a strict
+Content-Security-Policy.
 
 | Page | What it shows |
 | --- | --- |
