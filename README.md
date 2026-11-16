@@ -290,7 +290,7 @@ forge build
 forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
-npm run test:ts      # the kit integrations: 25 tests, offline
+npm run test:ts      # the kit integrations: 28 tests, offline
 npm run template:check && npm run cbom:check
 npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```
