@@ -111,6 +111,12 @@ export function tenderFacts(root: string): TenderFacts {
   const vercel = JSON.parse(read("vercel.json")) as { rewrites: { source: string; destination: string }[] };
   const vite = read("apps/dashboard/vite.config.ts");
   const origin = (u: string) => new URL(u).origin;
+  /** The hosted app's rewrites for `prefix`: required, so a removed rewrite fails the check. */
+  const rewrites = (prefix: string) => {
+    const r = vercel.rewrites.filter((x) => x.source.startsWith(prefix)).map((x) => origin(x.destination));
+    if (r.length === 0) throw new Error(`vercel.json has no ${prefix} rewrite`);
+    return r;
+  };
   return {
     foundry: tomlSections(read("foundry.toml")),
     deps: pkg.dependencies,
@@ -120,11 +126,11 @@ export function tenderFacts(root: string): TenderFacts {
     appEvmChainId: grab(app, /EVM_CHAIN_ID\s*=\s*(\d+)/, "the web app's EVM_CHAIN_ID"),
     appEvmRpc: grab(data, /TESTNET_RPC\s*=\s*"([^"]+)"/, "the web app's TESTNET_RPC"),
     proxyRest: [
-      ...vercel.rewrites.filter((r) => r.source.startsWith("/api/qore/rest")).map((r) => origin(r.destination)),
+      ...rewrites("/api/qore/rest"),
       grab(vite, /"\/api\/qore\/rest"[\s\S]*?target:\s*"([^"]+)"/, "the Vite REST proxy"),
     ],
     proxyRpc: [
-      ...vercel.rewrites.filter((r) => r.source.startsWith("/api/qore/rpc")).map((r) => origin(r.destination)),
+      ...rewrites("/api/qore/rpc"),
       grab(vite, /"\/api\/qore\/rpc"[\s\S]*?target:\s*"([^"]+)"/, "the Vite RPC proxy"),
     ],
   };

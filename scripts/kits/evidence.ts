@@ -14,7 +14,13 @@
  *               chain verified (`get_pq_status` reports verification.verified = true)
  *   evm         an EVM-lane transaction that succeeded. EVM transactions carry no
  *               ML-DSA-87 layer; Tender's post-quantum check runs inside the vault
- *               (pqcKeyStatus + pqcVerify), so success is what can be read here.
+ *               (pqcKeyStatus + pqcVerify), so success is what can be read here. A
+ *               reverted EVM call can still be a code-0 Cosmos transaction, so the
+ *               EVM receipt's own status (eth_getTransactionReceipt) is checked too.
+ *
+ * `get_pq_status` verifies a transaction's ML-DSA-87 layer against the signer's
+ * CURRENT key: after a key rotation an old transaction would read as unverified
+ * although the chain accepted it. Its notes are printed with any failure.
  * and optionally which message it carries. Exits 1 if any entry does not match.
  *
  * To check one hash by hand: `npm run qore -- pq status <hash>` (the pinned qore CLI,
@@ -24,6 +30,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TOOLS, toolContext } from "@qorechain/mcp";
+import { createPublicClient, http, type Hex } from "viem";
 
 export type Expectation = "enrollment" | "pqc" | "evm";
 
@@ -46,6 +53,7 @@ export interface TxView {
 
 /** The parts of `get_pq_status`'s answer this check reads (for a transaction). */
 export interface PqView {
+  notes?: string[];
   transaction_status: {
     tier: string;
     has_exactly_one_pqc_layer: boolean;
@@ -61,8 +69,11 @@ export interface Verdict {
   problems: string[];
 }
 
-/** Judge one transaction against its entry. Pure: the network calls are elsewhere. */
-export function judge(entry: EvidenceEntry, tx: TxView, pq: PqView | undefined): Verdict {
+/**
+ * Judge one transaction against its entry. Pure: the network calls are elsewhere.
+ * `evmStatus` is the EVM receipt's status, required for `evm` entries.
+ */
+export function judge(entry: EvidenceEntry, tx: TxView, pq: PqView | undefined, evmStatus?: "success" | "reverted"): Verdict {
   const problems: string[] = [];
   if (!tx.success) problems.push("the transaction failed on chain");
   const types = tx.messages.map((m) => m.type_url);
@@ -81,7 +92,8 @@ export function judge(entry: EvidenceEntry, tx: TxView, pq: PqView | undefined):
       else {
         if (!s.has_exactly_one_pqc_layer) problems.push("not exactly one ML-DSA-87 layer");
         if (!s.verification.checked || s.verification.verified !== true) {
-          problems.push(`ML-DSA-87 layer not verified (${s.verification.reason ?? "unknown"})`);
+          const notes = pq?.notes?.length ? `; notes: ${pq.notes.join(" ")}` : "";
+          problems.push(`ML-DSA-87 layer not verified against the signer's current key (${s.verification.reason ?? "unknown"}${notes})`);
         }
       }
       break;
@@ -90,6 +102,7 @@ export function judge(entry: EvidenceEntry, tx: TxView, pq: PqView | undefined):
       if (tier !== "classical" || !types.includes("/cosmos.evm.vm.v1.MsgEthereumTx")) {
         problems.push(`expected an EVM-lane transaction, found ${tier} ${types.join(", ")}`);
       }
+      if (evmStatus !== "success") problems.push(`the EVM receipt says ${evmStatus ?? "nothing (no receipt read)"}`);
       break;
     default:
       problems.push(`unknown expectation ${String(entry.expect)}`);
@@ -129,13 +142,15 @@ async function main(): Promise<void> {
   const file = args.find((a) => !a.startsWith("--")) ?? join(root, "deployments", "evidence.json");
   const entries = loadEvidence(file);
   const ctx = toolContext({ defaultNetwork: "testnet" });
+  const evm = createPublicClient({ transport: http(process.env.QORE_EVM_RPC_URL?.trim() || "https://evm-testnet.qore.host") });
   const results: { entry: EvidenceEntry; verdict: Verdict }[] = [];
   for (const entry of entries) {
     let verdict: Verdict;
     try {
       const tx = (await tool("get_transaction").handler({ hash: entry.hash }, ctx)) as TxView;
       const pq = entry.expect === "pqc" ? ((await tool("get_pq_status").handler({ target: entry.hash }, ctx)) as PqView) : undefined;
-      verdict = judge(entry, tx, pq);
+      const evmStatus = entry.expect === "evm" ? (await evm.getTransactionReceipt({ hash: entry.hash as Hex })).status : undefined;
+      verdict = judge(entry, tx, pq, evmStatus);
     } catch (e) {
       verdict = { ok: false, summary: "unreadable", problems: [e instanceof Error ? e.message : String(e)] };
     }

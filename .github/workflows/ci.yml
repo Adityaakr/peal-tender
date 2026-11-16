@@ -27,6 +27,15 @@ jobs:
       - run: forge build --sizes
       - run: forge test
       - run: (cd kit && forge test)
+      # QoreScan over the CURRENT Solidity sources (lib/ installed above): the
+      # contracts reach ML-DSA-87 only through pqcKeyStatus/pqcVerify, never ecrecover.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - run: npm ci
+      - run: npm run cbom:check -- --fresh
       # `forge flatten`'s output differs between releases: check the committed
       # audit source with the release it was made with (tests run faster on stable).
       - uses: foundry-rs/foundry-toolchain@v1
