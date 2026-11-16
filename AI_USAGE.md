@@ -255,3 +255,28 @@ fixed what they showed:
 - a phone ledger whose figures scrolled out of view;
 - diagram labels shrunk to 6px on phones (each diagram now has its own phone drawing);
 - clipped and colliding labels in the flow drawing.
+
+### 16 November 2026: the Peal family's logos (owner request)
+
+The owner asked for professional logos for all three products. The orchestrator gave
+this repository the logo system for the whole family. The worker first read the
+current marks and identities of all three repositories. It then drew one system on a
+24-unit grid, with one rule: every mark holds a solid dot, the thing that product keeps
+hold of. The marks:
+- Peal: a P whose bowl holds the dot;
+- Tender: a payment order with its seal;
+- Sealed Auction: an envelope with its wax seal;
+- Bidder: an agent on a leash, short of a red limit line.
+
+A generator, `docs/brand/build.mjs`, writes every master from that one geometry: light,
+dark and one-colour versions, wordmarks outlined from IBM Plex Sans, lockups, tiles and
+favicons. It also writes the module the Tender app draws its marks from. The worker
+rendered a brand sheet and pixel-level zooms of the 16 and 32 px tiles, and revised the
+marks four times:
+- the first Peal mark, a bell, read as a notifications icon;
+- Bidder's ring and leash read as a key, then as a letter;
+- the P sat off centre;
+- lockup gaps were optically uneven, and the envelope looked small next to its siblings.
+
+The Tender app and landing page now use the new mark and favicon. The auction and
+Bidder pages adopt theirs in their own repositories.
