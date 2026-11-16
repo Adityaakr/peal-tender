@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Peal Tender cover</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,300;0,400;1,300&display=swap" />
+    <style>
+      /* The fest cover, 1920 x 1080. Peal Tender's identity (apps/dashboard/DESIGN.md):
+         security paper, banknote ink, treasury green for what verifies, stamp red for
+         what is refused, IBM Plex. Everything that must be read sits in the safe area
+         (x 160 to 1760, y 110 to 800); the page lays a title band over the bottom. */
+      :root {
+        --paper: #f1f4f2;
+        --sheet: #fcfdfc;
+        --ink: #10231d;
+        --ink-2: #3d4d47;
+        --muted: #677770;
+        --rule: #d3dcd7;
+        --accent: #1e5b46;
+        --stamp: #a3261a;
+      }
+      html, body { margin: 0; }
+      body { width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+      .cover { position: relative; width: 1920px; height: 1080px; }
+      .copy { position: absolute; left: 180px; top: 150px; width: 820px; display: flex; flex-direction: column; gap: 44px; }
+      .lockup { height: 64px; width: auto; display: block; align-self: flex-start; }
+      h1 { margin: 0; font-family: "IBM Plex Serif", Georgia, serif; font-weight: 300; font-size: 116px; line-height: 1.02; letter-spacing: -0.02em; }
+      h1 em { font-style: italic; color: var(--accent); }
+      .facts { display: flex; gap: 0; font-family: "IBM Plex Mono", monospace; font-size: 30px; color: var(--ink); border-top: 2px solid var(--ink); padding-top: 26px; }
+      .facts span { padding-right: 30px; margin-right: 30px; border-right: 2px solid var(--rule); white-space: nowrap; }
+      .facts span:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+      .facts b { font-weight: 500; color: var(--accent); }
+      svg.order { position: absolute; left: 1020px; top: 104px; width: 740px; height: auto; overflow: visible; }
+      .sheet { filter: drop-shadow(0 2px 2px rgb(16 35 29 / 0.07)) drop-shadow(0 22px 44px rgb(16 35 29 / 0.12)); }
+      /* the bottom band stays quiet: the page's title band covers it */
+      svg.band { position: absolute; left: 0; bottom: 96px; width: 1920px; height: 72px; }
+      .guide { display: none; position: absolute; inset: 110px 160px 280px 160px; outline: 2px dashed magenta; }
+      body.show-safe .guide { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="cover">
+      <div class="copy">
+        <img class="lockup" src="../tender/lockup.svg" alt="Peal Tender" />
+        <h1>A stolen classical key moves <em>nothing.</em></h1>
+        <div class="facts"><span><b>2 of 3</b> signers</span><span>ML-DSA-87</span><span>pqcVerify</span></div>
+      </div>
+      <svg class="order" id="order" viewBox="0 0 640 600" role="img" aria-label="A payment order for 250.00 fUSD with two ML-DSA-87 signatures and a seal reading verified 2 of 3; beneath it, an order signed only with a stolen secp256k1 key, stamped refused."></svg>
+      <svg class="band" id="band" viewBox="0 0 1920 72" aria-hidden="true"></svg>
+      <div class="guide"></div>
+    </div>
+    <script>
+      // The drawing: the same instrument as the landing page, with fewer and larger labels
+      // so it reads as a thumbnail. Seeded strokes, the same on every render.
+      const NS = "http://www.w3.org/2000/svg";
+      const C = { ink: "#10231d", ink2: "#3d4d47", muted: "#677770", rule: "#d3dcd7", sheet: "#fcfdfc", guilloche: "#b9cfc5", accent: "#1e5b46", stamp: "#a3261a" };
+      const SERIF = "'IBM Plex Serif', Georgia, serif";
+      const SANS = "'IBM Plex Sans', system-ui, sans-serif";
+      const MONO = "'IBM Plex Mono', ui-monospace, monospace";
+      const s = (tag, a = {}, text) => {
+        const e = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(a)) e.setAttribute(k, String(v));
+        if (text !== undefined) e.textContent = text;
+        return e;
+      };
+      const t = (x, y, str, a = {}) => s("text", { x, y, "font-family": SANS, "font-size": 15, fill: C.ink, ...a }, str);
+      const m = (x, y, str, a = {}) => s("text", { x, y, "font-family": MONO, "font-size": 15, fill: C.ink, ...a }, str);
+
+      function signaturePath(x0, base, w, seed) {
+        const letters = 5 + seed, steps = 220, k = (w * 0.86) / (2 * Math.PI * letters), pts = [];
+        for (let i = 0; i <= steps; i++) {
+          const u = i / steps, th0 = 2 * Math.PI * letters * u;
+          const th = th0 + 0.9 * Math.sin(th0 * 0.31 + seed * 2.3);
+          const tall = Math.max(0, Math.sin(th0 * 0.5 + seed * 1.3));
+          let amp = 7 + 8 * tall * tall + 5 * (0.5 + 0.5 * Math.sin(th0 * 0.77 + seed));
+          if (u < 1 / letters) amp *= 1.9;
+          const yy = amp * (0.5 - 0.5 * Math.cos(th));
+          pts.push(`${i ? "L" : "M"}${(x0 + k * th0 - 1.45 * k * Math.sin(th) + yy * 0.32).toFixed(1)} ${(base - 3 - yy - 4 * u).toFixed(1)}`);
+        }
+        const ex = x0 + w * 0.86;
+        pts.push(`Q${(ex + 8).toFixed(1)} ${(base - 2).toFixed(1)} ${(x0 + w * 0.5).toFixed(1)} ${(base + 1).toFixed(1)}`);
+        pts.push(`T${(x0 + w * 0.06).toFixed(1)} ${(base + 2.5).toFixed(1)}`);
+        return pts.join("");
+      }
+      function guilloche(x0, y0, w, h) {
+        const g = s("g", { stroke: C.guilloche, "stroke-width": 0.7, fill: "none" });
+        for (let k = 0; k < 7; k++) {
+          const pts = [];
+          for (let i = 0; i <= 180; i++) {
+            const x = x0 + (i / 180) * w, ph = (i / 180) * Math.PI * 18;
+            pts.push(`${i ? "L" : "M"}${x.toFixed(1)} ${(y0 + h / 2 + (h / 2 - 2) * Math.sin(ph + k * 0.9) * Math.cos(ph / 6 + k * 0.4)).toFixed(1)}`);
+          }
+          g.append(s("path", { d: pts.join("") }));
+        }
+        return g;
+      }
+
+      const svg = document.getElementById("order");
+      // the refused order, underneath
+      const slip = s("g", { transform: "rotate(3.2 190 520)" });
+      slip.append(s("rect", { x: 10, y: 400, width: 380, height: 190, rx: 4, fill: C.sheet, stroke: C.rule, class: "sheet" }));
+      slip.append(t(32, 506, "Signed with", { fill: C.muted, "font-size": 16 }));
+      slip.append(m(32, 534, "secp256k1 only", { "font-size": 20, "font-weight": 500 }));
+      slip.append(t(32, 562, "the stolen classical key", { fill: C.stamp, "font-size": 16 }));
+      svg.append(slip);
+
+      // the order that clears
+      const sheet = s("g", { transform: "rotate(-1.4 330 230)" });
+      sheet.append(s("rect", { x: 40, y: 12, width: 580, height: 440, rx: 4, fill: C.sheet, stroke: C.rule, class: "sheet" }));
+      sheet.append(s("rect", { x: 54, y: 26, width: 552, height: 412, rx: 2, fill: "none", stroke: C.guilloche, "stroke-width": 0.9 }));
+      sheet.append(guilloche(54, 34, 552, 34));
+      sheet.append(t(74, 104, "PAYMENT ORDER", { "font-size": 14, "font-weight": 600, "letter-spacing": "0.18em", fill: C.ink2 }));
+      sheet.append(s("text", { x: 74, y: 140, "font-family": SERIF, "font-size": 27, fill: C.ink }, "PealTenderV2"));
+      sheet.append(t(74, 196, "Amount", { fill: C.muted, "font-size": 16 }));
+      sheet.append(m(170, 198, "250.00 fUSD", { "font-size": 40, "font-weight": 500 }));
+      sheet.append(s("line", { x1: 170, x2: 586, y1: 212, y2: 212, stroke: C.rule, "stroke-width": 1.2 }));
+      sheet.append(t(74, 258, "2 of 3 signatures required", { "font-size": 16, "font-weight": 600, fill: C.accent }));
+      [74, 262].forEach((x, i) => {
+        sheet.append(s("line", { x1: x, x2: x + 170, y1: 340, y2: 340, stroke: C.ink, "stroke-opacity": 0.6, "stroke-width": 1.2 }));
+        sheet.append(s("path", { d: signaturePath(x + 8, 328, 150, i + 1), fill: "none", stroke: C.accent, "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+        sheet.append(t(x, 366, `Signer ${i + 1}`, { "font-size": 17, "font-weight": 600 }));
+        sheet.append(m(x, 390, "ML-DSA-87", { "font-size": 15, fill: C.muted }));
+      });
+      // the seal
+      const seal = s("g");
+      seal.append(s("circle", { cx: 528, cy: 330, r: 62, fill: C.sheet, stroke: C.accent, "stroke-width": 2.4 }));
+      seal.append(s("circle", { cx: 528, cy: 330, r: 52, fill: "none", stroke: C.accent, "stroke-width": 1 }));
+      seal.append(t(528, 318, "VERIFIED", { "text-anchor": "middle", "font-size": 13, "font-weight": 600, "letter-spacing": "0.16em", fill: C.accent }));
+      seal.append(s("text", { x: 528, y: 352, "text-anchor": "middle", "font-family": SERIF, "font-size": 32, fill: C.accent }, "2 / 3"));
+      sheet.append(seal);
+      svg.append(sheet);
+
+      // the stamp, on top of the refused order
+      const stamp = s("g", { transform: "rotate(-9 470 528)" });
+      stamp.append(s("rect", { x: 342, y: 484, width: 256, height: 92, rx: 6, fill: C.sheet, "fill-opacity": 0.7, stroke: C.stamp, "stroke-width": 4 }));
+      stamp.append(s("rect", { x: 350, y: 492, width: 240, height: 76, rx: 3, fill: "none", stroke: C.stamp, "stroke-width": 1.4 }));
+      stamp.append(t(470, 538, "REFUSED", { "text-anchor": "middle", "font-weight": 600, "font-size": 40, "letter-spacing": "0.14em", fill: C.stamp }));
+      stamp.append(m(470, 560, "PqSignatureInvalid", { "text-anchor": "middle", "font-size": 15, fill: C.stamp }));
+      svg.append(stamp);
+      // the bottom band: the security pattern printed on cheques, quiet under the page's title band
+      const band = document.getElementById("band");
+      const bg = s("g", { stroke: C.guilloche, "stroke-width": 0.9, fill: "none", opacity: 0.7 });
+      for (let k = 0; k < 6; k++) {
+        const pts = [];
+        for (let i = 0; i <= 640; i++) {
+          const x = (i / 640) * 1920, ph = (i / 640) * Math.PI * 60;
+          pts.push(`${i ? "L" : "M"}${x.toFixed(1)} ${(36 + 32 * Math.sin(ph + k * 0.9) * Math.cos(ph / 6 + k * 0.4)).toFixed(1)}`);
+        }
+        bg.append(s("path", { d: pts.join("") }));
+      }
+      band.append(bg);
+      if (location.hash === "#safe") document.body.classList.add("show-safe");
+    </script>
+  </body>
+</html>
