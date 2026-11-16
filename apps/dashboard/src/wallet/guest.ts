@@ -17,6 +17,7 @@
 import { createPublicClient, createWalletClient, http, type Address, type Hex, type TransactionReceipt } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type { UnifiedAccount } from "@qorechain/sdk";
+import { explainEvmRefusal } from "./refusal.ts";
 import { CHAIN_ID, COMET_RPC, EVM_CHAIN_ID, EVM_RPC, IS_LOCAL, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, NATIVE_FEE, REST } from "../config.ts";
 
 const STORE = "peal-tender.guest.v1";
@@ -204,14 +205,19 @@ export async function run(acc: UnifiedAccount, calls: Call[], log: Log): Promise
       const gas = (gasEst * 125n) / 100n;
       if (gas > GAS_CAP) throw new Error(`${c.label} needs ${gas} gas, more than this window allows`);
       const nonce = await evm.getTransactionCount({ address: acc.evm as Address, blockTag: "pending" });
-      const hash = await w.sendTransaction({
-        to: c.to,
-        data: c.data,
-        gas,
-        nonce,
-        maxFeePerGas: IS_LOCAL ? undefined : MAX_FEE_PER_GAS,
-        maxPriorityFeePerGas: IS_LOCAL ? undefined : MAX_PRIORITY_FEE_PER_GAS,
-      });
+      let hash: Hex;
+      try {
+        hash = await w.sendTransaction({
+          to: c.to,
+          data: c.data,
+          gas,
+          nonce,
+          maxFeePerGas: IS_LOCAL ? undefined : MAX_FEE_PER_GAS,
+          maxPriorityFeePerGas: IS_LOCAL ? undefined : MAX_PRIORITY_FEE_PER_GAS,
+        });
+      } catch (e) {
+        throw await explainEvmRefusal(e, c.label);
+      }
       const r = await evm.waitForTransactionReceipt({ hash, timeout: 120_000 });
       if (r.status !== "success") throw new Error(`${c.label} reverted (tx ${hash})`);
       out.push(r);

@@ -70,6 +70,11 @@ Native-lane hashes are upper-case, EVM hashes are `0x…`. Every window opened f
 steps was closed again; the drill account has no live window, holds no ERC-20 tokens
 and has granted no approvals.
 
+**Check them yourself.** `npm run evidence` re-reads every transaction above
+([`deployments/evidence.json`](deployments/evidence.json)) through the QoreChain MCP
+server's own tools and says, for each, whether it succeeded and whether the chain
+verified its ML-DSA-87 layer. One hash by hand: `npm run qore -- pq status <hash>`.
+
 ## How it works (v1, the drill vault)
 
 ```
@@ -251,6 +256,21 @@ leaves a local node running with a vault in every state (a waiting signer change
 open tender with offers, a running sale) and prints the URL to open after
 `npm run dashboard -- --port 5199`.
 
+## QoreChain kits used
+
+Each kit does a job in Tender; [`docs/kits.md`](docs/kits.md) has the reasoning,
+including the kits that do not fit and why.
+
+| Kit | What it does here |
+| --- | --- |
+| QoreChain SDK (`@qorechain/sdk`, `@qorechain/evm`) | hybrid signing, key registration and windows in every script and in the web app's guest account |
+| qorechain-pqc (`@qorechain/pqc`) | ML-DSA-87 verification of every relayed share, in the end-to-end check and the web app's proposal checker |
+| create-qorechain-dapp | Tender started from its `foundry` template; `npm run template:check` scaffolds it again and checks the compiler settings and every network constant Tender writes down (17 checks, in CI) |
+| MCP + qore CLI (`@qorechain/mcp`, `@qorechain/qore-cli`) | `npm run evidence` checks the cited transactions with the MCP server's tools; `.mcp.json` gives the coding agents the same read-only view of the chain; `npm run qore` is the pinned CLI |
+| QoreScan (`@qorechain/qorescan`) | `npm run cbom` writes a CycloneDX CBOM ([`audits/cbom/`](audits/cbom)); `npm run cbom:check` asserts the contracts reach ML-DSA-87 only through `pqcKeyStatus` and `pqcVerify` and never call `ecrecover` (in CI) |
+| QoreX integrations (`@qorechain/qorex-types`) | the web app finds QoreX's native and EIP-1193 providers |
+| Wallet adapter (`@qorechain/wallet-adapter`) | QoreX's funding transfer (`qorexSignAndBroadcast`), MetaMask's network (`addQoreEvmToWallet`), and why the chain refused an EVM transaction (`isEvmWindowRejection`) |
+
 ## Build and test
 
 Needs Foundry and Node.js 20 or later.
@@ -262,6 +282,8 @@ forge build
 forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
+npm run test:ts      # the kit integrations: 15 tests, offline
+npm run template:check && npm run cbom:check
 npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```
 
@@ -335,6 +357,9 @@ tooling, the drill rehearsal, the dashboard and the audit artefacts.
 - The QoreChain `create-qorechain-dapp` foundry template (0.14.0) was the starting
   point for the project layout and the window helper; `@qorechain/sdk` and
   `@qorechain/evm` 0.14.0 do the hybrid signing, key registration and window messages.
+- QoreChain's `@qorechain/pqc`, `@qorechain/mcp`, `@qorechain/qore-cli`,
+  `@qorechain/qorescan`, `@qorechain/qorex-types` and `@qorechain/wallet-adapter`
+  (Apache-2.0, QoreChain Association), as listed above.
 - `qore-pq-kit` v0.3.0 (our toolkit, by git tag): `PqAuth`, `PqAuthSet` and the
   TypeScript helpers v2 uses.
 - OpenZeppelin Contracts 5.1.0 (SafeERC20, ReentrancyGuard, Math, ERC20), forge-std

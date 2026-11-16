@@ -48,6 +48,12 @@ jobs:
       - run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run test:ts
+      # create-qorechain-dapp's foundry template, scaffolded from the pinned package:
+      # Tender's compiler settings and network constants must still match it.
+      - run: npm run template:check
+      # QoreScan's CBOM: PQC precompiles in, ecrecover out (the committed scan).
+      - run: npm run cbom:check
       - name: Vectors match the TypeScript encoders
         run: npm run vectors:v2 && git diff --exit-code vectors/
       - run: npm run dashboard:build

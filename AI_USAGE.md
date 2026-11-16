@@ -303,3 +303,24 @@ briefed a worker to make it with the `/brag` workflow and HyperFrames. The worke
 The source is in [`docs/video/`](docs/video/README.md); the rendered video, the
 screenshots and the audio stay outside the repository. Publishing the video and
 submitting it are the owner's.
+
+### 17 November 2026: more QoreChain kits, each with a job (owner request)
+
+The owner asked for more of the QoreChain kits and network features, because other
+fest projects list many, and for them to show as "Verified" on the project page. The
+orchestrator briefed a worker to do it deeply, never as box-ticking, and to leave the
+drill account and the drill contracts alone. The worker:
+- read every kit's package (README, typings) and the fest pages, and worked out how the
+  site verifies by comparing all 67 project pages with their repositories and testnet
+  addresses (`docs/kits.md`): kits by npm dependency, most features by the listed
+  addresses' transactions, test tokens only from the fest-token faucet;
+- chose a job for each kit that fits a treasury, and wrote down why the rest do not fit;
+- added the checks: `npm run evidence` (every cited transaction re-read through the
+  QoreChain MCP server's tools), `npm run template:check` (create-qorechain-dapp's
+  foundry template against Tender's settings and network constants) and
+  `npm run cbom` / `cbom:check` (QoreScan's CBOM: the precompiles in, `ecrecover` out);
+- moved the web app's QoreX and MetaMask code onto `@qorechain/qorex-types` and
+  `@qorechain/wallet-adapter`, and added unit tests for all of it (`npm run test:ts`).
+
+The owner decides which boxes to tick and which addresses to list on the project page;
+the worker's list, with the evidence for each, is in the pull request.

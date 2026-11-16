@@ -208,7 +208,20 @@ signature true; tampered signature false; different nonce false; key without
 registration reverts; inactive precompile returns empty data; `pqcVerify` costs
 about 317,000 gas as a whole transaction).
 
-Transactions are listed in the README under "Deployed".
+Transactions are listed in the README under "Deployed". `npm run evidence` re-reads
+each of them through the QoreChain MCP server's tools (`get_transaction`,
+`get_pq_status`) and checks it is what the README says: every native message
+hybrid-signed with the ML-DSA-87 layer verified by the chain, the key registration
+signed classically as the chain requires, every vault call succeeded.
+
+Cryptographic inventory: QoreScan's CBOM of the contracts, the testnet endpoints and
+the signer's key ([`audits/cbom/peal-tender.cdx.json`](audits/cbom/peal-tender.cdx.json),
+`npm run cbom`) backs two claims above with a tool that is not ours. `npm run
+cbom:check` (in CI) fails unless the contracts reach ML-DSA-87 through `pqcKeyStatus`
+and `pqcVerify` and no contract calls `ecrecover` or its precompile, so no classical
+signature can authorise anything in Tender. It also records that the chain requires the
+hybrid signature with no classical fallback. The CBOM is an inventory aid, not a
+certification.
 
 ## 8. Peal Tender v2 (the full build)
 
