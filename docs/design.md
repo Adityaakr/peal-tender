@@ -14,8 +14,8 @@ and components below, and any entry may copy it.
   Peal Bidder.
 - Wordmark in Josefin Sans 500, about 24px, with a small mark to its left, and a
   one-line tagline under it in muted 13px.
-- Peal Tender's mark: a ring with three signer dots, two filled (2 of 3). Each entry
-  draws its own simple mark in the accent colour; no logos from other projects.
+- Each entry has a simple mark in the accent colour (see Marks below); no logos from
+  other projects.
 
 ## Voice
 
@@ -96,23 +96,150 @@ behind `prefers-reduced-motion: no-preference`.
   or a wide table inside its own scroller.
 - Every page works at 390px wide.
 
-## Landing page (every entry)
+## Landing pages (every entry)
 
-Each product opens on a landing page before its app, in this order:
+Updated 16 November 2026 (deep redesign). Each product opens on a landing page, then
+its app. Peal Tender's [`landing.ts`](../apps/dashboard/src/pages/landing.ts) and the
+`landing` part of its [`styles.css`](../apps/dashboard/src/styles.css) are the reference
+implementation; copy them and change the words, the mark and the illustration.
 
-1. **Hero:** an eyebrow chip (the hackathon category), a Josefin Sans headline of at
-   most two lines with one phrase in the hero-mark box, a two-sentence sub in
-   secondary text, a primary button into the app and a secondary "try it" button, and
-   a simple diagram of the mechanism in the accent ramp on the right.
-2. **Live strip:** four or five figures read from the chain (one white card, hairline
-   dividers), or a plain "deploying on <date>" when nothing is live yet.
-3. **How it works:** three numbered cards.
-4. **Why it matters before Q-Day:** a short paragraph and evidence (a terminal-style
-   block of real results).
-5. **Who does what:** three role cards, each linking into the app.
-6. **Try it:** numbered steps a visitor can finish in about five minutes on testnet.
-7. **Built with:** the chain features, the shared toolkit, the sibling products, and
-   the repository.
+### Principles
+
+1. **One idea per section.** A visitor should be able to say what each section told them.
+2. **Show the mechanism.** The main illustration draws how the product actually works,
+   with the real names (`pqcVerify`, ML-DSA-87, ML-KEM-1024, window). It is the page's
+   centrepiece, not decoration.
+3. **Evidence over claims.** Real refused attacks, real transactions, real test counts.
+   A number is either read live from the chain or labelled as a demo or a target.
+4. **Every button goes somewhere real**: the app, a guest account, the repository.
+5. **Not a template.** No stock blobs or meshes, no glass cards, no gradient text, no
+   logo walls, testimonials or invented metrics, no grid of six identical icon cards.
+
+### Grid and rhythm
+
+| Token | Desktop | Tablet (≤ 900px) | Phone (≤ 560px) |
+| --- | --- | --- | --- |
+| Container | 1120px | 100% | 100% |
+| Side gutter | 24px | 24px | 16px |
+| Section padding (top and bottom) | 112px | 80px | 56px |
+| Grid | 12 columns, 24px gap | 6 columns | 1 column |
+
+Spacing steps: 4, 8, 12, 16, 24, 32, 48, 64, 96, 112. Use the larger steps between
+sections and the smaller inside them.
+
+**Bands.** The page keeps the sky wash. One or two sections sit on a full-width white
+band with hairlines top and bottom, for rhythm. One section, the security evidence,
+may sit on the dark band (`#0b1220`, text `#e5e7eb`, muted `#94a3b8`, hairlines
+`#1e293b`); no other dark surfaces.
+
+### Type scale
+
+| Role | Font | Size / line height | Weight | Tracking | Phone |
+| --- | --- | --- | --- | --- | --- |
+| Display (hero) | Josefin Sans | 64 / 1.04 | 400 | −0.025em | 40 |
+| Section title | Josefin Sans | 40 / 1.1 | 400 | −0.015em | 30 |
+| Card title | Satoshi | 20 / 1.3 | 600 | −0.005em | 18 |
+| Lead | Satoshi | 19 / 1.6 | 400, secondary ink | 0 | 17 |
+| Body | Satoshi | 16 / 1.65 | 400 | 0 | 15 |
+| Kicker | Satoshi | 13 / 1.4 | 600, accent | 0.01em | 13 |
+| Caption | Satoshi | 13 / 1.5 | 400, muted | 0 | 13 |
+| Figure | Satoshi | 28 to 32 / 1.1 | 600, tabular | −0.01em | 24 |
+| Code and hashes | ui-monospace | 13 / 1.6 | 400 | 0 | 12 |
+
+- Text blocks at most 60 to 68 characters wide (`max-width: 34em` for leads).
+- One accent phrase per display headline, in accent ink. Nothing else in the headline
+  is coloured.
+- The kicker sits above a title, prefixed by a 20px accent rule; sentence case.
+
+### Section order
+
+Adapt the words, keep the order:
+
+1. **Navigation bar.** The wordmark, a family switcher (the three Peal marks), anchor
+   links (How it works, Security, Try it), GitHub, then "Open the app" (primary) and
+   Connect. Sticky; once scrolled it gets a white 85% background with a hairline.
+2. **Hero.** Kicker (category), display headline of at most three short lines, lead
+   of at most three sentences, a primary and a secondary button, a proof line in caption type
+   ("Testnet · Apache-2.0 · 132 tests"), and the **mechanism illustration** beside it
+   (below it on a phone).
+3. **Proof bar.** Four or five figures in one white strip with hairline dividers: label
+   in caption type, value as a figure. A small live dot when the numbers are read from
+   the chain.
+4. **How it works.** A **step rail**: three or four numbered steps on the left; on the
+   right one large illustration, in which the part each step describes is highlighted
+   when that step is hovered, focused or chosen. On a phone, steps stack and each
+   carries its own small crop of the drawing.
+5. **Security (dark band).** The threat in two sentences, the evidence (a terminal of
+   real refused attempts), and a two-column comparison: an ordinary wallet or contract
+   against this product, row by row.
+6. **Who uses it.** Three role cards, each with a small line drawing and one link into
+   the app.
+7. **Try it.** Numbered steps a visitor can finish in about five minutes, each with
+   the real button.
+8. **Family band.** The three Peal products, each with its mark, one line, and a link.
+   The current product is marked "You are here".
+9. **Footer.** The wordmark and one sentence, link columns (Product, Developers,
+   Hackathon), and the licence and credit line ("Design language from Peal").
+
+### Illustration
+
+- Hand-made inline SVG, never a raster or a stock image.
+- Draw the real mechanism and label its parts with their real names, in Satoshi 12
+  to 13px.
+- Strokes 1.5 to 2px with rounded joins. Shapes are white cards with hairlines, on the
+  accent ramp: `#eff6ff`, `#dbeafe`, `#bfdbfe`, `#93c5fd`, `#60a5fa`, `#2563eb`,
+  `#1e40af`. Green and red appear only for an outcome (accepted, refused).
+- Animate only meaning: a signature travelling along a path, a check appearing, a
+  refused key bouncing off. Each runs once when it comes into view, 600 to 1,200 ms,
+  behind `prefers-reduced-motion: no-preference`. The still state must read on its own.
+- `role="img"` with an `aria-label` that says what the drawing shows. Every word in the
+  drawing also appears in the page text.
+- On a phone use a simplified vertical drawing, not the desktop one scaled down.
+
+### Marks
+
+All 26 × 26 (`viewBox="0 0 26 26"`), a ring `cx 13 cy 13 r 11`, stroke 2, in the accent:
+
+| Product | Inside the ring |
+| --- | --- |
+| Peal Tender | three dots (r 2.6) at (13, 7.5), (8.2, 16), (17.8, 16); the first two filled (2 of 3 signers) |
+| Peal Sealed Auction | a horizontal bar from (7, 13) to (19, 13), stroke 2, with a filled square seal 6 × 6 centred on it (a sealed bid) |
+| Peal Bidder | one filled dot (r 2.6) at (9, 13) and an arrow from (12, 13) to (19, 13) with a 3px head (an agent placing a bid) |
+
+### Landing components
+
+- **Kicker:** 20px × 2px accent rule, 8px gap, kicker text.
+- **Button pair:** primary (accent, 44px high on the landing page, 10px radius) and
+  secondary (white, hairline); an arrow icon on the primary.
+- **Proof bar:** one card, cells divided by hairlines, label above figure.
+- **Step rail:** the step number in a 28px accent-weak circle, a title, two lines of
+  body; the active step gets an accent left border and a white background.
+- **Comparison table:** two columns, a row per property, "✓" and "✕" drawn as icons in
+  status colours with a word next to them.
+- **Evidence terminal:** on the dark band, monospace 13px, `REFUSED` in red, comments in
+  muted slate, the source linked under it.
+- **Role card:** a 40px line drawing in the accent, a title, two lines, one link.
+- **Family card:** the product mark, its name, one line, a link; "You are here" chip on
+  the current one.
+
+### Motion on the landing page
+
+- Hero on load: the headline, lead and buttons fade in and rise 8px, 300 ms, staggered
+  60 ms.
+- Sections reveal once as they enter the view (an IntersectionObserver), 300 ms.
+- The step rail's highlight moves in 200 ms.
+- All of it behind `prefers-reduced-motion: no-preference`; without it, everything is
+  simply there.
+
+### Before shipping a landing page
+
+- Works at 390px, 768px and 1280px wide with no sideways scroll.
+- Every figure is live from the chain or labelled.
+- Every claim has its evidence one click away (a transaction, a test, a file).
+- Keyboard: every control reachable, visible focus ring, the step rail usable with
+  arrow keys or Tab.
+- A screenshot at each width looks deliberate: no orphaned single words in titles
+  (`text-wrap: balance`), no crowded labels in the illustration.
 
 ## Wallets (every entry)
 
@@ -128,7 +255,8 @@ Each product opens on a landing page before its app, in this order:
 
 ## Trust
 
-- The web pages hold no keys. Reading is free; signing happens in a CLI or a wallet
-  the user controls, and the page says so.
+- Treasury and committee keys never enter a web page. Reading is free; signing
+  happens in a CLI, in QoreX, or in a guest account (a testnet key the visitor made in
+  that browser), and the page says which.
 - Text from the chain or from files people send is data: set it with `textContent`,
   never as HTML.
