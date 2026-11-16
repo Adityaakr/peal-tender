@@ -1,0 +1,42 @@
+<!-- {"id":"reveal","start":16.6,"dur":17.7} -->
+<style>
+  #s2-lock { position: absolute; left: 664px; top: 400px; width: 592px; height: 132px; }
+  #s2-lockwrap { position: absolute; inset: 0; }
+  #s2-kicker { position: absolute; left: 0; right: 0; top: 590px; text-align: center; font-size: 30px; color: var(--ink-2); }
+  #s2-view { left: 0; top: 120px; width: 1920px; height: 960px; }
+  #s2-hl-seal { left: 1118px; top: 434px; width: 104px; height: 104px; border-radius: 52px; }
+  #s2-hl-ref { left: 842px; top: 548px; width: 156px; height: 82px; }
+</style>
+<div class="stage" id="s2-stage">
+  <div id="s2-lockwrap">
+    <img id="s2-lock" src="assets/brand/lockup.svg" alt="Peal Tender" />
+    <div id="s2-kicker" class="mono">Treasury buyback vault · QoreChain</div>
+  </div>
+  <div class="chap" id="s2-chap"><b>02</b> &nbsp;Peal Tender · the landing page</div>
+  <div class="view" id="s2-view">
+    <div class="cam" id="s2-cam" style="width:1440px">
+      <img src="assets/shots/hero.png" width="1440" height="816" alt="Peal Tender landing page hero: the payment order" />
+      <div class="hl" id="s2-hl-seal"></div>
+      <div class="hl red" id="s2-hl-ref"></div>
+    </div>
+  </div>
+</div>
+<script>
+  const BOX = { x: 80, y: 0, w: 1760, h: 930 };
+  // Lockup: "Peal Tender is a treasury buyback vault on QoreChain"
+  tl.fromTo("#s2-lock", { opacity: 0, filter: "blur(10px)", scale: 0.97 }, { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.7, ease: "expo.out" }, 0.35);
+  inn("#s2-kicker", 1.6);
+  out("#s2-lockwrap", 4.75, 0.3);
+  // "Money leaves only on an order signed with ML-DSA-87"
+  camSet("#s2-cam", [110, 20, 1220, 760], BOX);
+  inn("#s2-chap", 5.0);
+  inn("#s2-view", 5.05, { d: 0.5 });
+  // "a post-quantum signature the chain checks itself"
+  camTo("#s2-cam", [650, 40, 640, 540], BOX, 7.4, 3.6);
+  hlIn("#s2-hl-seal", 11.6);
+  // "An order carrying only a stolen classical key is refused"
+  hlOut("#s2-hl-seal", 13.0);
+  camTo("#s2-cam", [560, 380, 820, 330], BOX, 13.1, 1.5);
+  hlIn("#s2-hl-ref", 15.95);
+  endScene("#s2-stage");
+</script>

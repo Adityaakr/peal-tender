@@ -1,0 +1,57 @@
+<!-- {"id":"proof","start":106.0,"dur":17.0} -->
+<style>
+  #s6-live { position: absolute; left: 120px; top: 150px; font-family: "IBM Plex Mono", monospace; font-size: 24px; letter-spacing: 0.05em; color: var(--accent); display: flex; align-items: center; gap: 14px; }
+  #s6-live i { width: 14px; height: 14px; border-radius: 7px; background: var(--accent); display: inline-block; }
+  #s6-vault { position: absolute; left: 120px; top: 200px; width: 1680px; display: flex; justify-content: space-between; align-items: baseline; }
+  #s6-vault .addr { font-family: "IBM Plex Mono", monospace; font-size: 38px; }
+  #s6-vault .addr span { font-family: "IBM Plex Sans", sans-serif; font-size: 26px; color: var(--muted); margin-right: 18px; }
+  #s6-vault .when { font-size: 25px; color: var(--ink-2); }
+  #s6-view { left: 0; top: 290px; width: 1920px; height: 620px; }
+  .s6-hl { left: 2px; width: 1132px; }
+  #s6-h1 { top: 45px; height: 50px; } #s6-h2 { top: 95px; height: 50px; } #s6-h3 { top: 194px; height: 50px; }
+  #s6-h4 { top: 244px; height: 50px; } #s6-h5 { top: 294px; height: 100px; }
+  #s6-tx { position: absolute; left: 120px; top: 934px; width: 1680px; font-family: "IBM Plex Mono", monospace; font-size: 23px; line-height: 1.75; }
+  #s6-tx .k { display: inline-block; width: 190px; color: var(--muted); }
+</style>
+<div class="stage" id="s6-stage">
+  <div class="chap" id="s6-chap"><b>06</b> &nbsp;Live on the testnet</div>
+  <img class="brandmark" id="s6-brand" src="assets/brand/lockup.svg" alt="Peal Tender" />
+  <div id="s6-live"><i></i>QORECHAIN TESTNET · qorechain-diana · EVM chain id 9800</div>
+  <div id="s6-vault">
+    <div class="addr"><span>PealTender vault</span>0xc3EA5683C1f8D8594A1865D169D98B509b057D41</div>
+    <div class="when">deployed 15 Nov 2026 · block 10158423</div>
+  </div>
+  <div class="view" id="s6-view">
+    <div class="cam" id="s6-cam" style="width:1136px">
+      <img class="shot-sheet" src="assets/shots/ledger.png" width="1136" height="448" alt="Statement of account of the drill vault" />
+      <div class="hl s6-hl" id="s6-h1"></div><div class="hl s6-hl" id="s6-h2"></div><div class="hl s6-hl" id="s6-h3"></div>
+      <div class="hl s6-hl" id="s6-h4"></div><div class="hl s6-hl" id="s6-h5"></div>
+    </div>
+  </div>
+  <div id="s6-tx">
+    <div id="s6-tx1"><span class="k">openTender</span>0x501ace7d5040b16fc147c4290f8aed80c10fc293d9f19e50b52746167af3bc76</div>
+    <div id="s6-tx2"><span class="k">settle</span>0x39c0cc40ebd12f4e9bfcc453a245d290efb762def3c387802d23b6eef5ca3cc4</div>
+  </div>
+</div>
+<script>
+  const BOX = { x: 120, y: 0, w: 1680, h: 610 };
+  inn("#s6-chap", 0.1);
+  inn("#s6-brand", 0.1);
+  // "And it's live. The drill vault has run on the QoreChain testnet since November fifteenth"
+  inn("#s6-live", 0.9);
+  inn("#s6-vault .addr", 1.9);
+  inn("#s6-vault .when", 4.9);
+  // "and its statement of account is real"
+  camSet("#s6-cam", [0, 0, 1136, 448], BOX);
+  inn("#s6-view", 5.9, { d: 0.5 });
+  // "a deposit, a post-quantum signed sweep, a tender opened, settled, and paid"
+  hlIn("#s6-h1", 7.9); hlOut("#s6-h1", 9.7);
+  hlIn("#s6-h2", 9.8); hlOut("#s6-h2", 10.9);
+  hlIn("#s6-h3", 11.0); hlOut("#s6-h3", 11.85);
+  hlIn("#s6-h4", 11.9); hlOut("#s6-h4", 12.45);
+  hlIn("#s6-h5", 12.5); hlOut("#s6-h5", 13.6);
+  // "Every line is a transaction you can look up."
+  inn("#s6-tx1", 13.5);
+  inn("#s6-tx2", 13.8);
+  endScene("#s6-stage");
+</script>

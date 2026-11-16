@@ -1,0 +1,72 @@
+<!-- {"id":"v2","start":123.0,"dur":26.3} -->
+<style>
+  #s7-auction { position: absolute; right: 120px; top: 50px; height: 46px; }
+  #s7-view { left: 0; top: 120px; width: 1920px; height: 870px; }
+  #s7-note { position: absolute; left: 120px; top: 1004px; font-size: 25px; color: var(--muted); }
+  #s7-note .mono { color: var(--ink-2); }
+  #s7-hl-sum { left: 218px; top: 293px; width: 1004px; height: 92px; }
+  #s7-hl-cards { left: 218px; top: 391px; width: 1004px; height: 374px; }
+  #s7-hl-cap { left: 470px; top: 269px; width: 247px; height: 156px; }
+  #s7-hl-queue { left: 218px; top: 497px; width: 1004px; height: 128px; }
+  #s7-hl-veto { left: 218px; top: 703px; width: 1004px; height: 98px; }
+  #s7-hl-settled { left: 216px; top: 178px; width: 250px; height: 52px; }
+  #s7-hl-desc { left: 216px; top: 196px; width: 660px; height: 100px; }
+  #s7-hl-row { left: 218px; top: 612px; width: 1004px; height: 58px; }
+</style>
+<div class="stage" id="s7-stage">
+  <div class="chap" id="s7-chap"><b>07</b> &nbsp;Version two · PealTenderV2</div>
+  <img id="s7-auction" src="assets/brand/auction-lockup.svg" alt="Peal Sealed Auction" />
+  <div class="view" id="s7-view">
+    <div class="cam" id="s7-c1" style="width:1440px">
+      <img src="assets/shots/app-signers.png" width="1440" height="964" alt="The app: signers and their ML-DSA-87 keys" />
+      <div class="hl" id="s7-hl-sum"></div><div class="hl" id="s7-hl-cards"></div>
+    </div>
+    <div class="cam" id="s7-c2" style="width:1440px">
+      <img src="assets/shots/app-timelock.png" width="1440" height="945" alt="The app: timelock and daily allowance" />
+      <div class="hl" id="s7-hl-cap"></div><div class="hl" id="s7-hl-queue"></div><div class="hl" id="s7-hl-veto"></div>
+    </div>
+    <div class="cam" id="s7-c3" style="width:1440px">
+      <img src="assets/shots/app-tender1.png" width="1440" height="1305" alt="The app: tender 1, settled" />
+      <div class="hl" id="s7-hl-settled"></div>
+    </div>
+    <div class="cam" id="s7-c4" style="width:1440px">
+      <img src="assets/shots/app-sales.png" width="1440" height="900" alt="The app: sealed sales on Peal Sealed Auction" />
+      <div class="hl" id="s7-hl-desc"></div><div class="hl" id="s7-hl-row"></div>
+    </div>
+  </div>
+  <div id="s7-note">The real app against a local node (<span class="mono">npm run demo:local</span>). v2 deploys on the testnet from 19 November 2026.</div>
+</div>
+<script>
+  const BOX = { x: 120, y: 0, w: 1680, h: 870 };
+  inn("#s7-chap", 0.1);
+  inn("#s7-note", 0.6);
+  // "Version two moves authority to three signers. Any two of their ML-DSA keys sign each order."
+  camSet("#s7-c1", [210, 150, 1020, 615], BOX);
+  inn("#s7-c1", 0.3, { d: 0.5 });
+  hlIn("#s7-hl-sum", 3.6); hlOut("#s7-hl-sum", 4.9);
+  camTo("#s7-c1", [210, 385, 1020, 385], BOX, 4.9, 1.2);
+  hlIn("#s7-hl-cards", 5.3);
+  out("#s7-c1", 6.45, 0.3);
+  // "Payments draw on a daily cap."
+  camSet("#s7-c2", [195, 20, 1050, 780], BOX);
+  inn("#s7-c2", 6.6, { d: 0.45 });
+  hlIn("#s7-hl-cap", 7.6); hlOut("#s7-hl-cap", 8.8);
+  // "Anything larger, and every rule change, waits in a public timelock, where one honest signer can veto it."
+  camTo("#s7-c2", [205, 400, 1030, 420], BOX, 8.8, 1.5);
+  hlIn("#s7-hl-queue", 10.5); hlOut("#s7-hl-queue", 13.4);
+  hlIn("#s7-hl-veto", 13.5);
+  out("#s7-c2", 14.55, 0.3);
+  // "Anyone can settle a finished tender."
+  camSet("#s7-c3", [195, 140, 1050, 330], BOX);
+  inn("#s7-c3", 14.7, { d: 0.45 });
+  hlIn("#s7-hl-settled", 15.4);
+  out("#s7-c3", 17.3, 0.3);
+  // "And a buyback can run as a sealed sale on Peal Sealed Auction"
+  camSet("#s7-c4", [210, 140, 1020, 540], BOX);
+  inn("#s7-c4", 17.45, { d: 0.45 });
+  inn("#s7-auction", 19.5, { d: 0.5 });
+  // "with bids hidden until the close, and proceeds that can only return to the vault"
+  hlIn("#s7-hl-desc", 20.9); hlOut("#s7-hl-desc", 23.0);
+  hlIn("#s7-hl-row", 23.2);
+  endScene("#s7-stage");
+</script>

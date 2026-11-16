@@ -1,0 +1,1 @@
+And it's live. The drill vault has run on the Core Chain testnet since November fifteenth, and its statement of account is real: a deposit, a post-quantum signed sweep, a tender opened, settled, and paid. Every line is a transaction you can look up.

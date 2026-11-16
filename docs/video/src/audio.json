@@ -1,0 +1,74 @@
+{
+ "total": 179,
+ "clips": [
+  {
+   "id": "vo",
+   "src": "assets/voiceover.wav",
+   "start": 0,
+   "duration": 179,
+   "track-index": 3,
+   "volume": 1
+  },
+  {
+   "id": "bed-a",
+   "src": "assets/music/bed.mp3",
+   "start": 0,
+   "duration": 117,
+   "track-index": 4,
+   "volume": 0.09,
+   "fade-in": 1.5,
+   "fade-out": 3
+  },
+  {
+   "id": "bed-b",
+   "src": "assets/music/bed.mp3",
+   "start": 115,
+   "duration": 64,
+   "media-start": 9.29,
+   "track-index": 5,
+   "volume": 0.09,
+   "fade-in": 2.5,
+   "fade-out": 4
+  },
+  {
+   "id": "sfx-seal",
+   "src": "assets/sfx/drop_001.ogg",
+   "start": 28.25,
+   "duration": 0.11,
+   "track-index": 6,
+   "volume": 0.55
+  },
+  {
+   "id": "sfx-refused",
+   "src": "assets/sfx/impactSoft_medium_001.ogg",
+   "start": 32.6,
+   "duration": 0.183,
+   "track-index": 6,
+   "volume": 0.6
+  },
+  {
+   "id": "sfx-clear",
+   "src": "assets/sfx/drop_002.ogg",
+   "start": 52.65,
+   "duration": 0.191,
+   "track-index": 6,
+   "volume": 0.5
+  },
+  {
+   "id": "sfx-drill",
+   "src": "assets/sfx/impactSoft_medium_004.ogg",
+   "start": 102.59,
+   "duration": 0.147,
+   "track-index": 6,
+   "volume": 0.65
+  },
+  {
+   "id": "sfx-end",
+   "src": "assets/sfx/bong_001.ogg",
+   "start": 171.05,
+   "duration": 0.123,
+   "track-index": 6,
+   "volume": 0.5
+  }
+ ]
+}

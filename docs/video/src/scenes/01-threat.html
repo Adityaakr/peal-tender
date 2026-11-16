@@ -1,0 +1,102 @@
+<!-- {"id":"threat","start":0,"dur":16.6} -->
+<style>
+  #s1-title { position: absolute; left: 120px; top: 150px; width: 820px; }
+  #s1-sub { position: absolute; left: 120px; top: 318px; font-size: 40px; color: var(--stamp); font-family: "IBM Plex Serif", serif; font-style: italic; font-weight: 300; }
+  .s1-box { position: absolute; background: var(--sheet); border: 2px solid var(--ink); border-radius: 6px; padding: 26px 32px; }
+  .s1-box h3 { font-size: 34px; font-weight: 600; margin-bottom: 10px; }
+  .s1-box p { font-size: 27px; color: var(--ink-2); }
+  .s1-box .mono { font-size: 25px; color: var(--ink); }
+  .s1-box .label { margin-top: 10px; }
+  #s1-acct { left: 1100px; top: 190px; width: 640px; }
+  #s1-funds { left: 1100px; top: 724px; width: 640px; }
+  #s1-funds-fill { position: absolute; inset: 0; background: var(--stamp-weak); border-radius: 4px; opacity: 0; }
+  #s1-funds > *:not(#s1-funds-fill) { position: relative; }
+  #s1-funds-red { position: absolute; inset: -2px; border: 2px solid var(--stamp); border-radius: 6px; opacity: 0; }
+  #s1-att { left: 120px; top: 760px; width: 580px; border: 2px dashed var(--stamp); background: var(--sheet); }
+  #s1-att h3 { color: var(--stamp); }
+  #s1-chainlab { position: absolute; left: 120px; top: 478px; }
+  #s1-keylab { position: absolute; left: 120px; top: 620px; font-size: 24px; color: var(--ink-2); }
+  .s1-blk { position: absolute; top: 548px; width: 30px; height: 30px; border: 2px solid var(--rule); background: var(--sheet); border-radius: 3px; }
+  #s1-chip { position: absolute; left: 1132px; top: 408px; padding: 10px 20px; border: 2px solid var(--ink); background: var(--sheet); border-radius: 6px; font-family: "IBM Plex Mono", monospace; font-size: 26px; }
+  #s1-owner { position: absolute; left: 1430px; top: 540px; }
+  #s1-also { position: absolute; left: 760px; top: 800px; color: var(--stamp); }
+  #s1-lines { position: absolute; inset: 0; }
+  #s1-priv { position: absolute; left: 152px; top: 940px; padding: 8px 18px; border: 2px solid var(--stamp); color: var(--stamp); background: var(--stamp-weak); border-radius: 6px; font-family: "IBM Plex Mono", monospace; font-size: 26px; }
+</style>
+<div class="stage" id="s1-stage">
+  <div class="chap" id="s1-chap"><b>01</b> &nbsp;Q-Day</div>
+  <h1 class="title" id="s1-title" data-split>A treasury held by one key</h1>
+  <div id="s1-sub" data-split>loses everything on that day.</div>
+
+  <svg id="s1-lines" viewBox="0 0 1920 1080" width="1920" height="1080">
+    <defs>
+      <marker id="s1-ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#10231d" /></marker>
+      <marker id="s1-ahr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#a3261a" /></marker>
+    </defs>
+    <path id="s1-chain" d="M120 563 H 900" stroke="#10231d" stroke-width="2" fill="none" pathLength="1" stroke-dasharray="1" />
+    <path id="s1-a-owner" d="M1420 338 V 716" stroke="#10231d" stroke-width="2.5" fill="none" pathLength="1" stroke-dasharray="1" />
+    <path id="s1-h-owner" d="M1411 702 L1420 720 L1429 702 Z" fill="#10231d" />
+    <path id="s1-a-derive" d="M600 602 V 752" stroke="#a3261a" stroke-width="2.5" fill="none" stroke-dasharray="9 7" marker-end="url(#s1-ahr)" />
+    <path id="s1-a-steal" d="M702 845 H 1090" stroke="#a3261a" stroke-width="2.5" fill="none" pathLength="1" stroke-dasharray="1" />
+    <path id="s1-h-steal" d="M1076 836 L1094 845 L1076 854 Z" fill="#a3261a" />
+  </svg>
+
+  <div class="label mono" id="s1-chainlab">the chain</div>
+  <div class="s1-blk" style="left:132px"></div><div class="s1-blk" style="left:182px"></div><div class="s1-blk" style="left:232px"></div>
+  <div class="s1-blk" style="left:282px"></div><div class="s1-blk" style="left:332px"></div><div class="s1-blk" style="left:382px"></div>
+  <div class="s1-blk" style="left:432px"></div><div class="s1-blk" style="left:780px"></div><div class="s1-blk" style="left:830px"></div>
+  <div id="s1-keylab">public key, on chain since the first transaction</div>
+
+  <div class="s1-box" id="s1-acct">
+    <h3>Treasury account</h3>
+    <p class="mono">one secp256k1 key</p>
+  </div>
+  <div id="s1-chip">public key</div>
+  <div class="label" id="s1-owner">the owner signs</div>
+
+  <div class="s1-box" id="s1-funds">
+    <div id="s1-funds-fill"></div><div id="s1-funds-red"></div>
+    <h3>Treasury funds</h3>
+    <p id="s1-funds-p">move on one signature</p>
+    <p class="mono label">secp256k1 only</p>
+  </div>
+
+  <div class="s1-box" id="s1-att">
+    <h3>Attacker after Q-Day</h3>
+    <p>derives the private key from the public key</p>
+  </div>
+  <div id="s1-priv">private key</div>
+  <div class="label" id="s1-also">so can the attacker</div>
+</div>
+<script>
+  inn("#s1-chap", 0.1);
+  words("#s1-title", 0.35, 0.08);
+  inn("#s1-acct", 1.5, { y: 14 });
+  draw("#s1-a-owner", 2.9, 0.6);
+  inn("#s1-h-owner", 3.4, { d: 0.2 });
+  inn("#s1-owner", 3.2);
+  inn("#s1-funds", 3.3, { y: 14 });
+  // "its public half is on chain"
+  draw("#s1-chain", 4.4, 0.8);
+  inn("#s1-chainlab", 4.5);
+  inn(".s1-blk", 4.6, { stagger: 0.05, d: 0.3 });
+  inn("#s1-chip", 4.8);
+  tl.fromTo("#s1-chip", { x: 0, y: 0 }, { x: -592, y: 132, duration: 1.1, ease: "power2.inOut" }, 5.4);
+  tl.to("#s1-chip", { borderColor: "#a3261a", color: "#a3261a", duration: 0.4 }, 8.3);
+  inn("#s1-keylab", 6.6);
+  // "On Q-Day"
+  inn("#s1-att", 8.3, { y: 14 });
+  tl.fromTo("#s1-a-derive", { opacity: 0, clipPath: "inset(0 0 100% 0)" }, { opacity: 1, clipPath: "inset(0 0 0% 0)", duration: 0.6, ease: "power2.out" }, 9.0);
+  // "derives the private key from it"
+  inn("#s1-priv", 10.9, { y: -10 });
+  // "A treasury held by that one key"
+  draw("#s1-a-steal", 12.5, 0.7);
+  inn("#s1-h-steal", 13.1, { d: 0.2 });
+  inn("#s1-also", 12.9);
+  // "loses everything"
+  tl.to("#s1-funds-fill", { opacity: 1, duration: 0.5 }, 14.5);
+  tl.to("#s1-funds-red", { opacity: 1, duration: 0.5 }, 14.5);
+  tl.to("#s1-funds-p", { color: "#a3261a", duration: 0.5 }, 14.5);
+  words("#s1-sub", 14.6, 0.09);
+  endScene("#s1-stage");
+</script>

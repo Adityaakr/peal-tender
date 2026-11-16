@@ -1,0 +1,1 @@
+Every blockchain treasury answers to a classical key, and its public half is on chain from the very first transaction. On Q-Day, a large enough quantum computer derives the private key from it. A treasury held by that one key loses everything.
