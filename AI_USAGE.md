@@ -322,5 +322,16 @@ drill account and the drill contracts alone. The worker:
 - moved the web app's QoreX and MetaMask code onto `@qorechain/qorex-types` and
   `@qorechain/wallet-adapter`, and added unit tests for all of it (`npm run test:ts`).
 
+In a second pull request the worker gave the treasury's proposals an author and a
+seal:
+- the proposer signs each proposal with QoreSign;
+- the signers publish ML-KEM-1024 keys in the chain's registry, and a proposal can be
+  sealed to them with QoreSeal;
+- the custody kit's address validator, vendored, checks every address a proposal
+  names.
+
+It tested this offline against a stand-in for `pqcKeyStatus`, end to end on a local node
+(e2e step 5b), and in the web checker with a headless browser.
+
 The owner decides which boxes to tick and which addresses to list on the project page;
 the worker's list, with the evidence for each, is in the pull request.

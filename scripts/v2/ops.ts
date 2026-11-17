@@ -17,7 +17,7 @@
  */
 import { existsSync } from "node:fs";
 import { fetchEvmWindow, fetchPqcStatus, isRegisteredPqcKey, msg as sdkMsg } from "@qorechain/sdk";
-import { formatEther, type Address, type Hex } from "viem";
+import { bytesToHex, formatEther, type Address, type Hex } from "viem";
 import {
   FUSD_DENOM,
   NATIVE_FEE,
@@ -33,6 +33,7 @@ import { erc20Abi, vaultAbi } from "./abi.ts";
 import { loadV2Account, refuseDrill, secretsFile } from "./accounts.ts";
 import { metadataHash } from "./encode.ts";
 import { DEPLOYMENT_FILE, LOCAL_RPC, loadDeployment } from "./vault.ts";
+import { kemKeyOf, sealKeysOf } from "./kem.ts";
 
 export const NOT_BEFORE = Date.parse("2026-11-19T00:00:00Z");
 
@@ -52,9 +53,9 @@ export const ROLES = [
     needQor: 5,
     why: "key registration and four funding sends, then about 0.4 QOR per relayed action (window open and close plus 0.5 to 0.7M gas)",
   },
-  { name: "v2-signer-a", needQor: 0.25, why: "key registration only (signers sign off chain; they never send)" },
-  { name: "v2-signer-b", needQor: 0.25, why: "key registration only" },
-  { name: "v2-signer-c", needQor: 0.25, why: "key registration only" },
+  { name: "v2-signer-a", needQor: 0.4, why: "the ML-DSA-87 and ML-KEM-1024 key registrations only (signers sign off chain)" },
+  { name: "v2-signer-b", needQor: 0.4, why: "the two key registrations only" },
+  { name: "v2-signer-c", needQor: 0.4, why: "the two key registrations only" },
 ] as const;
 
 const UQOR_PER_QOR = 1_000_000n;
@@ -90,7 +91,8 @@ export async function preflight(opts: { buy?: string; factory?: string }): Promi
     const evmWei = await client.getBalance({ address: acc.evm as Address });
     // On the testnet the bank balance (uqor) is what fees and windows draw on; a local node has only EVM balances.
     const haveQor = LOCAL_RPC ? Number(formatEther(evmWei)) : Number(uqor) / 1e6;
-    const funded = haveQor >= r.needQor;
+    const signer = r.name.startsWith("v2-signer-");
+    let funded = haveQor >= r.needQor;
     let keyOk = false;
     let keyNote = "";
     if (!LOCAL_RPC) {
@@ -106,12 +108,24 @@ export async function preflight(opts: { buy?: string; factory?: string }): Promi
       keyNote = "local: keys live in the pqcKeyStatus stand-in";
       keyOk = true;
     }
+    let kemTodo = false;
+    if (signer) {
+      // Sealed proposals need each signer's ML-KEM-1024 key in the encryption key registry.
+      const published = await kemKeyOf(acc.cosmos);
+      const kemOk = Boolean(published && bytesToHex(published) === bytesToHex(sealKeysOf(acc).mlkemPublicKey));
+      keyNote += published ? (kemOk ? "; ML-KEM key published" : "; a DIFFERENT ML-KEM key is published") : "; ML-KEM key not published";
+      // A signer only pays for its two registrations (0.15 QOR each): what it still needs depends on what is done.
+      const stillNeeds = (keyOk ? 0 : 0.15) + (kemOk ? 0 : 0.15);
+      funded = haveQor >= stillNeeds;
+      kemTodo = keyOk && !kemOk;
+      keyOk = keyOk && kemOk;
+    }
     console.log(
       `${ok(funded && keyOk)} ${r.name.padEnd(12)} ${acc.evm}  ${acc.cosmos}\n` +
         `       ${LOCAL_RPC ? `${formatEther(evmWei)} QOR` : qor(uqor)} (needs ${r.needQor} QOR: ${r.why}); ${keyNote}`,
     );
     if (!funded) todo.push(`fund ${r.name} ${acc.cosmos} with ${r.needQor} QOR (faucet, or npm run v2 -- account fund <from> ${r.name} <QOR>)`);
-    if (funded && !keyOk) todo.push(`npm run v2 -- account register ${r.name}`);
+    if (funded && !keyOk) todo.push(kemTodo ? `npm run v2 -- account register-kem ${r.name}` : `npm run v2 -- account register ${r.name}`);
   }
 
   console.log("\naddresses the vault is built with");
