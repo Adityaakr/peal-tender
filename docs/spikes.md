@@ -12,6 +12,8 @@ what it printed. The kit's own spikes (precompile gas, CORS, modexp) are in
 | T3 | Does the vault's `ISealedAuction` match the real Peal Sealed Auction, and does a buyback run end to end? | **Settled** (16 Nov) against peal-sealed-auction `main` at `f502616` |
 | T4 | What does a 2-of-3 action cost? | **Estimated** (16 Nov) from local measurement plus the kit's live precompile costs; to be measured on testnet after 19 Nov |
 | T5 | Live checks on the testnet | **Open**: no testnet deploys before 19 November 2026 00:00 UTC |
+| K1 | How does the fest site verify kits and network features? | **Settled** (16 Nov) by comparing all 67 project pages with their repositories and addresses |
+| K2 | What do the MCP server, QoreScan and create-qorechain-dapp report for Tender? | **Settled** (16 Nov): all three run offline or read-only, results below |
 
 ## T1. The kit by tag beside the drill's copy (16 November 2026)
 
@@ -128,3 +130,54 @@ With fresh accounts in `~/.qore-peal-tender/` (never the drill account):
 3. `npm run v2 -- refusal-demo`: a window scoped to
    [vault, fUSD, PEAL-T, factory] refuses a transaction to another address.
 4. A sealed buyback on the deployed Peal Sealed Auction, once that is deployed.
+
+## K1. How the fest site verifies (16 November 2026)
+
+**Run:** fetched `build.qorechain.io/projects` and every `/p/<slug>` page (67), read
+each page's "Verified"/"Declared" chips, and read the dependency files of the
+repositories whose chips differ (via the GitHub API) and the history of the addresses
+some of them publish in their READMEs (testnet REST).
+
+**Found:**
+
+- The project form says kits are checked in "your repo's dependency files" and
+  features "on chain" for the listed `qor1` addresses (up to 5).
+- A kit is verified when its npm package is a dependency in any `package.json`,
+  nested ones included: e.g. `@qorechain/qorescan` in a root `package.json`,
+  `@qorechain/handles` in `web/package.json`. `create-qorechain-dapp` is verified only
+  for the 5 projects that list `create-qorechain-dapp` itself; Tender, which used the
+  template but did not list the package, showed "Declared". `MCP + qore CLI` needs
+  `@qorechain/mcp`: a project with its own MCP server and no `@qorechain/mcp` shows
+  "Declared".
+- The QoreScan and "MCP server or qore CLI" features are verified for exactly the
+  projects with those packages, so they come from the repository too.
+- "Test tokens" is verified for addresses that received fUSD, fETH and fBTC in one
+  `MsgSend` from `qor178nscfyp0cq2ac5x7un4u98xrj4ayp6pt0kw08` (the fest-token side of
+  the faucet; the QOR side is `qor1wv0fvt5qzx7gllk9ckzv3u6ypceaqq8evuny0h`). The drill
+  account's AMM swap into fUSD on 15 November did not verify it.
+- Nobody has "Solidity PQC signature check", "Solidity PQC key status", "Sign In With
+  QoreChain", staking tiers, cross-VM, IBC, light node, native contracts, sidechain or
+  RDK rollup verified.
+
+## K2. The kit tools against Tender (16 November 2026)
+
+- **MCP server** (`@qorechain/mcp` 0.1.1, tools called in-process): all 15 evidence
+  transactions read back. `get_pq_status` reports the window, swap and convert
+  transactions as tier `pqc`, one ML-DSA-87 layer, `verified: true`, sign-bytes `v2`;
+  the key registration as tier `enrollment` (no layer, as the chain requires); the
+  vault calls as tier `classical` (EVM lane), all `success: true`.
+- **QoreScan** (`@qorechain/qorescan` 0.1.0, the Go binary it downloads and checks by
+  SHA-256): 13 Solidity files. ML-DSA-87 found as `pqcVerify` (`PqAuth.sol:38`) and
+  `pqcKeyStatus` (`PqAuth.sol:39`); Keccak-256 for hashing; no `ecrecover`. Both testnet
+  endpoints negotiate TLS 1.3 with `X25519MLKEM768`. The chain reports hybrid
+  signatures `required`, `allow-classical-fallback: false`, and `pqcVerify` and
+  `pqcKeyStatus` among the active precompiles.
+- **create-qorechain-dapp** 0.14.0 `--template foundry --yes --no-install` scaffolds
+  offline. Its `foundry.toml` has the same `solc_version` (0.8.28), optimizer and runs
+  (200) as Tender's, and its RPC and the SDK preset match every endpoint and chain id
+  Tender writes down (17 checks).
+- **wallet-adapter** 0.6.0 declares `@cosmjs/stargate ^0.32` as a peer; Tender uses
+  0.39. The functions Tender uses (`qorexSignAndBroadcast`, `isQorexRejection`,
+  `addQoreEvmToWallet`, `isEvmWindowRejection`) do not touch cosmjs, so a scoped npm
+  `overrides` entry points the peer at Tender's version.
+

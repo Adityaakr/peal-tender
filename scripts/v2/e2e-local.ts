@@ -290,6 +290,41 @@ async function main(): Promise<void> {
     file = proposalPath(cli("propose", "sweep", "fusd", sink, "1000000"));
     check(/not a member/.test(cliFails("sign-action", file, "--as", outsider)), "a non-member cannot add a share");
 
+    // ---------------------------------------------------------------- private proposals
+    console.log("\n5b. a proposal signed by its proposer (QoreSign) and sealed to the co-signers (QoreSeal)");
+    for (const s of signerNames) cli("account", "register-kem", s);
+    check(/already publishes this ML-KEM-1024 key/.test(cli("account", "register-kem", "v2-signer-a")), "publishing the same ML-KEM key again sends nothing");
+    file = proposalPath(cli("propose", "sweep", "fusd", sink, "2000000", "--as", "v2-signer-a"));
+    check(
+      /a member; its secp256k1 \+ ML-DSA-87 signature verifies against its key on chain/.test(cli("sign-action", file, "--as", "v2-signer-a")),
+      "the proposer's signature is verified against its key on chain before signing",
+    );
+    const sealedFile = cli("seal", file, "--as", "v2-signer-a").match(/^sealed proposal: (.+)$/m)![1]!.trim();
+    const sealedText = readFileSync(sealedFile, "utf8");
+    check(!sealedText.toLowerCase().includes(sink.slice(2).toLowerCase()) && !sealedText.includes("sweep"), "the sealed file shows neither the action nor the recipient");
+    const openedOut = cli("sign-action", sealedFile, "--as", "v2-signer-b");
+    check(/opened a proposal sealed to qor1\S+ by qor1\S+ \(a member; signature verified/.test(openedOut), "signer B opens its envelope and verifies the sender on chain");
+    const openedFile = openedOut.match(/^opened copy: (.+)$/m)![1]!.trim();
+    {
+      const b5 = await state();
+      const sinkBefore = await bal(fusd, sink);
+      await verifyRelayed(txHash(cli("relay", openedFile)), b5);
+      check((await bal(fusd, sink)) - sinkBefore === 2_000_000n, "the sealed proposal, signed by A and B, is relayed: 2 fUSD swept");
+    }
+    // refusals
+    const sealedObj = JSON.parse(sealedText) as { envelopes: { to: string; envelope: string }[] };
+    const cQor = accts["v2-signer-c"]!.cosmos;
+    const bEnvelope = sealedObj.envelopes.find((e) => e.to !== cQor)!;
+    writeFileSync(sealedFile, JSON.stringify({ ...sealedObj, envelopes: [{ to: cQor, envelope: bEnvelope.envelope }] }));
+    check(cliFails("sign-action", sealedFile, "--as", "v2-signer-c").length > 0, "an envelope re-addressed to another signer does not open");
+    check(/not a member/.test(cliFails("sign-action", sealedFile, "--as", outsider)), "a non-member cannot open or sign a sealed proposal");
+    file = proposalPath(cli("propose", "sweep", "fusd", sink, "2000000", "--as", "v2-signer-a"));
+    const signedP = JSON.parse(readFileSync(file, "utf8")) as { summary: string };
+    writeFileSync(file, JSON.stringify({ ...signedP, summary: "a harmless top-up" }));
+    check(/signed different content/.test(cliFails("sign-action", file, "--as", "v2-signer-b")), "a proposal altered after its proposer signed it is not signed");
+    check(/not a member/.test(cliFails("propose", "sweep", "fusd", sink, "1", "--as", outsider)), "a non-member cannot sign as proposer");
+    check(/EIP-55/.test(cliFails("propose", "sweep", "fusd", "0x000000000000000000000000000000000000BeEF", "1")), "a recipient with a wrong EIP-55 checksum is refused (custody kit)");
+
     // ---------------------------------------------------------------- timelock
     console.log("\n6. timelock: queue a large sweep, one signer vetoes; queue again, wait, execute");
     await quorum(["queue", "sweep", "fusd", sink, "500000000"]);
@@ -348,12 +383,14 @@ async function main(): Promise<void> {
     console.log("\n8. a sealed buyback on the (mock) auction factory, collected by anyone");
     const saleFile = join(tmp, "sale.json");
     writeFileSync(saleFile, readFileSync(join(ROOT, "examples", "sale.json"), "utf8"));
-    // Today's 100 fUSD allowance has 39 left (sweeps of 10 and 1, the tender's budget of 50):
+    // Today's 100 fUSD allowance has 37 left (sweeps of 10, 1 and 2, the tender's budget of 50):
     // a 40 fUSD sale must wait for tomorrow, or go through the timelock.
+    const left = await read<bigint>("remainingToday", [fusd]);
+    check(left === 37_000_000n, "37 fUSD of today's allowance is left");
     const saleProposal = proposalPath(cli("propose", "start-sale", saleFile));
     cli("sign-action", saleProposal, "--as", "v2-signer-a");
     cli("sign-action", saleProposal, "--as", "v2-signer-b");
-    check(/refused: OverDailyCap\(.*, 40000000, 39000000\)/.test(cliFails("relay", saleProposal)), "a sale above today's allowance is refused (OverDailyCap)");
+    check(new RegExp(`refused: OverDailyCap\\(.*, 40000000, ${left}\\)`).test(cliFails("relay", saleProposal)), "a sale above today's allowance is refused (OverDailyCap)");
     const now = (await pub.getBlock()).timestamp;
     await warp(Number(86_400n - (now % 86_400n)) + 1); // the next UTC day
     check((await read<bigint>("remainingToday", [fusd])) === 100_000_000n, "the next day the allowance is whole again");

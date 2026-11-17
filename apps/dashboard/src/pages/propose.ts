@@ -6,8 +6,14 @@
  * `npm run sign-action`, on their own machines. No key is ever asked for here.
  *
  * Checking reads a proposal file someone sent, recomputes what it does from its
- * arguments (never trusting its "summary"), and verifies every share against the
- * signer's key as the chain's registry holds it.
+ * arguments (never trusting its "summary"), verifies who proposed it (the
+ * proposer's QoreSign signature, if any) and every share against the signer's key
+ * as the chain's registry holds it. A sealed file (QoreSeal) is only described:
+ * opening it needs a signer's key, which never enters this page.
+ *
+ * Every address typed into the builder goes through the QoreChain custody kit's
+ * validateAddress (vendored), so a hex address with a broken EIP-55 checksum is
+ * refused and a qor1 address is accepted.
  */
 import { mldsa87 } from "@qorechain/pqc";
 import { parseUnits, toBytes, type Address, type Hex } from "viem";
@@ -22,6 +28,9 @@ import {
   shareMessage,
   type Proposal,
 } from "../../../../scripts/v2/proposal.ts";
+import { checkProposer, isSealed, type SignedProposal } from "../../../../scripts/v2/envelope.ts";
+import { validateAddress } from "../../../../vendor/qorechain-custody-kit/address.ts";
+import { CHAIN_ID } from "../config.ts";
 import { ZERO, client, describeOp, member, type Snapshot, type Token } from "../data.ts";
 import { type Ctx } from "../main.ts";
 import { chip, dateTime, duration, h, hash, icon } from "../ui.ts";
@@ -74,8 +83,9 @@ function tokenByAddr(s: Snapshot, a: string): Token {
 }
 
 function addr(v: string, what: string): Address {
-  if (!/^0x[0-9a-fA-F]{40}$/.test(v.trim())) throw new Error(`${what}: not an address`);
-  return v.trim() as Address;
+  const r = validateAddress(v.trim());
+  if (!r.valid) throw new Error(`${what}: ${r.detail}`);
+  return r.hex as Address;
 }
 
 function units(v: string, t: Token, what: string): bigint {
@@ -531,7 +541,22 @@ function checker(ctx: Ctx): HTMLElement {
 }
 
 async function check(text: string, ctx: Ctx, s: Snapshot): Promise<HTMLElement> {
-  const p = parseProposal(text);
+  const raw = JSON.parse(text) as unknown;
+  if (isSealed(raw)) {
+    const to = raw.envelopes.map((e) => e.to);
+    return h(
+      "div",
+      { style: "margin-top:16px" },
+      h("h3", { style: "margin:4px 0 4px" }, "A sealed proposal"),
+      h(
+        "p.small.muted",
+        `Sealed by ${raw.from} with ML-KEM-1024 (QoreSeal) to ${to.length} signer${to.length === 1 ? "" : "s"}' keys in QoreChain's encryption key registry. ` +
+          "Only they can read it, so this page cannot. Each opens it with npm run sign-action -- <file> --as <name>, which also checks the sender's signature against its key on chain.",
+      ),
+      h("ul.checks", ...to.map((q) => h("li", h("span", { style: "color:var(--green)" }, icon("check")), h("div", q)))),
+    );
+  }
+  const p = parseProposal(text) as SignedProposal;
   const [block, nonce, factory, openTenderId] = await Promise.all([
     client.getBlock(),
     client.readContract({ address: ctx.vault, abi: vaultAbi, functionName: "nonce" }) as Promise<bigint>,
@@ -551,6 +576,26 @@ async function check(text: string, ctx: Ctx, s: Snapshot): Promise<HTMLElement> 
   const args = decodeArgs(p);
   const forVault = p.vault.toLowerCase() === ctx.vault.toLowerCase() && p.chainId === "9800";
   line(forVault, forVault ? "For this vault on chain 9800" : `For another vault (${p.vault}) or chain (${p.chainId})`);
+
+  // Who proposed it: the proposer's secp256k1 + ML-DSA-87 signature, against its key on chain.
+  let proposerOk = true;
+  try {
+    const pc = await checkProposer(p, client, CHAIN_ID, new Date(Number(block.timestamp) * 1000));
+    if (pc.status === "unsigned") line("warn", "Unsigned: nothing says who proposed it, so read what it does below");
+    else {
+      proposerOk = s.members.some((m) => m.address.toLowerCase() === pc.evm.toLowerCase());
+      line(
+        proposerOk,
+        proposerOk
+          ? `Proposed by ${signerName(s, pc.evm)}: its secp256k1 + ML-DSA-87 signature verifies against its key on chain`
+          : `Signed by ${pc.from}, who is not a member of the signer set`,
+        pc.from,
+      );
+    }
+  } catch (e) {
+    proposerOk = false;
+    line(false, `The proposer's signature does NOT check out: ${e instanceof Error ? e.message : String(e)}`);
+  }
   const h2 = argsHashFor(p.fn, args, { factory, openTenderId });
   line(h2 === p.argsHash, h2 === p.argsHash ? "Its arguments match its argument hash" : "Its arguments do NOT match its argument hash: do not sign or relay");
   line(BigInt(p.nonce) === nonce, BigInt(p.nonce) === nonce ? `Made at the vault's current nonce (${nonce})` : `Stale: made at nonce ${p.nonce}, the vault is at ${nonce}`);
@@ -573,7 +618,7 @@ async function check(text: string, ctx: Ctx, s: Snapshot): Promise<HTMLElement> 
   const dupes = new Set(p.shares.map((x) => x.signer.toLowerCase())).size !== p.shares.length;
   if (dupes) line(false, "The same signer appears twice");
 
-  const ready = forVault && h2 === p.argsHash && BigInt(p.nonce) === nonce && left > 0n && good >= s.threshold && !dupes;
+  const ready = forVault && proposerOk && h2 === p.argsHash && BigInt(p.nonce) === nonce && left > 0n && good >= s.threshold && !dupes;
   return h(
     "div",
     { style: "margin-top:16px" },

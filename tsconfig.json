@@ -20,6 +20,7 @@
   },
   "include": [
     "scripts",
-    "apps"
+    "apps",
+    "test-ts"
   ]
 }

@@ -1,0 +1,21 @@
+{
+  "about": "Transactions Peal Tender cites as evidence. `npm run evidence` re-reads each one through the QoreChain MCP server's tools and checks it against `expect`: enrollment = an ML-DSA-87 key registration (signed classically, as the chain requires); pqc = a hybrid secp256k1 + ML-DSA-87 transaction whose ML-DSA-87 layer the chain verified; evm = an EVM-lane transaction that succeeded (Tender's own ML-DSA-87 check runs inside the contract, through pqcVerify).",
+  "network": "testnet",
+  "transactions": [
+    { "hash": "EE186C02BE81475FFDB9364BB796A48B08593733463B4218EC247BF68C82023C", "expect": "enrollment", "message": "/qorechain.pqc.v1.MsgRegisterPQCKeyV2", "what": "Register the drill account's ML-DSA-87 key, with proof of possession" },
+    { "hash": "452A9F36AA146527A01DA5A402849D880C129A0A7DAD0F09B1E91955D4AA93CD", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgOpenEVMWindow", "what": "Open an EVM window for the deployment" },
+    { "hash": "0xa3e87b068d6ec805707c1fc8950c575f9020e7183ea3a93da5be794f62042cd8", "expect": "evm", "what": "Deploy tPEAL" },
+    { "hash": "0x0690038331502520cf45a426dcd83efc53c294fa52be5920c31ec6b570c7d123", "expect": "evm", "what": "Deploy the drill vault (its constructor reads the signer's key with pqcKeyStatus)" },
+    { "hash": "0x6f13abf1881778082cef33d6982df02535c6a4c816ddfc1155257b05b4233b4a", "expect": "evm", "what": "Fund the vault with 70 QOR" },
+    { "hash": "147F956D82B840D3EEA748A7F82E9D634DBA9BC87D259934BC9DF74549352D30", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "Close the window" },
+    { "hash": "0x3801d22e00ed7d6be98cfa77972b7ea4488c89dc7833d083cf6b9fa1a8bc82eb", "expect": "evm", "what": "PQ-signed sweep of 3 QOR (pqcKeyStatus + pqcVerify in the vault)" },
+    { "hash": "47603E2DA8C8BFC82B63D46FD0FF525168684A51DA03BE99E7D7D329F1958787", "expect": "pqc", "message": "/qorechain.amm.v1.MsgSwapExactIn", "what": "Swap 2.5 QOR for 0.202817 fUSD on AMM pool 2" },
+    { "hash": "191073279F92FF8D5BC15299C67E3BB9C4C2FD3D0A59060BDCACEFCF0A70589A", "expect": "pqc", "message": "/cosmos.evm.erc20.v1.MsgConvertCoin", "what": "Convert that fUSD straight into the vault" },
+    { "hash": "0x501ace7d5040b16fc147c4290f8aed80c10fc293d9f19e50b52746167af3bc76", "expect": "evm", "what": "PQ-signed openTender (tender 1)" },
+    { "hash": "0x69194b6377f2c3163932278b7a47dc1a530283c39b59136874e7bacd79d3ac73", "expect": "evm", "what": "Offer: 60 tPEAL at 0.0010 fUSD" },
+    { "hash": "0x51f3e77414ddd036bb2b6854e35d6667cf2f82bbe601bac88498c4f1286a6185", "expect": "evm", "what": "Offer: 50 tPEAL at 0.0013 fUSD" },
+    { "hash": "0x39c0cc40ebd12f4e9bfcc453a245d290efb762def3c387802d23b6eef5ca3cc4", "expect": "evm", "what": "PQ-signed settle: clears at 0.0013 fUSD" },
+    { "hash": "0x2084f9436017c57596168569a0d40254e8e0095e00006779559b73f1873638fb", "expect": "evm", "what": "Claim: 60 tPEAL sold for 0.078 fUSD" },
+    { "hash": "0xed5a808ff4dbefa5910d326768a5a6b5e18bd8f1641c1e63b03fcfd2a177ca1c", "expect": "evm", "what": "Claim: 16.92 tPEAL sold, 33.08 returned" }
+  ]
+}

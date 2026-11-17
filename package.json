@@ -11,7 +11,7 @@
   "scripts": {
     "setup": "forge install foundry-rs/forge-std@v1.9.7 --no-git && forge install OpenZeppelin/openzeppelin-contracts@v5.1.0 --no-git && forge install Adityaakr/qore-pq-kit@v0.3.0 --no-git && npm --workspace kit run setup",
     "build": "forge build",
-    "test": "forge test && npm --workspace kit run test",
+    "test": "forge test && npm --workspace kit run test && npm run test:ts",
     "typecheck": "tsc --noEmit && npm --workspace kit run typecheck",
     "deploy": "forge build && tsx scripts/deploy.ts",
     "pq": "npm --workspace kit run pq --",
@@ -27,22 +27,42 @@
     "dashboard:build": "vite build apps/dashboard",
     "snapshot": "forge test --match-contract GasTest",
     "e2e:local": "forge build && tsx scripts/v2/e2e-local.ts",
-    "demo:local": "forge build && tsx scripts/v2/e2e-local.ts --keep"
+    "demo:local": "forge build && tsx scripts/v2/e2e-local.ts --keep",
+    "test:ts": "tsx --test test-ts/*.test.ts",
+    "evidence": "tsx scripts/kits/evidence.ts",
+    "template:check": "tsx scripts/kits/template-check.ts",
+    "cbom": "tsx scripts/kits/cbom.ts",
+    "cbom:check": "tsx scripts/kits/cbom.ts check",
+    "qore": "qore"
   },
   "dependencies": {
-    "qore-pq-kit": "*",
-    "viem": "^2.21.0",
-    "@qorechain/sdk": "0.14.0",
-    "pqkit": "git+https://github.com/Adityaakr/qore-pq-kit.git#v0.3.0",
+    "@cosmjs/stargate": "0.39.0",
     "@qorechain/evm": "0.14.0",
+    "@qorechain/mcp": "0.1.1",
     "@qorechain/pqc": "0.2.3",
+    "@qorechain/qoreseal": "0.1.0",
+    "@qorechain/qoresign": "0.2.0",
+    "@qorechain/qorex-types": "0.1.0",
+    "@qorechain/sdk": "0.14.0",
+    "@qorechain/wallet-adapter": "0.6.0",
     "cosmjs-types": "0.11.0",
-    "@cosmjs/stargate": "0.39.0"
+    "pqkit": "git+https://github.com/Adityaakr/qore-pq-kit.git#v0.3.0",
+    "qore-pq-kit": "*",
+    "viem": "^2.21.0"
   },
   "devDependencies": {
+    "@qorechain/qore-cli": "0.1.1",
+    "@qorechain/qorescan": "0.1.0",
     "@types/node": "^22.7.5",
+    "create-qorechain-dapp": "0.14.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.3",
     "vite": "8.3.5"
+  },
+  "overrides": {
+    "@qorechain/wallet-adapter": {
+      "@cosmjs/stargate": "$@cosmjs/stargate",
+      "@cosmjs/proto-signing": "0.39.0"
+    }
   }
 }

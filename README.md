@@ -70,6 +70,11 @@ Native-lane hashes are upper-case, EVM hashes are `0x…`. Every window opened f
 steps was closed again; the drill account has no live window, holds no ERC-20 tokens
 and has granted no approvals.
 
+**Check them yourself.** `npm run evidence` re-reads every transaction above
+([`deployments/evidence.json`](deployments/evidence.json)) through the QoreChain MCP
+server's own tools and says, for each, whether it succeeded and whether the chain
+verified its ML-DSA-87 layer. One hash by hand: `npm run qore -- pq status <hash>`.
+
 ## How it works (v1, the drill vault)
 
 ```
@@ -183,11 +188,15 @@ npm run v2 -- account register v2-signer-a # once funded: ML-DSA-87 key, proof o
 npm run deploy:v2 -- --buy <PEAL-T> --factory <SealedAuctionFactory> --delay 900 --cap 1000000
 
 # a quorum action: propose, two signers sign (on their own machines), relay
-npm run v2 -- propose sweep fusd <to> 250000        # prints the proposal file's path
+npm run v2 -- propose sweep fusd <to> 250000 --as v2-signer-a   # signed by its proposer (QoreSign)
 npm run sign-action -- <proposal.json> --as v2-signer-a
 npm run sign-action -- <proposal.json> --as v2-signer-b
 npm run v2 -- relay <proposal.json>                 # in a window scoped to the vault's targets
 
+# keep it private until it is relayed (QoreSeal): each signer publishes an ML-KEM-1024 key once
+npm run v2 -- account register-kem v2-signer-b      # and -c
+npm run v2 -- seal <proposal.json> --as v2-signer-a # prints the sealed file's path
+npm run sign-action -- <proposal.sealed.json> --as v2-signer-b   # opens its envelope, checks, signs
 npm run v2 -- propose queue signers 2 <a>,<b>,<c>   # timelocked: queue, wait, execute
 npm run v2 -- execute <opId>
 npm run v2 -- veto <opId> --as v2-signer-c          # any one signer, alone
@@ -203,7 +212,8 @@ drives the vault only through the commands above: a sweep, the refusals (one sha
 a tampered proposal, a stale one, a non-member), a queued sweep vetoed by one signer
 and another executed after the delay, a tender settled by anyone, a sealed sale
 refused over the daily cap and started the next day, and its collection, plus the
-deploy preflight (34 checks, also in CI). Foundry's EVM cannot run ML-DSA-87, so the local `pqcVerify` stand-in
+deploy preflight, and private proposals (step 5b: a proposer-signed proposal sealed to
+the co-signers and relayed, and five refusals) (48 checks, also in CI). Foundry's EVM cannot run ML-DSA-87, so the local `pqcVerify` stand-in
 accepts any signature; the harness instead checks every relayed share itself with
 the SDK's ML-DSA-87 verifier against the exact bytes the vault verifies.
 
@@ -251,6 +261,24 @@ leaves a local node running with a vault in every state (a waiting signer change
 open tender with offers, a running sale) and prints the URL to open after
 `npm run dashboard -- --port 5199`.
 
+## QoreChain kits used
+
+Each kit does a job in Tender; [`docs/kits.md`](docs/kits.md) has the reasoning,
+including the kits that do not fit and why.
+
+| Kit | What it does here |
+| --- | --- |
+| QoreChain SDK (`@qorechain/sdk`, `@qorechain/evm`) | hybrid signing, key registration and windows in every script and in the web app's guest account |
+| qorechain-pqc (`@qorechain/pqc`) | ML-DSA-87 verification of every relayed share, in the end-to-end check and the web app's proposal checker |
+| create-qorechain-dapp | Tender started from its `foundry` template; `npm run template:check` scaffolds it again and checks the compiler settings and every network constant Tender writes down (17 checks, in CI) |
+| MCP + qore CLI (`@qorechain/mcp`, `@qorechain/qore-cli`) | `npm run evidence` checks the cited transactions with the MCP server's tools; `.mcp.json` gives the coding agents the same read-only view of the chain; `npm run qore` is the pinned CLI |
+| QoreScan (`@qorechain/qorescan`) | `npm run cbom` writes a CycloneDX CBOM ([`audits/cbom/`](audits/cbom)); `npm run cbom:check` asserts the contracts reach ML-DSA-87 only through `pqcKeyStatus` and `pqcVerify` and never call `ecrecover` (in CI) |
+| QoreX integrations (`@qorechain/qorex-types`) | the web app finds QoreX's native and EIP-1193 providers |
+| Wallet adapter (`@qorechain/wallet-adapter`) | QoreX's funding transfer (`qorexSignAndBroadcast`), MetaMask's network (`addQoreEvmToWallet`), and why the chain refused an EVM transaction (`isEvmWindowRejection`) |
+| QoreSign (`@qorechain/qoresign`) | the proposer signs each proposal (secp256k1 + ML-DSA-87); `sign-action` and the web checker verify it against the proposer's key on chain, so nobody can pass off a proposal as a co-signer's |
+| QoreSeal (`@qorechain/qoreseal`) and the encryption key registry | `account register-kem` publishes each signer's ML-KEM-1024 key on chain; `seal` encrypts a proposal to the co-signers' keys so a buyback cannot be front-run before it is relayed |
+| Custody kit (vendored, [`vendor/qorechain-custody-kit`](vendor/qorechain-custody-kit)) | `validateAddress` on every address a proposal names, in the CLI and the web builder; its own test vectors run in `test:ts` |
+
 ## Build and test
 
 Needs Foundry and Node.js 20 or later.
@@ -262,6 +290,8 @@ forge build
 forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
+npm run test:ts      # the kit integrations: 28 tests, offline
+npm run template:check && npm run cbom:check
 npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```
 
@@ -335,6 +365,9 @@ tooling, the drill rehearsal, the dashboard and the audit artefacts.
 - The QoreChain `create-qorechain-dapp` foundry template (0.14.0) was the starting
   point for the project layout and the window helper; `@qorechain/sdk` and
   `@qorechain/evm` 0.14.0 do the hybrid signing, key registration and window messages.
+- QoreChain's `@qorechain/pqc`, `@qorechain/mcp`, `@qorechain/qore-cli`,
+  `@qorechain/qorescan`, `@qorechain/qorex-types` and `@qorechain/wallet-adapter`
+  (Apache-2.0, QoreChain Association), as listed above.
 - `qore-pq-kit` v0.3.0 (our toolkit, by git tag): `PqAuth`, `PqAuthSet` and the
   TypeScript helpers v2 uses.
 - OpenZeppelin Contracts 5.1.0 (SafeERC20, ReentrancyGuard, Math, ERC20), forge-std

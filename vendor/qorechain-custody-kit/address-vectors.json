@@ -1,0 +1,194 @@
+{
+  "source": "qorechain/qorechain-custody-kit vectors/custody-v1.json, tag v0.1.1 (4455daddfbd055ab0b4b7cb0beb90d3e3460d06b): the addresses section only",
+  "format": "custody-kit-vectors-v1",
+  "addresses": {
+    "valid": [
+      {
+        "input": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672h",
+        "expected": {
+          "kind": "account",
+          "format": "bech32",
+          "checksum": "bech32",
+          "bech32": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672h",
+          "hex": "0x28Ff5c6d57D8cFD492B6FB42614536eD648E01Fd"
+        }
+      },
+      {
+        "input": "0x28Ff5c6d57D8cFD492B6FB42614536eD648E01Fd",
+        "expected": {
+          "kind": "account",
+          "format": "hex",
+          "checksum": "eip55",
+          "bech32": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672h",
+          "hex": "0x28Ff5c6d57D8cFD492B6FB42614536eD648E01Fd"
+        }
+      },
+      {
+        "input": "qor1npvwllfr9dqr8erajqqr6s0vxnk2ak55am9g2c",
+        "expected": {
+          "kind": "account",
+          "format": "bech32",
+          "checksum": "bech32",
+          "bech32": "qor1npvwllfr9dqr8erajqqr6s0vxnk2ak55am9g2c",
+          "hex": "0x9858EfFD232B4033E47d90003D41EC34EcaEda94"
+        }
+      },
+      {
+        "input": "0x9858EfFD232B4033E47d90003D41EC34EcaEda94",
+        "expected": {
+          "kind": "account",
+          "format": "hex",
+          "checksum": "eip55",
+          "bech32": "qor1npvwllfr9dqr8erajqqr6s0vxnk2ak55am9g2c",
+          "hex": "0x9858EfFD232B4033E47d90003D41EC34EcaEda94"
+        }
+      },
+      {
+        "input": "0x9858effd232b4033e47d90003d41ec34ecaeda94",
+        "expected": {
+          "kind": "account",
+          "format": "hex",
+          "checksum": "none",
+          "bech32": "qor1npvwllfr9dqr8erajqqr6s0vxnk2ak55am9g2c",
+          "hex": "0x9858EfFD232B4033E47d90003D41EC34EcaEda94"
+        }
+      },
+      {
+        "input": "0x9858EFFD232B4033E47D90003D41EC34ECAEDA94",
+        "expected": {
+          "kind": "account",
+          "format": "hex",
+          "checksum": "none",
+          "bech32": "qor1npvwllfr9dqr8erajqqr6s0vxnk2ak55am9g2c",
+          "hex": "0x9858EfFD232B4033E47d90003D41EC34EcaEda94"
+        }
+      },
+      {
+        "input": "QOR19RL4CM2HMR8AFY4KLDPXZ3FKA4JGUQ0AGT672H",
+        "expected": {
+          "kind": "account",
+          "format": "bech32",
+          "checksum": "bech32",
+          "bech32": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672h",
+          "hex": "0x28Ff5c6d57D8cFD492B6FB42614536eD648E01Fd"
+        }
+      },
+      {
+        "input": "0x1111111111111111111111111111111111111111",
+        "expected": {
+          "kind": "account",
+          "format": "hex",
+          "checksum": "eip55",
+          "bech32": "qor1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg34kqp8d",
+          "hex": "0x1111111111111111111111111111111111111111"
+        }
+      },
+      {
+        "input": "qorvaloper19rl4cm2hmr8afy4kldpxz3fka4jguq0a5ws5he",
+        "allow": [
+          "account",
+          "validator"
+        ],
+        "expected": {
+          "kind": "validator",
+          "format": "bech32",
+          "checksum": "bech32",
+          "bech32": "qorvaloper19rl4cm2hmr8afy4kldpxz3fka4jguq0a5ws5he",
+          "hex": "0x28Ff5c6d57D8cFD492B6FB42614536eD648E01Fd"
+        }
+      },
+      {
+        "input": "qor17xpfvakm2amg962yls6f84z3kell8c5lyj5r7l",
+        "expected": {
+          "kind": "account",
+          "format": "bech32",
+          "checksum": "bech32",
+          "bech32": "qor17xpfvakm2amg962yls6f84z3kell8c5lyj5r7l",
+          "hex": "0xf1829676DB577682E944fc3493d451B67Ff3E29F"
+        }
+      }
+    ],
+    "invalid": [
+      {
+        "input": "",
+        "error": "EMPTY"
+      },
+      {
+        "input": " qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672h",
+        "error": "WHITESPACE"
+      },
+      {
+        "input": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672h\n",
+        "error": "WHITESPACE"
+      },
+      {
+        "input": "0x9858EfFD232B4033E47d90003D41EC34EcaEdA94",
+        "error": "BAD_EIP55"
+      },
+      {
+        "input": "0x9858effd232b4033e47d90003d41ec34ecaeda9",
+        "error": "BAD_HEX"
+      },
+      {
+        "input": "0xzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        "error": "BAD_HEX"
+      },
+      {
+        "input": "0x9858effd232b4033e47d90003d41ec34ecaeda94",
+        "requireEip55": true,
+        "error": "NO_CHECKSUM"
+      },
+      {
+        "input": "qor19rL4CM2hmr8afy4kldpxz3fka4jguq0agt672h",
+        "error": "MIXED_CASE"
+      },
+      {
+        "input": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672j",
+        "error": "BAD_CHECKSUM"
+      },
+      {
+        "input": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0aah2j04",
+        "error": "BAD_CHECKSUM"
+      },
+      {
+        "input": "qor19rl4bm2hmr8afy4kldpxz3fka4jguq0agt672h",
+        "error": "BAD_BECH32"
+      },
+      {
+        "input": "qor1qqqq",
+        "error": "BAD_BECH32"
+      },
+      {
+        "input": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0agt672hqq",
+        "error": "BAD_CHECKSUM"
+      },
+      {
+        "input": "qor19rl4cm2hmr8afy4kldpxz3fka4jguq0aq4w6xgu",
+        "error": "BAD_BECH32"
+      },
+      {
+        "input": "cosmos19rl4cm2hmr8afy4kldpxz3fka4jguq0auqdal4",
+        "error": "WRONG_PREFIX"
+      },
+      {
+        "input": "qor1qurswpc8qurswpc8qurswpc8qurswpc8qurswpc8qurswpc8qurswr24tc",
+        "error": "BAD_LENGTH"
+      },
+      {
+        "input": "qorvaloper19rl4cm2hmr8afy4kldpxz3fka4jguq0a5ws5he",
+        "error": "KIND_NOT_ALLOWED"
+      },
+      {
+        "input": "0x28Ff5c6d57D8cFD492B6FB42614536eD648E01Fd",
+        "allow": [
+          "validator"
+        ],
+        "error": "KIND_NOT_ALLOWED"
+      },
+      {
+        "input": "0x9858effd232b4033e47d90003d41ec34ecaeda9400",
+        "error": "BAD_HEX"
+      }
+    ]
+  }
+}

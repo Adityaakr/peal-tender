@@ -46,6 +46,16 @@ compiles with:
 CI runs `npm run flatten -- --check`, so the committed flattened file always
 matches `src/`.
 
+## Cryptographic inventory (QoreScan)
+
+Beside the QCAI reports, [`cbom/peal-tender.cdx.json`](cbom/peal-tender.cdx.json) is a
+CycloneDX 1.6 CBOM from QoreScan (`npm run cbom`): every cryptographic primitive the
+contracts use and where (ML-DSA-87 through `pqcKeyStatus` and `pqcVerify` in
+`PqAuth.sol`, Keccak-256 for message hashing, no `ecrecover`), the TLS of the testnet
+endpoints the app uses, the chain's PQC parameters and the treasury signer's key.
+Regenerate it on the audited commit so the inventory and the reports describe the same
+source; `npm run cbom:check` checks it.
+
 ## Records
 
 - [Stage 1](stage-1.md)

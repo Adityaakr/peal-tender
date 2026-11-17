@@ -137,6 +137,10 @@ function guestSection(): HTMLElement {
           log(`QoreX sent it (tx ${tx.slice(0, 10)}…).`);
           setTimeout(() => void refreshGuest(), 4000);
         } catch (e) {
+          if (e instanceof qorex.Declined) {
+            log(e.message);
+            return;
+          }
           state.error = e instanceof Error ? e.message : String(e);
           emit();
         }
