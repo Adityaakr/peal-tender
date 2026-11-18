@@ -26,7 +26,7 @@ export function connect(onVault: (v: Address) => void): HTMLElement {
     h("h1.page-title", "Open a treasury"),
     h(
       "p.page-sub",
-      "Peal Tender v2 is not deployed on the testnet yet (deploys open on 19 November 2026). Paste a vault address, or open this page with ?vault=0x… and, for a local node, ?rpc=http://127.0.0.1:8545.",
+      "Paste a vault address, or open this page with ?vault=0x… and, for a local node, ?rpc=http://127.0.0.1:8545. On the testnet the app opens the live Peal Tender v2 vault by default.",
     ),
     h("div.card", form, msg),
   );

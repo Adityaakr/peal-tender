@@ -27,8 +27,9 @@ category, and its Q-Day Drill.
   timelock with a daily cap, permissionless settlement, and buybacks run as sealed
   sales on [Peal Sealed Auction](https://github.com/Adityaakr/peal-sealed-auction).
   Written and tested (unit, fuzz, invariant, cross-language vectors), checked end to
-  end against the real auction contracts, **not deployed yet**: no testnet deploys
-  before 19 November 2026 00:00 UTC. [See below](#peal-tender-v2-the-full-build).
+  end against the real auction contracts, and **live on the testnet since
+  18 November 2026**: vault `0x79B2076a34b8CaBCF0120073cE0640165B287940`
+  (`qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4`). [See below](#peal-tender-v2-the-full-build).
 
 Neither version is audited yet; the two-stage QCAI audit of v2 is prepared in
 [`audits/`](audits/README.md).
@@ -69,6 +70,34 @@ price, above the 0.0010 minimum of the cheaper one. After it, the vault holds
 Native-lane hashes are upper-case, EVM hashes are `0x…`. Every window opened for these
 steps was closed again; the drill account has no live window, holds no ERC-20 tokens
 and has granted no approvals.
+
+### v2, live since 18 November 2026
+
+| What | Address |
+| --- | --- |
+| `PealTenderV2` vault (2 of 3, 15-minute time lock, 1 fUSD a day without it) | `0x79B2076a34b8CaBCF0120073cE0640165B287940` / `qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4` |
+| `TenderBook` (the tender engine, a linked library) | `0xb06D322fAB9503D59f980D3A67Da5EBA236AAB10` |
+| Signers A, B, C (ML-DSA-87 and ML-KEM-1024 keys registered) | `qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn`, `qor1ynz8d7q3l6rgnsvrytxhzw6jrjg4xwmy80h0u9`, `qor1qy60eg0nuwq54n9w6xmppsrkan58lfhzh4f7ga` |
+| Relayer (pays gas, has no authority; received the fest's fUSD, fETH and fBTC) | `qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc` |
+| Deployer | `qor16z0zu9avvxxs5e5n2u0xmfcza07942zyjvcc9y` |
+| Buys back PEAL-T, sells through the auction factory (Peal Sealed Auction) | `0x7edc65adc95de061887ecd6fc8629f2a99fffe9e`, `0x1160ab95b570a65bbadb488c76e2f8515f3d6562` |
+
+The full record is in [`deployments/qorechain-diana-v2.json`](deployments/qorechain-diana-v2.json).
+The drill account, vault and token were not used: v2's accounts are its own.
+
+| Step | Transaction |
+| --- | --- |
+| Register the five accounts' ML-DSA-87 keys | `C99287D5…897356` (relayer), `FA5BECE2…A7DCDD`, `3558706D…8E37DA`, `6F94E45A…7D7E10`, `C90FF055…25A0A0` |
+| Publish the signers' ML-KEM-1024 keys (QoreSeal) | `58E4718C…031A31`, `679CA54D…F6D2B4`, `5708EB7B…F9E164` |
+| Deploy `TenderBook` and the vault in one two-transaction window (5,324,071 gas) | `0x54acfce838e7e8741fc50348e3a93c6a68ad630e5e1aeac40ec2e95991ddbf0f`, `0xf99caac9ad272e0463ca3a80bbbdb90aa35902e3c3342cb76efb428745131299` |
+| `MsgConvertCoin` of 100 fUSD from the fest faucet straight into the vault | `C624289CB1C1F8E0028861748A3175C87A5067C70CBB2F830759374A29AFE0D0` |
+| 2-of-3 `sweep` of 0.01 fUSD: proposed by A with a QoreSign signature, sealed to B and C with QoreSeal, opened and signed by B (466,762 gas) | `0xd1aec2ea83c7cd9c89a88f9f60d02eca96e6c9c370784c252e852037b6a6bd4f` |
+| 2-of-3 `startSealedSale`: 0.9 fUSD for PEAL-T on Peal Sealed Auction, auction `0x19bCC6197b97fE53b111d19c350660753441082B` (1,213,795 gas) | `0x5a2c880ebdb0cf68377f0a630ede0bf88d85180604abc68611da0147bf70b615` |
+| 2-of-3 `openTender`: tender 1, 0.08 fUSD, open to visitors until 25 November (625,595 gas) | `0x230bcc916d658c9051f3bd80c307402b9a7a725798e1b96f9ea7c9c899d7d9c2` |
+
+Each EVM step ran in a window scoped to the vault, fUSD, PEAL-T and the auction
+factory, opened and closed around it; [`deployments/evidence.json`](deployments/evidence.json)
+lists every hash, windows included.
 
 **Check them yourself.** `npm run evidence` re-reads every transaction above
 ([`deployments/evidence.json`](deployments/evidence.json)) through the QoreChain MCP
@@ -179,7 +208,7 @@ It keeps v1's tender and accounting rules and changes who holds the authority.
 
 Accounts live in `~/.qore-peal-tender/<name>.env` (mode 0600), never in the drill's
 directory; every v2 script refuses the drill account and the drill contracts. The
-testnet deployment, from 19 November, follows [`docs/v2-runbook.md`](docs/v2-runbook.md);
+testnet deployment (18 November 2026) followed [`docs/v2-runbook.md`](docs/v2-runbook.md);
 `npm run v2 -- preflight` prints a read-only checklist of what is still missing.
 
 ```sh
@@ -228,7 +257,12 @@ the exact bytes against the vault's own `quorumMessage` view before signing.
 `npm run dashboard` serves the treasury's web app ([`apps/dashboard`](apps/dashboard)),
 in the Peal design language shared by all three entries ([`docs/design.md`](docs/design.md)).
 It opens on a **landing page** (what Peal Tender is, why post-quantum now, how it
-works, who does what, and how to try it in four steps), then the app below.
+works, who does what), then the app below. On the testnet both read the live v2 vault
+by default (`?vault=` or the connect page's paste box open another). **How to use**,
+on the landing page and as a tab in the app, says what visitors, PEAL-T holders,
+anyone and the signers can each do right now, step by step, from the vault's live
+state: a step that is not possible yet (no open tender, a tender not yet ended) says
+what opens it.
 
 **Wallets.** QoreChain admits an EVM transaction only from an account with a
 registered ML-DSA-87 key and a live window opened by a hybrid-signed native message.
@@ -248,6 +282,7 @@ Content-Security-Policy.
 
 | Page | What it shows |
 | --- | --- |
+| How to use | each role's steps with the live state: explore the vault, get an account and test tokens, offer into the open tender, settle and claim, see the sealed sale, and the signers' commands |
 | Overview | free balances, what is left of today's allowance, changes waiting, recent activity, the signers |
 | Signers | each member's ML-DSA-87 key as `pqcKeyStatus` reports it (registered, possession, a key fingerprint), and what each has signed |
 | Timelock | every queued change with its countdown, who vetoed it, and the command to execute it once ready; the allowance per token |
@@ -290,7 +325,7 @@ forge build
 forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
-npm run test:ts      # the kit integrations: 28 tests, offline
+npm run test:ts      # the kit integrations and the web app's guide: 36 tests, offline
 npm run template:check && npm run cbom:check
 npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```

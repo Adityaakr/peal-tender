@@ -227,8 +227,9 @@ certification.
 
 Added 16 November 2026. v2 (`src/PealTenderV2.sol`, `src/TenderBook.sol`) is a new
 contract beside the drill vault; sections 1 to 7 describe the drill vault and stay as
-they were. v2 is **not deployed yet** (no testnet deploys before 19 November 2026),
-so nothing in this section is "observed" on chain; the tests named here run on
+they were. v2 was deployed on the testnet on 18 November 2026
+(`0x79B2076a34b8CaBCF0120073cE0640165B287940`); its deployment, a 2-of-3 sweep and a
+sealed sale are in `deployments/evidence.json`. Unless a row says so, the tests named here run on
 Foundry's local EVM with the precompiles mocked, and the sealed-sale path was also
 run against the real Peal Sealed Auction contracts ([`docs/spikes.md`](docs/spikes.md), T3).
 

@@ -66,8 +66,8 @@ repositories and addresses:
 | AMM pools | **Yes**, verified | fUSD for the vault is bought on pool 2 and converted straight into the vault |
 | Solidity PQC signature check | **Yes**, declared (no project verifies) | `PqAuth`/`PqAuthSet` call `pqcVerify` for every treasury action |
 | Solidity PQC key status | **Yes**, declared (no project verifies) | `pqcKeyStatus` read for every signer at every check, and in v2's constructor |
-| Test tokens fUSD, fETH, fBTC | **Yes**, needs one faucet claim | the vault holds fUSD; the owner claims fest tokens for the v2 relayer and `npm run v2 -- fusd convert` moves the fUSD into the v2 vault |
-| QoreSeal and the encryption key registry | **Yes** (on chain from 19 November, runbook step 1) | each v2 signer publishes an ML-KEM-1024 key (`MsgRegisterKEMKey`) so proposals can be sealed to them |
+| Test tokens fUSD, fETH, fBTC | **Yes** | the owner's faucet claim paid the v2 relayer all three (17 November); `npm run v2 -- fusd convert` moved 100 fUSD into the v2 vault (`C624289C…AFE0D0`) |
+| QoreSeal and the encryption key registry | **Yes**, on chain since 18 November | each v2 signer published an ML-KEM-1024 key (`MsgRegisterKEMKey`); the first sealed proposal, a 2-of-3 sweep, was relayed the same day |
 | MCP server or qore CLI | **Yes** | `@qorechain/mcp` and `@qorechain/qore-cli` (above) |
 | QoreScan | **Yes** | `@qorechain/qorescan` (above) |
 | Smart accounts and spending rules | **No** | considered for a keeper key (a classical key linked to a treasury account, fenced by a spending rule to the vault's `settle`, `execute` and `collectSealedSale`). It removes no risk here: every quorum call is gated by the vault's ML-DSA-87 check whoever sends it, the others are permissionless, and `MsgExecuteEVM` still needs a hybrid-signing relayer holding the gas money, so a linked key would only add an account |
@@ -78,7 +78,13 @@ repositories and addresses:
 
 ## Addresses to list on the project page
 
-Up to five `qor1` addresses; the final list, with the evidence for each, is in the
-pull request that finishes this work. The drill account stays listed (its history
-carries the verified features); the v2 relayer and the v2 vault join it after
-19 November. Every new on-chain action comes from non-drill accounts.
+Up to five `qor1` addresses (18 November 2026). Every hash is in
+`deployments/evidence.json` and passes `npm run evidence`.
+
+| Address | Role | What its history shows |
+| --- | --- | --- |
+| `qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j` | drill account (v1 signer) | key registration, hybrid transactions, EVM windows, the AMM swap (15 November) |
+| `qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc` | v2 relayer | fUSD, fETH and fBTC from the fest faucet; key registration; hybrid sends; scoped windows around every relayed 2-of-3 action; `MsgConvertCoin` into the vault |
+| `qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4` | v2 vault (`0x79B2…7940`) | the contract every action targets: the 2-of-3 sweep, the tender, the sealed sale, and the fUSD it holds |
+| `qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn` | v2 signer A | ML-DSA-87 key registration and its ML-KEM-1024 key in the encryption key registry (QoreSeal) |
+| `qor16z0zu9avvxxs5e5n2u0xmfcza07942zyjvcc9y` | v2 deployer | key registration, the unscoped two-transaction window that created `TenderBook` and the vault |

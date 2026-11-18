@@ -16,7 +16,9 @@ import { activityPage } from "./pages/activity.ts";
 import { propose } from "./pages/propose.ts";
 import { connect } from "./pages/connect.ts";
 import { landing } from "./pages/landing.ts";
+import { guidePage } from "./pages/guide.ts";
 import { mountPanel, setBuyToken, walletButton } from "./wallet/panel.ts";
+import { openPanel, state as wallet, subscribe } from "./wallet/store.ts";
 
 export interface Ctx {
   vault: Address;
@@ -34,6 +36,7 @@ type Page = (ctx: Ctx, arg?: string) => HTMLElement | Promise<HTMLElement>;
 const ROUTES: { path: string; label: string; page: Page; live: boolean; tab?: false }[] = [
   { path: "", label: "Home", page: landing, live: true, tab: false },
   { path: "vault", label: "Overview", page: overview, live: true },
+  { path: "guide", label: "How to use", page: (c) => guidePage(c.snap, wallet, () => openPanel()), live: true },
   { path: "signers", label: "Signers", page: signers, live: true },
   { path: "timelock", label: "Timelock", page: timelock, live: true },
   { path: "tenders", label: "Tenders", page: tenders, live: true },
@@ -177,6 +180,10 @@ async function load(force = false): Promise<void> {
 }
 
 mountPanel();
+// The guide's account steps follow the wallet (account created, QOR arrived).
+subscribe(() => {
+  if (route().r.path === "guide") void render(true);
+});
 window.addEventListener("hashchange", () => {
   window.scrollTo(0, 0);
   void render(true);

@@ -1,8 +1,9 @@
 /**
  * data.ts - everything the app reads from the chain. Read-only: no wallet, no keys.
  *
- * The vault address comes from ?vault=, else from deployments/qorechain-diana-v2.json
- * when it exists. ?rpc= points at a local node (anvil with mock precompiles) instead
+ * The vault address comes from ?vault=, else, on the testnet, from
+ * deployments/qorechain-diana-v2.json (the live v2 vault since 18 November 2026).
+ * A local node has no default: its vault is passed with ?vault=. ?rpc= points at a local node (anvil with mock precompiles) instead
  * of the testnet's EVM RPC, which allows browser calls from any origin (kit spike S4).
  */
 import {
@@ -34,7 +35,7 @@ const deployed = Object.values(deployments)[0] as
   | undefined;
 
 export function vaultFromUrl(): Address | undefined {
-  const v = params.get("vault") ?? deployed?.contracts?.PealTenderV2?.address;
+  const v = params.get("vault") ?? (IS_LOCAL ? undefined : deployed?.contracts?.PealTenderV2?.address);
   return v && /^0x[0-9a-fA-F]{40}$/.test(v) ? (v as Address) : undefined;
 }
 

@@ -20,7 +20,7 @@
  *    deployments/qorechain-diana.json is never touched.
  */
 import { existsSync, writeFileSync } from "node:fs";
-import { fetchEvmWindow } from "@qorechain/sdk";
+import { fetchEvmLimits, fetchEvmWindow } from "@qorechain/sdk";
 import { encodeDeployData, getContractAddress, type Address } from "viem";
 import { FUSD, MAX_FEE_PER_GAS, balances, broadcast, estimate, network, publicClient, qor, sendEvm } from "pqkit";
 import { openEvmWindowMsg } from "@qorechain/sdk";
@@ -40,8 +40,11 @@ const opt = (name: string, fallback?: string) => {
 async function main(): Promise<void> {
   // Local mode (PEAL_TENDER_LOCAL_RPC, a localhost node for npm run e2e:local) has no
   // date guard, no window and may name its own payment token; the testnet has none of that.
-  if (!LOCAL_RPC && Date.now() < NOT_BEFORE) {
-    throw new Error("no testnet deploys before 19 November 2026 00:00 UTC (Q-Day Drill day)");
+  // The owner may waive the date on drill day (--drill-day-ok, 18 November 2026): v2's
+  // accounts, contracts and tokens are separate from the drill's, and refuseDrill below
+  // still refuses every drill address whatever the date.
+  if (!LOCAL_RPC && Date.now() < NOT_BEFORE && !argv.includes("--drill-day-ok")) {
+    throw new Error("no testnet deploys before 19 November 2026 00:00 UTC (Q-Day Drill day) unless the owner approves --drill-day-ok");
   }
   if (existsSync(DEPLOYMENT_FILE) && !argv.includes("--force")) throw new Error(`${DEPLOYMENT_FILE} exists; pass --force for a new vault`);
 
@@ -70,7 +73,29 @@ async function main(): Promise<void> {
   //    The vault's constructor reads every member's key from pqcKeyStatus, so this also
   //    fails early if a signer has not registered.
   const gasBook = await estimate(deployer, { data: book.bytecode.object });
-  const gasVault = await estimate(deployer, { data: vaultData("0x1111111111111111111111111111111111111111") });
+  //    The public testnet RPC simulates with at most 5,000,000 gas (eth_call and
+  //    eth_estimateGas clamp any higher limit; docs/spikes.md T6), below what the
+  //    23 KB vault's creation needs, although the chain itself accepts up to 30M per
+  //    EVM transaction. `--vault-gas` then gives the limit, measured on anvil by
+  //    `npm run e2e:local` (which prints the vault's gas) plus headroom, and it is
+  //    checked against the chain's own cap.
+  const vaultGasOpt = opt("vault-gas");
+  let gasVault: bigint;
+  if (vaultGasOpt) {
+    gasVault = BigInt(vaultGasOpt);
+    const cap = LOCAL_RPC ? 30_000_000n : (await fetchEvmLimits({ rest: net.rest })).txMaxGas;
+    if (gasVault > cap) throw new Error(`--vault-gas ${gasVault} is above the chain's EVM cap of ${cap}`);
+  } else {
+    try {
+      gasVault = await estimate(deployer, { data: vaultData("0x1111111111111111111111111111111111111111") });
+    } catch (e) {
+      const why = e instanceof Error ? e.message : String(e);
+      if (/code storage out of gas|out of gas/i.test(why)) {
+        throw new Error("the RPC could not simulate the vault's creation (it caps simulations at 5M gas); pass --vault-gas <limit> (npm run e2e:local prints the gas the vault used; add 25%)");
+      }
+      throw e;
+    }
+  }
   const maxValue =
     evmWindowCost({ gas: gasBook, maxFeePerGas: MAX_FEE_PER_GAS, value: 0n }) +
     evmWindowCost({ gas: gasVault, maxFeePerGas: MAX_FEE_PER_GAS, value: 0n });
