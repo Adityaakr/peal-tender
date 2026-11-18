@@ -112,7 +112,7 @@ Header: "Live on QoreChain testnet · qorechain-diana · chain id 9800"; the vau
 Transition mood: soft -> Scene 7
 
 ### Scene 7 - Version two - 123.0-149.3 s
-Label: "PealTenderV2 · the real app on a local node · testnet deploys open 19 November". Real app screens, one framing each: Signers (2 of 3 to act, 1 to veto) -> Timelock (daily allowance; vetoed and executed changes) -> Tender #1 settled by anyone -> Sealed sales, with the Peal Sealed Auction lockup.
+Label: "PealTenderV2 · the real app on a local node · live on the testnet since 18 November". Real app screens, one framing each: Signers (2 of 3 to act, 1 to veto) -> Timelock (daily allowance; vetoed and executed changes) -> Tender #1 settled by anyone -> Sealed sales, with the Peal Sealed Auction lockup.
 Transition mood: soft -> Scene 8
 
 ### Scene 8 - The category's requirements - 149.3-170.7 s

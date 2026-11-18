@@ -77,7 +77,7 @@ export async function preflight(opts: { buy?: string; factory?: string }): Promi
 
   const early = !LOCAL_RPC && Date.now() < NOT_BEFORE;
   console.log(`${ok(!early)} deploys allowed from 2026-11-19T00:00Z (now ${new Date().toISOString()})`);
-  if (early) todo.push("wait for 19 November 00:00 UTC before deploying (Q-Day Drill)");
+  if (early) todo.push("wait for 19 November 00:00 UTC before deploying (Q-Day Drill), or deploy with the owner's --drill-day-ok");
 
   console.log("\naccounts (~/.qore-peal-tender/, never the drill's)");
   for (const r of ROLES) {

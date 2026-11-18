@@ -1,10 +1,12 @@
 # Peal Tender v2 on the testnet: runbook
 
-Written 16 November 2026. Steps marked **(owner)** need the owner's sign-in; every
-other step is a command. Nothing here may run before **19 November 2026 00:00 UTC**:
-the Q-Day Drill runs on 18 November and judges the drill vault, the drill token and
-the drill account as deployed. v2 never sends anything from or to them, and its
-scripts refuse their addresses.
+Written 16 November 2026; **run on 18 November 2026** (steps 1 to 3, demo rows 1b,
+6 and 7; the result is in the README, "v2, live since 18 November 2026"). Steps marked
+**(owner)** need the owner's sign-in; every other step is a command. The plan was to
+wait for 19 November 00:00 UTC, after the Q-Day Drill; the owner moved the deploy
+forward because the drill judges only the drill vault, the drill token and the drill
+account, and v2 never sends anything from or to them (its scripts refuse their
+addresses). `deploy:v2` still refuses drill day unless given `--drill-day-ok`.
 
 At any point, `npm run v2 -- preflight [--buy <PEAL-T>] [--factory <factory>]` prints
 a read-only checklist: chain id, the date guard, each v2 account's balance against
@@ -31,11 +33,12 @@ proposals (`MsgRegisterKEMKey`). In the
 demo the owner holds all three signer keys, as separate accounts, disclosed as
 demo-only.
 
-## 1. Fund and register (from 19 November)
+## 1. Fund and register
 
 1. **Funds.** 10 QOR was sent to `v2-relayer`
    (`qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc`) on 16 November from the auction's
-   deployer account. The budget below fits it: the deployer 3 QOR, each signer
+   deployer account, and **(owner)** a dashboard faucet claim on 17 November added
+   100 QOR and the fest tokens (1,000 fUSD, 2 fETH, 0.5 fBTC). The budget below fits it: the deployer 3 QOR, each signer
    0.4 QOR (its ML-DSA-87 and ML-KEM-1024 registrations), and the relayer keeps
    about 5.8 QOR (about 5 after its own registration and the four sends), enough
    for about a dozen relayed actions.
@@ -60,12 +63,17 @@ demo-only.
 ## 2. Deploy
 
 Needs the PEAL-T token and the `SealedAuctionFactory` from Peal Sealed Auction's
-testnet deployment (planned there for about 22 November).
+testnet deployment (16 November: PEAL-T `0x7edc65adc95de061887ecd6fc8629f2a99fffe9e`, factory `0x1160ab95b570a65bbadb488c76e2f8515f3d6562`).
 
 ```sh
 npm run v2 -- preflight --buy <PEAL-T> --factory <factory>   # every line "ok"
-npm run deploy:v2 -- --buy <PEAL-T> --factory <factory> --delay 900 --cap 1000000
+npm run deploy:v2 -- --buy <PEAL-T> --factory <factory> --delay 900 --cap 1000000 --vault-gas 7333072
 ```
+
+- `--vault-gas`: the public RPC simulates with at most 5M gas, less than the vault's
+  creation needs (`docs/spikes.md` T6), so its gas limit is given: what
+  `npm run e2e:local` measured on anvil plus 25%, checked against the chain's 30M cap.
+  It used 5,324,071 on 18 November.
 
 - `--delay 900`: 15 minutes, so a signer rotation fits in the demo video. A real
   treasury would use days (see `THREAT_MODEL.md` 8.3).
@@ -81,18 +89,17 @@ npm run deploy:v2 -- --buy <PEAL-T> --factory <factory> --delay 900 --cap 100000
 
 ## 3. Put fUSD in the vault
 
-The faucet's fest tokens did not arrive for the drill account in November (the kit's
-spike S5 is still open), so the drill bought fUSD on the testnet AMM. The same works
-for v2, converting straight into the vault so no account ever holds the ERC-20 or
-approves anyone:
+The owner's faucet claim paid `v2-relayer` 1,000 fUSD as a bank coin. `fusd convert`
+moves it straight into the vault (`MsgConvertCoin` to the vault's address), so no
+account ever holds the ERC-20 or approves anyone. On 18 November 100 fUSD went in:
 
 ```sh
-npm run v2 -- fusd swap v2-relayer 1000000 1     # 1 QOR for about 0.08 fUSD (pool 2, at November's rate)
-npm run v2 -- fusd convert v2-relayer            # all of it into the vault
+npm run v2 -- fusd convert v2-relayer 100000000  # 100 fUSD into the vault
 npm run v2 -- status
 ```
 
-If the faucet does pay fUSD to an account, `fusd convert` moves it the same way.
+Without faucet tokens, `npm run v2 -- fusd swap v2-relayer 1000000 1` buys fUSD on AMM
+pool 2 first, as the drill did.
 
 ## 4. The demo sequence (for the video and `docs/spikes.md` T4/T5)
 
@@ -132,7 +139,7 @@ allowance, the queue and the sales throughout.
 
 - Record the addresses and transaction hashes in `README.md` and the measured gas in
   `docs/spikes.md`.
-- From 19 November the drill vault may also move to `qore-pq-kit` by tag and `kit/`
+- After the drill (from 19 November) the drill vault may also move to `qore-pq-kit` by tag and `kit/`
   can go (its Solidity is byte-identical to v0.3.0); `DRILL.md`'s commands must keep
   working.
 - **(owner)** QCAI audit stage 1 (about 22 November) and stage 2 (29 November):

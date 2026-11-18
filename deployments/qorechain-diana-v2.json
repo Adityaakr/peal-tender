@@ -1,0 +1,82 @@
+{
+  "network": "qorechain-diana",
+  "evmChainId": 9800,
+  "deployedAt": "2026-11-18T11:55:31.340Z",
+  "deployer": "0xd09E2e17ac618d0A6693571E6DA702EBFC5aa844",
+  "contracts": {
+    "PealTenderV2": {
+      "address": "0x79B2076a34b8CaBCF0120073cE0640165B287940",
+      "tx": "0xf99caac9ad272e0463ca3a80bbbdb90aa35902e3c3342cb76efb428745131299",
+      "block": 10314093,
+      "gasUsed": 5324071
+    },
+    "TenderBook": {
+      "address": "0xb06D322fAB9503D59f980D3A67Da5EBA236AAB10",
+      "tx": "0x54acfce838e7e8741fc50348e3a93c6a68ad630e5e1aeac40ec2e95991ddbf0f",
+      "block": 10314091,
+      "gasUsed": 1881041
+    }
+  },
+  "payToken": "0x97143B771D34ddb9130b807b135Ae675A5a963CA",
+  "buyToken": "0x7edc65adc95de061887ecd6fc8629f2a99fffe9e",
+  "auctionFactory": "0x1160ab95b570a65bbadb488c76e2f8515f3d6562",
+  "members": [
+    "0x0134fca1F3E3814aCcaEd1B610C076ECe87fA6E2",
+    "0x24c476f811FE8689c18322CD713b521c91533B64",
+    "0x29a1b196e3cb98Aa5f01Dc8788Bedf04D5b0c8D7"
+  ],
+  "threshold": 2,
+  "delay": 900,
+  "payDailyCap": "1000000",
+  "vaultQor": "qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4",
+  "accounts": {
+    "deployer": {
+      "qor": "qor16z0zu9avvxxs5e5n2u0xmfcza07942zyjvcc9y",
+      "evm": "0xd09E2e17ac618d0A6693571E6DA702EBFC5aa844"
+    },
+    "relayer": {
+      "qor": "qor1eluz68hlnzlrsu7tfs79aj3d46nqmxs8jjh4kc",
+      "evm": "0xCFF82d1Eff98be3873cb4C3C5ecA2daeA60d9a07"
+    }
+  },
+  "signers": [
+    {
+      "name": "v2-signer-a",
+      "qor": "qor19xsmr9hrewv25hcpmjrc30klqn2mpjxhs3mwrn",
+      "evm": "0x29a1b196e3cb98Aa5f01Dc8788Bedf04D5b0c8D7",
+      "mlKemKey": "0x2fa50e5d60a64706"
+    },
+    {
+      "name": "v2-signer-b",
+      "qor": "qor1ynz8d7q3l6rgnsvrytxhzw6jrjg4xwmy80h0u9",
+      "evm": "0x24c476f811FE8689c18322CD713b521c91533B64",
+      "mlKemKey": "0xcd063f09fe0409b3"
+    },
+    {
+      "name": "v2-signer-c",
+      "qor": "qor1qy60eg0nuwq54n9w6xmppsrkan58lfhzh4f7ga",
+      "evm": "0x0134fca1F3E3814aCcaEd1B610C076ECe87fA6E2",
+      "mlKemKey": "0xab8f42e71c18b501"
+    }
+  ],
+  "committeeSetId": "0xd6da2884e224c0bff5db99f3b8443e2f7e9e8b5ac1be1786e4a29003fff90fe5",
+  "actions": {
+    "sweep": {
+      "tx": "0xd1aec2ea83c7cd9c89a88f9f60d02eca96e6c9c370784c252e852037b6a6bd4f",
+      "gasUsed": 466762,
+      "what": "0.01 fUSD to the relayer; proposed by signer A (QoreSign), sealed to B and C (QoreSeal), signed by A and B"
+    },
+    "startSealedSale": {
+      "tx": "0x5a2c880ebdb0cf68377f0a630ede0bf88d85180604abc68611da0147bf70b615",
+      "gasUsed": 1213795,
+      "auction": "0x19bCC6197b97fE53b111d19c350660753441082B",
+      "what": "0.9 fUSD for PEAL-T on Peal Sealed Auction (examples/sale-testnet.json); signed by A and C"
+    },
+    "openTender": {
+      "tx": "0x230bcc916d658c9051f3bd80c307402b9a7a725798e1b96f9ea7c9c899d7d9c2",
+      "gasUsed": 625595,
+      "tenderId": 1,
+      "what": "0.08 fUSD budget, 0.001 to 0.0019 fUSD per PEAL-T, open 7 days for visitors; signed by B and C"
+    }
+  }
+}

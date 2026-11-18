@@ -335,3 +335,18 @@ It tested this offline against a stand-in for `pqcKeyStatus`, end to end on a lo
 
 The owner decides which boxes to tick and which addresses to list on the project page;
 the worker's list, with the evidence for each, is in the pull request.
+
+### 18 November 2026: the v2 deploy and the "How to use" guide
+
+The owner moved the v2 deploy forward to 18 November (the drill judges only the drill
+account, vault and token, which v2 never touches) and asked the same worker to run
+`docs/v2-runbook.md` end to end. The worker ran it from the v2 accounts: key
+registrations, ML-KEM keys, the deploy, 100 fUSD into the vault, a sealed 2-of-3 sweep,
+a sealed sale on Peal Sealed Auction and a 7-day demo tender, and recorded every hash
+(`deployments/evidence.json`, all re-checked through the MCP server). The deploy's gas
+estimate failed; the worker traced it by experiment to the public RPC's 5M-gas
+simulation cap (`docs/spikes.md` T6) and added `--vault-gas` rather than change the
+contract. The owner then asked for the app to open the live vault by default and to
+explain how to use it; the worker wrote the "How to use" guide (`pages/guide.ts`), whose
+steps come from the vault's live state and are unit-tested, and checked it in a
+headless browser at desktop and phone widths.

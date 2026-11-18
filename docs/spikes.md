@@ -10,8 +10,9 @@ what it printed. The kit's own spikes (precompile gas, CORS, modexp) are in
 | T1 | Can v2 use `qore-pq-kit` by git tag while the drill keeps the in-repo `kit/`? | **Settled** (16 Nov): yes |
 | T2 | Does the v2 vault fit the 24,576-byte contract size limit? | **Settled** (16 Nov): only with the tender engine in a linked library |
 | T3 | Does the vault's `ISealedAuction` match the real Peal Sealed Auction, and does a buyback run end to end? | **Settled** (16 Nov) against peal-sealed-auction `main` at `f502616` |
-| T4 | What does a 2-of-3 action cost? | **Estimated** (16 Nov) from local measurement plus the kit's live precompile costs; to be measured on testnet after 19 Nov |
-| T5 | Live checks on the testnet | **Open**: no testnet deploys before 19 November 2026 00:00 UTC |
+| T4 | What does a 2-of-3 action cost? | **Measured** (18 Nov) on the testnet for `sweep`, `openTender` and `startSealedSale`; the rest estimated (16 Nov) |
+| T5 | Live checks on the testnet | **Settled** (18 Nov, the owner moved the deploy forward): deployed, a sealed 2-of-3 sweep, a sealed sale and a tender; the refusal demo and a rotation are still to run |
+| T6 | Can the public RPC estimate the vault's creation? | **Settled** (18 Nov): no, it simulates with at most 5,000,000 gas; the chain accepts 30,000,000 |
 | K1 | How does the fest site verify kits and network features? | **Settled** (16 Nov) by comparing all 67 project pages with their repositories and addresses |
 | K2 | What do the MCP server, QoreScan and create-qorechain-dapp report for Tender? | **Settled** (16 Nov): all three run offline or read-only, results below |
 
@@ -104,32 +105,63 @@ calldata, so about 172k per signature, plus the 21k transaction base.
 
 | Call | Vault alone | Signatures | Estimated on QoreChain |
 | --- | --- | --- | --- |
-| `sweep`, 2 of 3 | 123,239 | 2 | about 490k |
+| `sweep`, 2 of 3 | 123,239 | 2 | about 490k; **466,762 measured** (18 Nov) |
 | `sweep`, 3 of 3 | 144,089 | 3 | about 680k |
-| `openTender` | 301,760 | 2 | about 670k |
+| `openTender` | 301,760 | 2 | about 670k; **625,595 measured** (18 Nov) |
 | `queue` (a sweep above the cap) | 198,335 | 2 | about 565k |
 | `veto` (one signer) | 27,207 | 1 | about 220k |
 | `execute` (a queued sweep) | 48,260 | 0 | about 70k |
 | `settle` (permissionless, 10 ticks) | 127,021 | 0 | about 150k |
 | `claim` | 44,020 | 0 | about 65k |
 | `offer` | 230,881 | 0 | about 250k |
-| `startSealedSale` | 1,224,709 with the mock factory, which deploys a full contract; the real factory makes a clone | 2 | to measure |
+| `startSealedSale` | 1,224,709 with the mock factory, which deploys a full contract; the real factory makes a clone | 2 | **1,213,795 measured** (18 Nov, the real factory's clone) |
 | `collectSealedSale` | 182,812 | 0 | about 205k |
 
 The design's estimate for a 2-of-3 action was about 650k; these are below it. A
 quorum action at about 0.5 to 0.7 million gas costs about 0.06 to 0.08 QOR at the
 testnet's 112.5 gwei.
 
-## T5. Still to run on the testnet (after 19 November 00:00 UTC)
+## T5. Live on the testnet (18 November 2026)
 
-With fresh accounts in `~/.qore-peal-tender/` (never the drill account):
+The owner moved the deploy forward to 18 November: v2's accounts and contracts are
+separate from the drill's, and every v2 script refuses the drill's addresses
+(`deploy:v2` took `--drill-day-ok` for the date). With the accounts in
+`~/.qore-peal-tender/` (never the drill account):
 
-1. Register the three signers' ML-DSA-87 keys; deploy `TenderBook` and the vault
-   (`npm run deploy:v2`); record the addresses.
-2. Measure a real 2-of-3 `sweep`, `queue`, `veto` and `startSealedSale` against T4.
-3. `npm run v2 -- refusal-demo`: a window scoped to
-   [vault, fUSD, PEAL-T, factory] refuses a transaction to another address.
-4. A sealed buyback on the deployed Peal Sealed Auction, once that is deployed.
+1. **Done.** All five accounts registered their ML-DSA-87 keys and the three signers
+   published ML-KEM-1024 keys; `TenderBook` and the vault were deployed
+   (`0x79B2076a34b8CaBCF0120073cE0640165B287940`). The vault's constructor read all
+   three keys through the real `pqcKeyStatus`. Hashes: README, "v2, live since
+   18 November 2026".
+2. **Measured** a real 2-of-3 `sweep` (proposed with QoreSign, sealed with QoreSeal,
+   opened by the co-signer), `startSealedSale` and `openTender`: T4. `queue` and
+   `veto` are still to measure.
+3. **Still to run:** `npm run v2 -- refusal-demo` (a window scoped to
+   [vault, fUSD, PEAL-T, factory] refuses a transaction to another address).
+4. **Done.** A sealed buyback on the deployed Peal Sealed Auction, with its real
+   committee set (`0xd6da…0fe5`): auction `0x19bCC6197b97fE53b111d19c350660753441082B`.
+   The vault collects its result (`npm run v2 -- collect`) once the auction is final.
+5. The fest faucet's fUSD did arrive this time (the owner's claim for `v2-relayer`),
+   so the vault was funded with `fusd convert` and no AMM swap.
+
+## T6. The public RPC cannot simulate the vault's creation (18 November 2026)
+
+**Run:** `deploy:v2` failed at its first step, the gas estimate, with "contract
+creation code storage out of gas", whatever gas limit was passed. Then:
+
+- `eth_call` of init code that returns `gasleft()` (`0x5a5f5260205ff3`) with
+  `gas` 5M, 10M and 30M: each returned 4,946,884, so the RPC clamps every
+  simulation to 5,000,000 gas.
+- Creations returning N zero bytes estimated normally up to 24,576 bytes
+  (4,971,731 gas); a constructor that needs more than about 5M always failed.
+- `GET /qorechain/pqc/v1/evm_limits`: `tx_max_gas` 30,000,000. The cap is the RPC's
+  simulation limit, not the chain's.
+
+**Settled:** the 23,131-byte vault needs about 5.3M gas, so `deploy:v2` takes
+`--vault-gas`, measured on anvil (`npm run e2e:local` printed 5,866,458 with the
+mock precompiles; plus 25%: 7,333,072) and checked against the chain's
+`tx_max_gas`. The real creation used 5,324,071 (the live `pqcKeyStatus` costs less
+than the mock). Every other v2 call is under 5M gas and estimates normally.
 
 ## K1. How the fest site verifies (16 November 2026)
 

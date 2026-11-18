@@ -16,6 +16,13 @@ export const EVM_RPC = RPC;
 export const REST = `${location.origin}/api/qore/rest`;
 export const COMET_RPC = `${location.origin}/api/qore/rpc`;
 
+/**
+ * The live Peal Tender v2 vault on the testnet (deployed 18 November 2026,
+ * deployments/qorechain-diana-v2.json). The app opens it by default on the testnet;
+ * ?vault= and the paste box on the connect page override it.
+ */
+export const V2_VAULT = "0x79B2076a34b8CaBCF0120073cE0640165B287940" as Address;
+
 /** Peal Sealed Auction's testnet deployment (its deployments/qorechain-diana.json, 16 November 2026). */
 export const AUCTION = {
   pealT: "0x7edc65adc95de061887ecd6fc8629f2a99fffe9e" as Address,
@@ -23,9 +30,7 @@ export const AUCTION = {
   factory: "0x1160ab95b570a65bbadb488c76e2f8515f3d6562" as Address,
 };
 
-export const DASHBOARD_FAUCET = "https://dashboard.qorechain.io/faucet";
-export const QOREX_HELP = "https://docs.qorechain.io/qorex/browser-extension";
-export const REPO = "https://github.com/Adityaakr/peal-tender";
+export { AUCTION_REPO, DASHBOARD_FAUCET, QOREX_HELP, REPO } from "./links.ts";
 
 /** Fees the kit uses on the testnet: a fixed native fee, EVM at up to 200 gwei. */
 export const NATIVE_FEE = { amount: [{ denom: "uqor", amount: "150000" }], gas: "1000000" };

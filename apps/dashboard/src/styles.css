@@ -1206,3 +1206,125 @@ body.wallet-open .wallet-scrim {
   min-width: 140px;
   flex: 1 1 140px;
 }
+
+/* ---------------------------------------------------------------- how to use (pages/guide.ts) */
+
+.guide-roles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.guide-role {
+  min-width: 0;
+}
+
+.guide-role-head h3 {
+  margin: 0;
+  font-family: var(--title);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.guide-role-head p {
+  margin: 2px 0 0;
+}
+
+.guide-steps {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.guide-step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.guide-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-2);
+  background: var(--surface);
+}
+
+.guide-step.is-now .guide-num {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.guide-step.is-done .guide-num {
+  border-color: var(--green-border);
+  background: var(--green-weak);
+  color: var(--green-text);
+}
+
+.guide-step.is-later .guide-title {
+  color: var(--text-2);
+}
+
+.guide-body {
+  min-width: 0;
+}
+
+.guide-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.guide-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.guide-text {
+  margin: 4px 0 0;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.guide-status {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.guide-cmd {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.guide-act {
+  margin-top: 8px;
+}
+
+@media (max-width: 760px) {
+  .guide-roles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,6 +1,6 @@
 /** Shared wording for the pages: events in plain words, signer names, amounts. */
 import { type Address } from "viem";
-import { type Activity, type Snapshot, type Token } from "../data.ts";
+import type { Activity, Snapshot, Token } from "../data.ts";
 import { amount, ago, h, hash, icon, short, type Tone } from "../ui.ts";
 
 export function fmt(v: bigint, t: Token): string {

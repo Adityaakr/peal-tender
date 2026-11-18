@@ -196,6 +196,13 @@
   color: var(--ink);
 }
 
+.t-live {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .t-hero-art {
   grid-column: 6 / span 7;
   margin: 0;

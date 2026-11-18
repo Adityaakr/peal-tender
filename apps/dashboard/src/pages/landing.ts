@@ -14,6 +14,7 @@ import { brandMark, duration, h, hash, icon } from "../ui.ts";
 import { walletButton } from "../wallet/panel.ts";
 import { openPanel, state as wallet } from "../wallet/store.ts";
 import { fmt } from "./common.ts";
+import { guideRoles, plan } from "./guide.ts";
 
 import { C, m, s, SERIF, t } from "./svg.ts";
 import { clearingChart, FLOW, flowDiagram, keysSingle, keysSinglePhone, keysTender, keysTenderPhone } from "./tender-diagrams.ts";
@@ -617,11 +618,11 @@ function nav(): HTMLElement {
       h(
         "nav.t-links",
         { "aria-label": "On this page" },
+        link("How to use", "try"),
         link("How it works", "how"),
         link("Security", "attacks"),
         link("Proof", "statement"),
         link("Requirements", "requirements"),
-        link("Try it", "try"),
       ),
       h("div.t-nav-ctas", walletButton(), h("a.btn.btn-primary.btn-small", { href: "#/vault" }, "Open the treasury")),
     ),
@@ -662,6 +663,14 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
           h("div", h("dt", "Signature"), h("dd", "ML-DSA-87")),
           h("div", h("dt", "Hold above limit"), h("dd", snap ? duration(snap.delay) : "15 min")),
         ),
+        snap
+          ? h(
+              "p.t-live",
+              "Live on the QoreChain testnet: vault ",
+              hash(snap.vault, { label: "vault address" }),
+              ` holds ${fmt(snap.pay.balance, snap.pay)} ${snap.pay.symbol}, read from the chain just now.`,
+            )
+          : null,
       ),
       h(
         "figure.t-hero-art",
@@ -848,7 +857,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
         h("h2.t-title", "Statement of account"),
         h(
           "p.t-lead",
-          "The first vault, deployed for QoreChain's Q-Day Drill, on 15 November 2026. Every entry is a real transaction; the closing balance is what the vault held that evening. That vault had one signer; the current version requires two of three.",
+          "The first vault, deployed for QoreChain's Q-Day Drill, on 15 November 2026. Every entry is a real transaction; the closing balance is what the vault held that evening. That vault had one signer; the current version, live since 18 November 2026 and shown under Open the treasury, requires two of three.",
         ),
       ),
       h(
@@ -1015,7 +1024,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
       "div.t-wrap",
       head(
         "The category's requirements",
-        "QoreChain's Post-Quantum dApp category asks for a scoped EVM window, pqcVerify, a two-stage QCAI audit and Foundry or Hardhat tests. Each one, where it lives in the repository, and its state on 16 November.",
+        "QoreChain's Post-Quantum dApp category asks for a scoped EVM window, pqcVerify, a two-stage QCAI audit and Foundry or Hardhat tests. Each one, where it lives in the repository, and its state on 18 November.",
       ),
       h(
         "div.t-ledger-scroll.t-req-scroll",
@@ -1027,7 +1036,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
             reqRow(
               "Scoped EVM window",
               ["Each action opens a window scoped to the vault, fUSD, PEAL-T and the auction factory, sends, and closes it. ", gh("scripts/v2/window.ts", "scripts/v2/window.ts")],
-              "In use by the drill vault; v2 deploys on 19 Nov",
+              "In use by the drill vault and, since 18 Nov, the v2 vault",
             ),
             reqRow(
               "pqcVerify",
@@ -1035,7 +1044,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
                 "Every order needs two of three ML-DSA-87 signatures: keys from pqcKeyStatus, signatures checked by pqcVerify. ",
                 gh("src/PealTenderV2.sol", "src/PealTenderV2.sol"),
               ],
-              "Live in the drill vault since 15 Nov",
+              "Live in the drill vault since 15 Nov; two of three in the v2 vault since 18 Nov",
             ),
             reqRow(
               "Two-stage QCAI audit",
@@ -1085,7 +1094,24 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
   createBtn.addEventListener("click", () => openPanel());
   const step = (n: number, title: string, body: string, action?: HTMLElement) =>
     h("li.t-step", h("span.t-step-n", String(n)), h("div", h("h3", title), h("p", body)), action ?? h("div"));
-  const tryIt = h(
+  // With the vault read, the guide is live (guide.ts): every role's steps, each saying
+  // whether it can be done now. Before the first read, the four steps below stand in.
+  const liveGuide = snap
+    ? h(
+        "section.t-section.t-guide",
+        { id: "try" },
+        h(
+          "div.t-wrap",
+          head(
+            "How to use Peal Tender",
+            "Who can do what with the live vault on the QoreChain testnet, from what it holds right now. A step that is not possible yet says what opens it. Test tokens have no value.",
+          ),
+          guideRoles(plan(snap, wallet), () => openPanel()),
+          h("p.t-source", "Also in the app: ", h("a", { href: "#/guide" }, "How to use"), ", which follows your account as you go."),
+        ),
+      )
+    : undefined;
+  const tryIt = liveGuide ?? h(
     "section.t-section",
     { id: "try" },
     h(
@@ -1134,6 +1160,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
           "div.t-foot-col",
           h("div.t-foot-title", "Treasury"),
           h("a", { href: "#/vault" }, "Overview"),
+          h("a", { href: "#/guide" }, "How to use"),
           h("a", { href: "#/tenders" }, "Tenders"),
           h("a", { href: "#/propose" }, "Propose"),
           h("a", { href: "#/activity" }, "Activity"),
@@ -1200,5 +1227,5 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
     ),
   );
 
-  return h("div.t-page", nav(), h("main", hero, why, how, attacks, statement, buyback, mandate, requirements, tryIt), footer);
+  return h("div.t-page", nav(), h("main", hero, tryIt, why, how, attacks, statement, buyback, mandate, requirements), footer);
 }

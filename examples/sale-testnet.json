@@ -1,0 +1,15 @@
+{
+  "name": "Tender v2 buyback 1",
+  "details": "Peal Tender v2 sells 0.9 fUSD for PEAL-T: bid how many PEAL-T you give per fUSD",
+  "totalSupply": "900000",
+  "reservePrice": "5000000000000000000",
+  "tickSize": "100000000000000000",
+  "numTicks": 20,
+  "durationSec": 3600,
+  "releaseSec": 3600,
+  "minBidQuantity": "100000",
+  "maxQuantityPerAddress": "0",
+  "maxBids": 16,
+  "bidBond": "1000000000000000000",
+  "committeeSetId": "0xd6da2884e224c0bff5db99f3b8443e2f7e9e8b5ac1be1786e4a29003fff90fe5"
+}
