@@ -128,12 +128,11 @@ allowance, the queue and the sales throughout.
    commands, the output folder, the `/api/qore/*` rewrites to the testnet REST and RPC,
    and the security headers. Every push to `main` then redeploys; pull requests get
    preview URLs.
-2. In the hosted app: **Connect → Create a guest account**, fund it with about 0.6 QOR
-   (`npm run v2 -- account fund v2-relayer <name>` does not apply to a browser account;
-   send from QoreX, or a bank send from `v2-relayer` to the guest's `qor1` address),
-   then **Get test PEAL-T** and **Offer** into the open tender. This is the first run of
-   the browser path on the real chain (key registration, a scoped window, two EVM
-   transactions, the window closed); record the transactions in `docs/spikes.md`.
+2. In the hosted app: **Connect → Create a guest account**, fund it with about 1.5 QOR
+   (`npm run v2 -- account fund` takes v2 account names only; send from QoreX, or
+   `npm run v2 -- account send v2-relayer <qor1…> 1.5`), then **Get test PEAL-T** and
+   **Offer** into the open tender. Done on 21 November 2026 (section 4c and the README,
+   "The buyback path, run end to end from the browser").
 
 ## 4c. Keep a buyback open for visitors and judges (21 November 2026)
 
