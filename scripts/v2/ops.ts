@@ -6,6 +6,8 @@
  *       addresses the vault will be built with, and the deployment if there is one
  *   npm run v2 -- account fund <fromName> <toName> <QOR>
  *       move test QOR between two v2 accounts (one faucet claim can fund all five)
+ *   npm run v2 -- account send <fromName> <qor1…|0x…> <QOR>
+ *       give a visitor's guest account (made in the web app) test QOR, at most 2 QOR
  *   npm run v2 -- fusd swap <name> <uqorIn> <minOut> [poolId]
  *       swap QOR for fUSD on the testnet AMM (pool 2 held QOR/fUSD in November)
  *   npm run v2 -- fusd convert <name> [amount]
@@ -33,6 +35,7 @@ import { erc20Abi, vaultAbi } from "./abi.ts";
 import { loadV2Account, refuseDrill, secretsFile } from "./accounts.ts";
 import { metadataHash } from "./encode.ts";
 import { DEPLOYMENT_FILE, LOCAL_RPC, loadDeployment } from "./vault.ts";
+import { validateAddress } from "../../vendor/qorechain-custody-kit/address.ts";
 import { kemKeyOf, sealKeysOf } from "./kem.ts";
 
 export const NOT_BEFORE = Date.parse("2026-11-19T00:00:00Z");
@@ -195,6 +198,33 @@ export async function fund(fromName: string, toName: string, qorAmount: string):
   const m = sdkMsg.bank.send({ fromAddress: from.cosmos, toAddress: to.cosmos, amount: [{ denom: "uqor", amount: uqor.toString() }] });
   const res = await broadcast(from, [m]);
   console.log(`sent ${qor(uqor)} from ${fromName} to ${toName} (${to.cosmos}): tx ${res.transactionHash}`);
+}
+
+/** The most `account send` gives one visitor: a guest needs about 0.6 QOR. */
+export const GUEST_SEND_MAX_UQOR = 2n * UQOR_PER_QOR;
+
+function toUqor(qorAmount: string): bigint {
+  if (!/^\d+(\.\d{1,6})?$/.test(qorAmount ?? "")) throw new Error(`bad QOR amount "${qorAmount}"`);
+  const [whole, frac = ""] = qorAmount.split(".");
+  return BigInt(whole!) * UQOR_PER_QOR + BigInt((frac + "000000").slice(0, 6));
+}
+
+/**
+ * Give a visitor's guest account test QOR so it can register its key and open a
+ * window (the web app's guide asks for about 0.6). The one v2 command that sends to
+ * an address that is not a v2 account: capped at 2 QOR, accounts only, never the drill's.
+ */
+export async function sendToGuest(fromName: string, to: string, qorAmount: string): Promise<void> {
+  const from = await loadV2Account(fromName);
+  const check = validateAddress(to);
+  if (!check.valid) throw new Error(`recipient ${to}: ${check.detail}`);
+  refuseDrill(check.bech32, "recipient");
+  refuseDrill(check.hex, "recipient");
+  const uqor = toUqor(qorAmount);
+  if (uqor <= 0n || uqor > GUEST_SEND_MAX_UQOR) throw new Error(`send between 0 and ${qor(GUEST_SEND_MAX_UQOR)} to a guest account`);
+  const m = sdkMsg.bank.send({ fromAddress: from.cosmos, toAddress: check.bech32, amount: [{ denom: "uqor", amount: uqor.toString() }] });
+  const res = await broadcast(from, [m]);
+  console.log(`sent ${qor(uqor)} from ${fromName} to ${check.bech32} (${check.hex}): tx ${res.transactionHash}`);
 }
 
 /** Swap QOR for fUSD on the testnet AMM, from a v2 account. */

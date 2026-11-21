@@ -17,6 +17,9 @@
     {"hash": "0x39c0cc40ebd12f4e9bfcc453a245d290efb762def3c387802d23b6eef5ca3cc4", "expect": "evm", "what": "PQ-signed settle: clears at 0.0013 fUSD"},
     {"hash": "0x2084f9436017c57596168569a0d40254e8e0095e00006779559b73f1873638fb", "expect": "evm", "what": "Claim: 60 tPEAL sold for 0.078 fUSD"},
     {"hash": "0xed5a808ff4dbefa5910d326768a5a6b5e18bd8f1641c1e63b03fcfd2a177ca1c", "expect": "evm", "what": "Claim: 16.92 tPEAL sold, 33.08 returned"},
+    {"hash": "B3F240286B1BE31E69A64E76B548455777501BD3FAB26D5242FE0E06A21F2650", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgOpenEVMWindow", "what": "Q-Day Drill day, 18 Nov: the drill account opens a window scoped to the drill vault, one transaction"},
+    {"hash": "0x42ee8b65dbbd98f6034eb8e9107dc7d3d7e00a869cab1d1cddc2be527cedd4f1", "expect": "evm", "what": "Q-Day Drill proof: PQ-signed openTender (drill tender 2) sent from the drill account during the drill"},
+    {"hash": "056EE9A2432B2331E4171366981FC4A0D464E220B73AF6C4F4991E0F713761F9", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "Q-Day Drill day: close that window"},
     {"hash": "C99287D540A583B037B7CED0212E86A283E29E1F9B522D5496C2A3319D897356", "expect": "enrollment", "message": "/qorechain.pqc.v1.MsgRegisterPQCKeyV2", "what": "v2: register the relayer's ML-DSA-87 key"},
     {"hash": "ED803C018D1366747C66FB1F79E780D74CDFAD8369FC7780FE699EF524CA7731", "expect": "pqc", "message": "/cosmos.bank.v1beta1.MsgSend", "what": "v2: the relayer sends 3 QOR to the deployer"},
     {"hash": "FDFE81E73F2E74D607C9327475B7D2DB9DB9014A12B0A8A7C2DD5F51CA0D8D02", "expect": "pqc", "message": "/cosmos.bank.v1beta1.MsgSend", "what": "v2: the relayer sends 0.4 QOR to signer A"},
@@ -42,6 +45,22 @@
     {"hash": "E2720739FA17DF4083D8154C10C9E965232AF0D7F9A029372A0659003EB34EF4", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "v2: close that window"},
     {"hash": "BEAF7DED9EAE8F85447F8479EC20CF08507FF0D71E7CB8968C991369591D3422", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgOpenEVMWindow", "what": "v2: open a scoped window for the demo tender"},
     {"hash": "0x230bcc916d658c9051f3bd80c307402b9a7a725798e1b96f9ea7c9c899d7d9c2", "expect": "evm", "what": "v2: 2-of-3 PQ-signed openTender (tender 1, open 7 days for visitors)"},
-    {"hash": "2AF16B5E7281B57C83D46246987F33B944FE76D9C95861E1E680FC676923E857", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "v2: close that window"}
+    {"hash": "2AF16B5E7281B57C83D46246987F33B944FE76D9C95861E1E680FC676923E857", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "v2: close that window"},
+    {"hash": "BE990399DB8DDB56CD77DE2699C46D6639FB3208D2242829BAD01BF82A944E98", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgOpenEVMWindow", "what": "v2, 21 Nov: window scoped to the first sealed sale's auction only"},
+    {"hash": "0x90659549e91895669deebd008a5a91e8500ed85cb4500f6bf7ffd059c94dcf3b", "expect": "evm", "what": "v2: closeCommit on auction 0x19bC…082B by anyone (no bids: Failed)"},
+    {"hash": "45CCFD55D32274C7C4879CFA80F1921ECA4CE1DE5C3E54909A764A4AEB13BBAB", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "v2: close that window"},
+    {"hash": "0x5c5ce0f717b175b3fe0351dff159d8c494e622fa5fdf7b86e8e9d70131ceda01", "expect": "evm", "what": "v2: collectSealedSale by anyone: 0.9 fUSD unsold back in the vault"},
+    {"hash": "0x083c45375a5616a2191f18610f9191f75a74bc75ef7a3745672853b8c3a5dc0b", "expect": "evm", "what": "v2: 2-of-3 PQ-signed cancelTender (tender 1, no offers; signed by A and B)"},
+    {"hash": "0x55b605cd296e070c0b691aa25a6fc7880d8aaae794e3f3bca113877589fdc628", "expect": "evm", "what": "v2: 2-of-3 PQ-signed openTender (tender 2, one hour, 0.1 fUSD; signed by B and C)"},
+    {"hash": "BEBB619A38ED229BC6C38C7BF5972CEB7C0156585747149B59389ED38FF204D5", "expect": "enrollment", "message": "/qorechain.pqc.v1.MsgRegisterPQCKeyV2", "what": "v2: a browser guest account registers its ML-DSA-87 key, in the hosted app"},
+    {"hash": "DF3DCACF76CA2D5BC9A0F2E1011E2551FC26B77F69D6372ED730BEC3DCE43AAF", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgOpenEVMWindow", "what": "v2: the guest's window, scoped to the PEAL-T faucet only"},
+    {"hash": "0x37e00d100959e0deb0fed19b13f13796b5a9325075d12e9e2d5f24cea560a018", "expect": "evm", "what": "v2: the guest claims 1,000 test PEAL-T from the faucet"},
+    {"hash": "0x26584742f04131074584973223165d7c5a54b9993f27c9421c6acd923a806d05", "expect": "evm", "what": "v2: the guest approves the vault for exactly 50 PEAL-T"},
+    {"hash": "0x57b6140b321c233a067bc4e340f9617fdcb57901bf41597a49415ba2b0510a0f", "expect": "evm", "what": "v2: the guest offers 50 PEAL-T into tender 2 at 0.0013 fUSD or more"},
+    {"hash": "0x7be0a3e555797f7b030c3ec817044ea24b3a54d47e27c51915ca07d4857e4831", "expect": "evm", "what": "v2: the guest settles tender 2 (anyone may): one price, 0.0013 fUSD, 50 PEAL-T bought"},
+    {"hash": "0xd5e890b5ccf69f6edc0e0903b33c5c56ec516c82809e16350fb66e7da2662a8d", "expect": "evm", "what": "v2: the guest claims offer 0: 0.065 fUSD paid"},
+    {"hash": "0xf21ca4e3c19a7a2fb965e89cff2245d2b958bfdb972f0fd522b486c6afdd5290", "expect": "evm", "what": "v2: 2-of-3 PQ-signed openTender (tender 3, 0.85 fUSD, open to visitors until 20 December 12:00 UTC; signed by A and C)"},
+    {"hash": "EB3A10F4ACF17A2646AAADFFCD7498B9A67C116655276449FD74015CE3B6735E", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "v2: close that window"},
+    {"hash": "0x16a135be36058ea05f21b3146ce7dc0e472003aaebe3ad7827756b3aa370ff92", "expect": "evm", "what": "v2: the test guest account offers 100 PEAL-T into tender 3 at 0.0015 fUSD or more, from the hosted app"}
   ]
 }

@@ -1,11 +1,11 @@
 {
- "total": 179,
+ "total": 177.5,
  "clips": [
   {
    "id": "vo",
    "src": "assets/voiceover.wav",
    "start": 0,
-   "duration": 179,
+   "duration": 177.5,
    "track-index": 3,
    "volume": 1
   },
@@ -23,7 +23,7 @@
    "id": "bed-b",
    "src": "assets/music/bed.mp3",
    "start": 115,
-   "duration": 64,
+   "duration": 62.5,
    "media-start": 9.29,
    "track-index": 5,
    "volume": 0.09,
@@ -57,7 +57,7 @@
   {
    "id": "sfx-drill",
    "src": "assets/sfx/impactSoft_medium_004.ogg",
-   "start": 102.59,
+   "start": 99.35,
    "duration": 0.147,
    "track-index": 6,
    "volume": 0.65
@@ -65,7 +65,7 @@
   {
    "id": "sfx-end",
    "src": "assets/sfx/bong_001.ogg",
-   "start": 171.05,
+   "start": 169.216,
    "duration": 0.123,
    "track-index": 6,
    "volume": 0.5

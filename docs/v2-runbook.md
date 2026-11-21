@@ -128,12 +128,67 @@ allowance, the queue and the sales throughout.
    commands, the output folder, the `/api/qore/*` rewrites to the testnet REST and RPC,
    and the security headers. Every push to `main` then redeploys; pull requests get
    preview URLs.
-2. In the hosted app: **Connect → Create a guest account**, fund it with about 0.6 QOR
-   (`npm run v2 -- account fund v2-relayer <name>` does not apply to a browser account;
-   send from QoreX, or a bank send from `v2-relayer` to the guest's `qor1` address),
-   then **Get test PEAL-T** and **Offer** into the open tender. This is the first run of
-   the browser path on the real chain (key registration, a scoped window, two EVM
-   transactions, the window closed); record the transactions in `docs/spikes.md`.
+2. In the hosted app: **Connect → Create a guest account**, fund it with about 1.5 QOR
+   (`npm run v2 -- account fund` takes v2 account names only; send from QoreX, or
+   `npm run v2 -- account send v2-relayer <qor1…> 1.5`), then **Get test PEAL-T** and
+   **Offer** into the open tender. Done on 21 November 2026 (section 4c and the README,
+   "The buyback path, run end to end from the browser").
+
+## 4c. Keep a buyback open for visitors and judges (21 November 2026)
+
+Judging runs 6 to 15 December and the winners show is on 16 December, so a tender is
+kept open past them: **tender #3 ends 20 December 2026 at 12:00 UTC**. A tender lasts
+at most 30 days (`TenderBook.MAX_DURATION`), and its budget draws on the 1 fUSD daily
+allowance. What was run, from the relayer and signers named above:
+
+```sh
+# the first sealed sale (18 November) got no bids; anyone closes its bidding, then collects
+npm run v2 -- close-sale 0x19bCC6197b97fE53b111d19c350660753441082B   # auction: Failed (no bids)
+npm run v2 -- collect 0x19bCC6197b97fE53b111d19c350660753441082B      # 0.9 fUSD back in the vault
+
+# tender #1 (0.08 fUSD, no offers, ending 25 November) is cancelled: only one tender runs at a time
+npm run v2 -- propose cancel-tender --as v2-signer-a
+npm run sign-action -- <file> --as v2-signer-a && npm run sign-action -- <file> --as v2-signer-b
+npm run v2 -- relay <file>
+
+# tender #2: one hour, 0.1 fUSD, run end to end from a fresh browser guest account (README)
+npm run v2 -- propose open-tender 100000 1000 100 10 3600 200 1000000000000000000 --as v2-signer-b
+#   … signed by B and C, relayed; the guest offered, settled and claimed in the hosted app
+
+# tender #3: 0.85 fUSD, 0.001 to 0.0019 fUSD per PEAL-T, up to 200 offers of at least 1 PEAL-T,
+# ending 1797768000 (2026-12-20T12:00Z); the duration is that minus the current block time
+npm run v2 -- propose open-tender 850000 1000 100 10 <1797768000 - now> 200 1000000000000000000 --as v2-signer-a
+#   … signed by A and C, relayed
+```
+
+So the ladder is not empty when a judge arrives, the same test guest account offered
+100 PEAL-T at 0.0015 fUSD or more into tender #3 from the hosted app
+(`0x16a135be36058ea05f21b3146ce7dc0e472003aaebe3ad7827756b3aa370ff92`). That offer comes from our own
+test account, not a third party.
+
+**When it ends** (from 20 December 12:00 UTC): anyone settles it, in the app (Tenders,
+*Settle it*) or with `npm run v2 -- settle`; then each offer is claimed (*Claim* in the
+app, or `claim` on the vault from any account).
+
+**To reopen one** (after it settles, or to replace it early): `cancel-tender` (2 of 3)
+if one is still open, then `open-tender` as above with a new duration (at most
+2,592,000 seconds) and a budget within what is left of today's allowance
+(`npm run v2 -- status`). The vault holds about 99 fUSD, so many more tenders fit.
+
+**A visitor without test QOR.** The guide asks for about 1.5 QOR: 0.15 to register the
+guest account's ML-DSA-87 key, then about 0.32 per action (a window opened and closed
+at 0.15 QOR each, plus gas). If a judge cannot use the dashboard faucet, the relayer can
+send QOR to the `qor1…` address their wallet panel shows, at most 2 QOR per send, never
+to a drill address:
+
+```sh
+npm run v2 -- account send v2-relayer <qor1…> 1.5
+```
+
+**Test PEAL-T** comes from the faucet contract
+`0xe6c2943ff47e908c8b42af4329fb4abd10452e57` (1,000 per claim; 498,990 left on
+21 November), which the app's wallet panel calls directly. It needs neither Peal
+Sealed Auction's website nor any account of ours.
 
 ## 5. Afterwards
 

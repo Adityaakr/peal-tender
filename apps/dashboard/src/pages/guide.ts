@@ -34,7 +34,17 @@ export interface Role {
 }
 
 /** Native QOR a guest account needs: its key registration, a window, and two EVM transactions. */
-export const GUEST_QOR_NEEDED = 600_000n; // uqor, 0.6 QOR
+/**
+ * uqor, 1.5 QOR: what a holder's whole path costs on the testnet (measured 21 November
+ * 2026): 0.15 to register the ML-DSA-87 key, then about 0.32 per action (a window opened
+ * and closed at 0.15 QOR each, plus gas), for getting PEAL-T, offering, settling and claiming.
+ */
+export const GUEST_QOR_NEEDED = 1_500_000n;
+
+/** A sealed sale whose bidding time is over while the auction still says it is open: anyone may close it. */
+export function biddingOver(x: { auctionState?: string; endTime?: bigint }, now: bigint): boolean {
+  return x.auctionState === "Open for bids" && x.endTime !== undefined && x.endTime <= now;
+}
 
 const priceAt = (t: Tender, tick: number) => t.floorPrice + BigInt(tick) * t.tickSize;
 
@@ -102,14 +112,14 @@ export function plan(s: Snapshot, w: Pick<WalletState, "guest" | "guestStatus" |
     },
     {
       title: "Get test QOR",
-      text: `The account needs about ${amount(GUEST_QOR_NEEDED, 6, 2)} QOR for its key registration and a scoped EVM window. Claim it from the QoreChain dashboard faucet to the account's qor1 address, or send it from QoreX.`,
+      text: `The account needs about ${amount(GUEST_QOR_NEEDED, 6, 2)} QOR for the whole path: 0.15 to register its key, then about 0.3 per action, because each one opens and closes a scoped EVM window. Claim it from the QoreChain dashboard faucet to the account's qor1 address, or send it from QoreX.`,
       state: funded ? "done" : "now",
       status: st ? `${amount(st.qor, st.qorDecimals, 4)} QOR in the account` : undefined,
       action: { label: "Dashboard faucet", href: DASHBOARD_FAUCET, external: true },
     },
     {
       title: `Get test ${s.buy.symbol}`,
-      text: `${s.buy.symbol} is the token the vault buys back. The demo faucet of Peal Sealed Auction gives some to any account, from the wallet panel.`,
+      text: `${s.buy.symbol} is the token the vault buys back. One click in the wallet panel claims 1,000 from a test-token faucet contract on the testnet (deployed with Peal Sealed Auction); no other site is needed.`,
       state: w.guest ? "now" : "later",
       status: w.guest ? undefined : "after the account exists",
       action: { label: `Get test ${s.buy.symbol}`, wallet: true },
@@ -175,9 +185,11 @@ export function plan(s: Snapshot, w: Pick<WalletState, "guest" | "guestStatus" |
     const x = activeSales[0]!;
     anyoneSteps.push({
       title: "See a sealed buyback on Peal Sealed Auction",
-      text: `The vault is selling ${pay(x.supply)} for ${s.buy.symbol} as the auction's issuer. Bids stay sealed until the close and clear at one price; bidding happens in Peal Sealed Auction.`,
+      text: biddingOver(x, now)
+        ? `The vault sold ${pay(x.supply)} for ${s.buy.symbol} as the auction's issuer. Bidding has ended: anyone can close it on the Sealed sales page, and a sale without bids then returns its ${s.pay.symbol} to the vault.`
+        : `The vault is selling ${pay(x.supply)} for ${s.buy.symbol} as the auction's issuer. Bids stay sealed until the close and clear at one price; bidding happens in Peal Sealed Auction.`,
       state: "now",
-      status: x.endTime && x.endTime > now ? `bids close ${dateTime(x.endTime)}` : x.auctionState ? `auction ${x.auctionState.toLowerCase()}` : undefined,
+      status: biddingOver(x, now) ? `bidding ended ${dateTime(x.endTime!)}` : x.endTime && x.endTime > now ? `bids close ${dateTime(x.endTime)}` : x.auctionState ? `auction ${x.auctionState.toLowerCase()}` : undefined,
       action: { label: "Sealed sales", href: "#/sales" },
     });
   } else {

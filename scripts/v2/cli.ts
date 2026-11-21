@@ -31,9 +31,12 @@
  *   npm run v2 -- veto <opId> --as <name>
  * Anyone (permissionless):
  *   npm run v2 -- execute <opId> | settle | collect <auction>
+ *   npm run v2 -- close-sale <auction>          close a sealed sale's bidding once it has ended
+ *                                                (no bids: the auction fails, then `collect` brings the fUSD home)
  * Getting ready (see docs/v2-runbook.md):
  *   npm run v2 -- preflight [--buy <PEAL-T>] [--factory <factory>]   read-only checklist
  *   npm run v2 -- account fund <fromName> <toName> <QOR>             between v2 accounts only
+ *   npm run v2 -- account send <fromName> <qor1…|0x…> <QOR>          test QOR to a visitor's guest account (at most 2)
  *   npm run v2 -- fusd swap <name> <uqorIn> <minOut> | fusd convert <name> [amount]
  * Read-only and demos:
  *   npm run v2 -- status
@@ -45,7 +48,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { BaseError, decodeErrorResult, encodeFunctionData, keccak256, type Address, type Hex } from "viem";
+import { BaseError, decodeErrorResult, encodeFunctionData, keccak256, parseAbi, type Address, type Hex } from "viem";
 import { FUSD, estimate, sendEvm } from "pqkit";
 import { quorumMessage, signAnyAction, signQuorumShare, orderShares } from "pqkit/pqauthset";
 import { erc20Abi, pqcKeyStatusAbi, tenderBookAbi, vaultAbi } from "./abi.ts";
@@ -70,7 +73,7 @@ import { network } from "pqkit";
 import { validateAddress } from "../../vendor/qorechain-custody-kit/address.ts";
 import { checkProposer, isSealed, openSealedProposal, sealProposal, signProposal, type SignedProposal } from "./envelope.ts";
 import { fingerprint, kemKeyOf, registerKemV2, sealKeysOf } from "./kem.ts";
-import { convertFusdToVault, fund, preflight, swapFusd } from "./ops.ts";
+import { convertFusdToVault, fund, preflight, sendToGuest, swapFusd } from "./ops.ts";
 
 const argv = process.argv.slice(2);
 function flag(name: string, fallback?: string): string | undefined {
@@ -447,7 +450,34 @@ const permissionless = {
       encodeFunctionData({ abi: vaultAbi, functionName: "collectSealedSale", args: [addr(argv[1], "auction")] }),
       "collectSealedSale",
     ),
+  "close-sale": closeSale,
 };
+
+const auctionAbi = parseAbi(["function closeCommit()", "function state() view returns (uint8)"]);
+const AUCTION_STATES = ["Created", "Funded", "CommitOpen", "Closed", "Settled", "Failed", "Cancelled"] as const;
+
+/**
+ * Close a sealed sale's bidding once its end has passed (anyone may; the auction
+ * checks the time). With no bids the auction fails at once and `collect` brings the
+ * supply back to the vault; with bids it waits for the committee's release.
+ * The window is scoped to that one auction, which must be one of the vault's sales.
+ */
+async function closeSale(): Promise<void> {
+  const auction = addr(argv[1], "auction");
+  const sale = await read<{ state: number }>("getSale", [auction]);
+  if (sale.state === 0) throw new Error(`${auction} is not one of this vault's sealed sales`);
+  const relayer = await loadV2Account(RELAYER);
+  const data = encodeFunctionData({ abi: auctionAbi, functionName: "closeCommit" });
+  const gas = await estimate(relayer, { to: auction, data }).catch((e: unknown) => {
+    throw explain(e);
+  });
+  await withScopedWindow(relayer, { targets: [auction], maxTxs: 1, blocks: 120, gasPerTx: gas }, async () => {
+    const r = await sendEvm(relayer, { to: auction, data, gas });
+    console.log(`closeCommit: tx ${r.transactionHash} in block ${r.blockNumber}, gas used ${r.gasUsed}`);
+  });
+  const st = await client().readContract({ address: auction, abi: auctionAbi, functionName: "state" });
+  console.log(`auction ${auction} is now ${AUCTION_STATES[st] ?? st}${st === 5 ? `; next: npm run v2 -- collect ${auction}` : ""}`);
+}
 
 /** Under a window scoped to the vault's targets, a transaction to anything else is refused by the chain. */
 async function refusalDemo(): Promise<void> {
@@ -540,13 +570,14 @@ const commands: Record<string, () => Promise<unknown>> = {
   "refusal-demo": refusalDemo,
   account: async () => {
     const [sub, name, ...rest] = argv.slice(1);
-    if (!name) throw new Error("account new|register|register-kem|status <name> | account fund <from> <to> <QOR>");
+    if (!name) throw new Error("account new|register|register-kem|status <name> | account fund <from> <to> <QOR> | account send <from> <qor1…|0x…> <QOR>");
     if (sub === "new") return newV2Account(name);
     if (sub === "register") return registerV2(name);
     if (sub === "register-kem") return registerKemV2(name, { replace: REPLACE });
     if (sub === "status") return statusV2(name);
     if (sub === "fund") return fund(name, rest[0]!, rest[1]!);
-    throw new Error("account new|register|register-kem|status <name> | account fund <from> <to> <QOR>");
+    if (sub === "send") return sendToGuest(name, rest[0]!, rest[1]!);
+    throw new Error("account new|register|register-kem|status <name> | account fund <from> <to> <QOR> | account send <from> <qor1…|0x…> <QOR>");
   },
   preflight: () => preflight({ buy: flag("buy"), factory: flag("factory") }),
   fusd: async () => {

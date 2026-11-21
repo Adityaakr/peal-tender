@@ -1129,8 +1129,8 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
         h(
           "ol.t-steps",
           step(1, "Create a guest account", "A new testnet account with its own ML-DSA-87 key, stored only in this browser.", createBtn),
-          step(2, "Fund it", "Send a little test QOR from QoreX, or claim it from the QoreChain dashboard faucet."),
-          step(3, "Get test PEAL-T", "Claim it from Peal Sealed Auction's demo faucet in one click."),
+          step(2, "Fund it", "About 1.5 test QOR covers every step: send it from QoreX, or claim it from the QoreChain dashboard faucet."),
+          step(3, "Get test PEAL-T", "One click in the wallet panel claims 1,000 from a test-token faucet on the testnet."),
           step(
             4,
             "Make an offer",

@@ -44,6 +44,19 @@ signature is made for the current nonce.
 After the drill, `npm run tender -- settle` (once the tender's hour is over)
 closes the tender; with no offers it simply fails and releases the budget.
 
+## What happened (18 November 2026)
+
+- The proof transaction, submitted on the project page:
+  `0x42ee8b65dbbd98f6034eb8e9107dc7d3d7e00a869cab1d1cddc2be527cedd4f1`
+  (10:18:05 UTC, block 10,309,995, success): the `openTender` above, drill tender #2,
+  first attempt. Window opened `B3F240286B1BE31E69A64E76B548455777501BD3FAB26D5242FE0E06A21F2650`
+  and closed `056EE9A2432B2331E4171366981FC4A0D464E220B73AF6C4F4991E0F713761F9`.
+- The drill account's sequence went from 18 at the drill's start to 21: only those
+  three transactions. The vault's only events since then are the proof transaction's.
+- The vault still holds 67 QOR and 0.102818 fUSD, everything it held before the drill.
+- Tender #2 ended with no offers and was left unsettled, so the vault stays as the
+  drill judged it.
+
 ## What not to do on drill day
 
 - Do not open an unscoped window, and do not leave any window open.

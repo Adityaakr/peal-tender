@@ -1,6 +1,6 @@
 # Brag Plan: Peal Tender
 
-Run: `/brag:brag --voice --tone polished --duration 179`, 17 November 2026.
+Run: `/brag:brag --voice --tone polished --duration 179`, 17 November 2026. This is the first cut's plan; the second cut (21 November 2026) rewrote scenes 5, 7 and 8 (see README.md and `src/voice/`).
 Owner's direction: "the best demo and explainer video, around 2:59, clean and meaningful depth, with a clean voice-over, so we can share everything about Peal Tender."
 Purpose: the hackathon submission video for QoreChain "Build Before Q-Day", Post-Quantum dApp category (at most 3:00).
 

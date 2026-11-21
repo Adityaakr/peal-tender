@@ -1,7 +1,7 @@
-<!-- {"id":"reqs","start":149.3,"dur":21.4} -->
+<!-- {"id":"reqs","start":150.18,"dur":18.69} -->
 <style>
   #s8-view { left: 0; top: 140px; width: 1920px; height: 640px; }
-  .s8-hl { left: 2px; width: 1132px; }
+  .s8-hl { left: 2px; width: 846px; }
   #s8-h1 { top: 44px; height: 83px; } #s8-h2 { top: 126px; height: 83px; } #s8-h3 { top: 209px; height: 83px; }
   #s8-h4 { top: 292px; height: 62px; }
   #s8-strip { position: absolute; left: 120px; top: 812px; width: 1680px; border-top: 2px solid var(--ink); padding-top: 26px; display: grid; grid-template-columns: 300px 1fr; align-items: center; }
@@ -16,6 +16,7 @@
   <div class="view" id="s8-view">
     <div class="cam" id="s8-cam" style="width:1136px">
       <img class="shot-sheet" src="assets/shots/req.png" width="1136" height="438" alt="The category's requirements: where each lives in Peal Tender, and its state" />
+      <div id="s8-cut" style="position:absolute;left:852px;top:-4px;width:300px;height:446px;background:#f1f4f2"></div>
       <div class="hl s8-hl" id="s8-h1"></div><div class="hl s8-hl" id="s8-h2"></div>
       <div class="hl s8-hl" id="s8-h3"></div><div class="hl s8-hl" id="s8-h4"></div>
     </div>
@@ -36,22 +37,23 @@
   const BOX = { x: 120, y: 0, w: 1680, h: 640 };
   inn("#s8-chap", 0.1);
   inn("#s8-brand", 0.1);
-  camSet("#s8-cam", [0, 0, 1136, 438], BOX);
+  // The requirement and where it lives in the code (the state column is left out: it dates).
+  camSet("#s8-cam", [0, 0, 850, 438], BOX);
   inn("#s8-view", 0.3, { d: 0.5 });
   // "a scoped EVM window on every action"
-  hlIn("#s8-h1", 2.5); hlOut("#s8-h1", 5.5);
+  hlIn("#s8-h1", 2.4); hlOut("#s8-h1", 5.4);
   // "pqcVerify on every order"
-  hlIn("#s8-h2", 5.6); hlOut("#s8-h2", 8.0);
-  // "a two-stage QCAI audit, stage one around November 22, stage two on the 29th"
-  hlIn("#s8-h3", 8.1); hlOut("#s8-h3", 14.4);
-  camTo("#s8-cam", [0, 150, 1136, 210], BOX, 9.2, 1.6);
-  camTo("#s8-cam", [0, 0, 1136, 438], BOX, 13.6, 1.2);
+  hlIn("#s8-h2", 5.6); hlOut("#s8-h2", 7.9);
+  // "a two-stage QCAI audit, prepared in the repository"
+  hlIn("#s8-h3", 8.2); hlOut("#s8-h3", 12.1);
+  camTo("#s8-cam", [0, 150, 850, 210], BOX, 8.8, 1.4);
+  camTo("#s8-cam", [0, 0, 850, 438], BOX, 11.2, 1.1);
   // "And 132 Foundry tests, unit, fuzz, and invariant, running in CI"
-  hlIn("#s8-h4", 14.7);
-  inn("#s8-strip", 14.8, { y: 12 });
+  hlIn("#s8-h4", 12.5);
+  inn("#s8-strip", 12.6, { y: 12 });
   const n = { v: 0 };
   tl.fromTo(n, { v: 0 }, { v: 132, duration: 1.3, ease: "power2.out",
-    onUpdate: () => { document.getElementById("s8-n").textContent = String(Math.round(n.v)); } }, 15.0);
-  inn("#s8-parts span", 17.2, { stagger: 0.45, d: 0.3 });
+    onUpdate: () => { document.getElementById("s8-n").textContent = String(Math.round(n.v)); } }, 12.8);
+  inn("#s8-parts span", 14.8, { stagger: 0.45, d: 0.3 });
   endScene("#s8-stage");
 </script>

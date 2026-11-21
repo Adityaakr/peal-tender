@@ -1,1 +1,1 @@
-And against the category's brief: a scoped E V M window on every action. P Q C verify on every order. A two-stage Q C A I audit, with stage one around November twenty-second, and stage two on the twenty-ninth. And a hundred and thirty-two Foundry tests, unit, fuzz, and invariant, running in C I.
+And against the category's brief: a scoped E V M window on every action. P Q C verify on every order. A two-stage Q C A I audit, prepared in the repository. And a hundred and thirty-two Foundry tests, unit, fuzz, and invariant, running in C I.
