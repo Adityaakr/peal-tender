@@ -1,72 +1,121 @@
-<!-- {"id":"v2","start":123.0,"dur":26.3} -->
+<!-- {"id":"v2","start":124.2,"dur":25.98} -->
 <style>
-  #s7-auction { position: absolute; right: 120px; top: 50px; height: 46px; }
+  #s7-live { position: absolute; left: 120px; top: 1004px; font-family: "IBM Plex Mono", monospace; font-size: 23px; letter-spacing: 0.03em; color: var(--accent); display: flex; align-items: center; gap: 14px; }
+  #s7-live i { width: 13px; height: 13px; border-radius: 7px; background: var(--accent); display: inline-block; }
+  #s7-live span { color: var(--ink-2); }
   #s7-view { left: 0; top: 120px; width: 1920px; height: 870px; }
-  #s7-note { position: absolute; left: 120px; top: 1004px; font-size: 25px; color: var(--muted); }
-  #s7-note .mono { color: var(--ink-2); }
   #s7-hl-sum { left: 218px; top: 293px; width: 1004px; height: 92px; }
   #s7-hl-cards { left: 218px; top: 391px; width: 1004px; height: 374px; }
-  #s7-hl-cap { left: 470px; top: 269px; width: 247px; height: 156px; }
-  #s7-hl-queue { left: 218px; top: 497px; width: 1004px; height: 128px; }
-  #s7-hl-veto { left: 218px; top: 703px; width: 1004px; height: 98px; }
-  #s7-hl-settled { left: 216px; top: 178px; width: 250px; height: 52px; }
-  #s7-hl-desc { left: 216px; top: 196px; width: 660px; height: 100px; }
-  #s7-hl-row { left: 218px; top: 612px; width: 1004px; height: 58px; }
+  #s7-hl-cap { left: 724px; top: 270px; width: 243px; height: 170px; }
+  #s7-hl-rules { left: 822px; top: 910px; width: 398px; height: 162px; }
+  #s7-hl-sell { left: 220px; top: 443px; width: 1000px; height: 198px; }
+  #s7-hl-ends { left: 976px; top: 302px; width: 244px; height: 132px; }
+  #s7-hl-reg { left: 14px; top: 146px; width: 392px; height: 50px; }
+  #s7-hl-win { left: 14px; top: 197px; width: 392px; height: 118px; }
+  #s7-hl-you { left: 225px; top: 1258px; width: 990px; height: 50px; }
+  #s7-hl-price { left: 474px; top: 302px; width: 244px; height: 132px; }
+  #s7-steps { position: absolute; left: 860px; top: 190px; width: 940px; }
+  #s7-steps h3, #s7-log h3 { font-family: "IBM Plex Serif", serif; font-weight: 300; font-size: 44px; margin-bottom: 26px; }
+  .s7-st { display: grid; grid-template-columns: 56px 1fr; gap: 4px 18px; padding: 16px 0; border-top: 1px solid var(--rule); font-size: 27px; }
+  .s7-st b { font-family: "IBM Plex Mono", monospace; font-weight: 500; color: var(--accent); }
+  .s7-st .h { grid-column: 2; font-family: "IBM Plex Mono", monospace; font-size: 21px; color: var(--muted); word-break: break-all; }
+  #s7-log { position: absolute; left: 120px; top: 470px; width: 1680px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 28px 36px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; }
+  #s7-log h3 { grid-column: 1 / 3; font-size: 38px; margin-bottom: 10px; }
+  #s7-log .s7-st { font-size: 28px; padding: 14px 0; grid-template-columns: 44px 1fr; }
+  #s7-log .s7-st .h { font-size: 21px; }
 </style>
 <div class="stage" id="s7-stage">
-  <div class="chap" id="s7-chap"><b>07</b> &nbsp;Version two · PealTenderV2</div>
-  <img id="s7-auction" src="assets/brand/auction-lockup.svg" alt="Peal Sealed Auction" />
+  <div class="chap" id="s7-chap"><b>07</b> &nbsp;Version two · live on the testnet</div>
+  <img class="brandmark" id="s7-brand" src="assets/brand/lockup.svg" alt="Peal Tender" />
+  <div id="s7-live"><i></i>peal-tender.vercel.app <span>· PealTenderV2 0x79B2076a34b8CaBCF0120073cE0640165B287940 · live since 18 Nov 2026</span></div>
   <div class="view" id="s7-view">
     <div class="cam" id="s7-c1" style="width:1440px">
-      <img src="assets/shots/app-signers.png" width="1440" height="964" alt="The app: signers and their ML-DSA-87 keys" />
+      <img src="assets/shots/live-signers.png" width="1440" height="964" alt="The live app: signers and their ML-DSA-87 keys" />
       <div class="hl" id="s7-hl-sum"></div><div class="hl" id="s7-hl-cards"></div>
     </div>
     <div class="cam" id="s7-c2" style="width:1440px">
-      <img src="assets/shots/app-timelock.png" width="1440" height="945" alt="The app: timelock and daily allowance" />
-      <div class="hl" id="s7-hl-cap"></div><div class="hl" id="s7-hl-queue"></div><div class="hl" id="s7-hl-veto"></div>
+      <img src="assets/shots/live-vault.png" width="1440" height="1171" alt="The live app: the treasury, its daily allowance and rules" />
+      <div class="hl" id="s7-hl-cap"></div><div class="hl" id="s7-hl-rules"></div>
     </div>
     <div class="cam" id="s7-c3" style="width:1440px">
-      <img src="assets/shots/app-tender1.png" width="1440" height="1305" alt="The app: tender 1, settled" />
-      <div class="hl" id="s7-hl-settled"></div>
+      <img src="assets/shots/live-tender3.png" width="1440" height="1144" alt="The live app: tender 3, open for offers" />
+      <div class="hl" id="s7-hl-ends"></div><div class="hl" id="s7-hl-sell"></div>
     </div>
-    <div class="cam" id="s7-c4" style="width:1440px">
-      <img src="assets/shots/app-sales.png" width="1440" height="900" alt="The app: sealed sales on Peal Sealed Auction" />
-      <div class="hl" id="s7-hl-desc"></div><div class="hl" id="s7-hl-row"></div>
+    <div class="cam" id="s7-c4" style="width:420px">
+      <img src="assets/shots/live-panel-claim.png" width="420" height="740" alt="The wallet panel: a guest account claims test PEAL-T" />
+      <div class="hl" id="s7-hl-reg"></div><div class="hl" id="s7-hl-win"></div>
+    </div>
+    <div class="cam" id="s7-c5" style="width:1440px">
+      <img src="assets/shots/live-offer-placed.png" width="1440" height="1410" alt="The live app: the guest's offer on tender 2" />
+      <div class="hl" id="s7-hl-you"></div>
+    </div>
+    <div class="cam" id="s7-c6" style="width:1440px">
+      <img src="assets/shots/live-tender2.png" width="1440" height="1204" alt="The live app: tender 2, settled at one price" />
+      <div class="hl" id="s7-hl-price"></div>
     </div>
   </div>
-  <div id="s7-note">The real app against a local node (<span class="mono">npm run demo:local</span>). v2 has been live on the testnet since 18 November 2026.</div>
+  <div id="s7-steps">
+    <h3>A fresh browser, on the testnet</h3>
+    <div class="s7-st" id="s7-st1"><b>1</b><span>its own ML-DSA-87 key, registered</span><span class="h" data-layout-ignore>BEBB619A38ED229BC6C38C7BF5972CEB7C0156585747149B59389ED38FF204D5</span></div>
+    <div class="s7-st" id="s7-st2"><b>2</b><span>a window scoped to the faucet, for one transaction</span></div>
+    <div class="s7-st" id="s7-st3"><b>3</b><span>1,000 test PEAL-T claimed</span><span class="h" data-layout-ignore>0x37e00d100959e0deb0fed19b13f13796b5a9325075d12e9e2d5f24cea560a018</span></div>
+    <div class="s7-st" id="s7-st4"><b>4</b><span>the window closed again</span></div>
+  </div>
+  <div id="s7-log">
+    <h3>Offer 50 PEAL-T at 0.0013 or more</h3>
+    <div class="s7-st" id="s7-lg1"><b>1</b><span>window: 2 transactions, scoped to PEAL-T and the vault</span></div>
+    <div class="s7-st" id="s7-lg2"><b>2</b><span>allow the vault to escrow 50 PEAL-T</span><span class="h" data-layout-ignore>0x26584742f04131074584973223165d7c5a54b9993f27c9421c6acd923a806d05</span></div>
+    <div class="s7-st" id="s7-lg3"><b>3</b><span>place the offer</span><span class="h" data-layout-ignore>0x57b6140b321c233a067bc4e340f9617fdcb57901bf41597a49415ba2b0510a0f</span></div>
+    <div class="s7-st" id="s7-lg4"><b>4</b><span>window closed</span></div>
+  </div>
 </div>
 <script>
   const BOX = { x: 120, y: 0, w: 1680, h: 870 };
+  // A camera fades in where camSet framed it (inn() would reset its y).
+  function fade(sel, t, d = 0.4) { tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t); }
   inn("#s7-chap", 0.1);
-  inn("#s7-note", 0.6);
-  // "Version two moves authority to three signers. Any two of their ML-DSA keys sign each order."
+  inn("#s7-brand", 0.1);
+  // "Version two is live on the testnet too."
   camSet("#s7-c1", [210, 150, 1020, 615], BOX);
-  inn("#s7-c1", 0.3, { d: 0.5 });
-  hlIn("#s7-hl-sum", 3.6); hlOut("#s7-hl-sum", 4.9);
-  camTo("#s7-c1", [210, 385, 1020, 385], BOX, 4.9, 1.2);
-  hlIn("#s7-hl-cards", 5.3);
-  out("#s7-c1", 6.45, 0.3);
-  // "Payments draw on a daily cap."
-  camSet("#s7-c2", [195, 20, 1050, 780], BOX);
-  inn("#s7-c2", 6.6, { d: 0.45 });
-  hlIn("#s7-hl-cap", 7.6); hlOut("#s7-hl-cap", 8.8);
-  // "Anything larger, and every rule change, waits in a public timelock, where one honest signer can veto it."
-  camTo("#s7-c2", [205, 400, 1030, 420], BOX, 8.8, 1.5);
-  hlIn("#s7-hl-queue", 10.5); hlOut("#s7-hl-queue", 13.4);
-  hlIn("#s7-hl-veto", 13.5);
-  out("#s7-c2", 14.55, 0.3);
-  // "Anyone can settle a finished tender."
-  camSet("#s7-c3", [195, 140, 1050, 330], BOX);
-  inn("#s7-c3", 14.7, { d: 0.45 });
-  hlIn("#s7-hl-settled", 15.4);
-  out("#s7-c3", 17.3, 0.3);
-  // "And a buyback can run as a sealed sale on Peal Sealed Auction"
-  camSet("#s7-c4", [210, 140, 1020, 540], BOX);
-  inn("#s7-c4", 17.45, { d: 0.45 });
-  inn("#s7-auction", 19.5, { d: 0.5 });
-  // "with bids hidden until the close, and proceeds that can only return to the vault"
-  hlIn("#s7-hl-desc", 20.9); hlOut("#s7-hl-desc", 23.0);
-  hlIn("#s7-hl-row", 23.2);
+  fade("#s7-c1", 0.3, 0.5);
+  inn("#s7-live", 0.7);
+  // "Two of three signers' ML-DSA keys sign each order"
+  hlIn("#s7-hl-sum", 3.3); hlOut("#s7-hl-sum", 4.6);
+  camTo("#s7-c1", [210, 385, 1020, 385], BOX, 4.6, 1.1);
+  hlIn("#s7-hl-cards", 5.0);
+  out("#s7-c1", 6.35, 0.3);
+  // "under a daily cap, and a timelock any one signer can veto."
+  camSet("#s7-c2", [210, 230, 1020, 520], BOX);
+  fade("#s7-c2", 6.5, 0.4);
+  hlIn("#s7-hl-cap", 6.8); hlOut("#s7-hl-cap", 7.9);
+  camTo("#s7-c2", [210, 440, 1020, 640], BOX, 7.8, 1.0);
+  hlIn("#s7-hl-rules", 8.7);
+  out("#s7-c2", 10.3, 0.3);
+  // "And anyone can try it in a browser."
+  camSet("#s7-c3", [210, 150, 1020, 520], BOX);
+  fade("#s7-c3", 10.5, 0.4);
+  hlIn("#s7-hl-ends", 10.9); hlOut("#s7-hl-ends", 11.8);
+  hlIn("#s7-hl-sell", 11.85);
+  out("#s7-c3", 12.55, 0.3);
+  // "A guest account registers its own post-quantum key, claims test tokens"
+  camSet("#s7-c4", [0, 100, 420, 460], { x: 120, y: 40, w: 700, h: 790 });
+  fade("#s7-c4", 12.7, 0.4);
+  inn("#s7-steps h3", 12.8);
+  hlIn("#s7-hl-reg", 13.4); inn("#s7-st1", 13.4);
+  hlOut("#s7-hl-reg", 14.6);
+  hlIn("#s7-hl-win", 14.7); inn("#s7-st2", 13.9); inn("#s7-st3", 14.4); inn("#s7-st4", 14.9);
+  out("#s7-c4", 16.6, 0.3); out("#s7-steps", 16.6, 0.3);
+  // "and offers them into an open tender, each step in a scoped window, closed again."
+  camSet("#s7-c5", [215, 660, 1010, 680], BOX);
+  fade("#s7-c5", 16.8, 0.4);
+  camTo("#s7-c5", [220, 1190, 1000, 130], { x: 120, y: 20, w: 1680, h: 260 }, 17.5, 1.2);
+  hlIn("#s7-hl-you", 18.4);
+  inn("#s7-log", 18.9, { y: 12 });
+  inn("#s7-lg1", 19.4); inn("#s7-lg2", 19.9); inn("#s7-lg3", 20.4); inn("#s7-lg4", 21.6);
+  out("#s7-c5", 22.35, 0.3); out("#s7-log", 22.35, 0.3);
+  // "Anyone settles it, and every seller is paid one price."
+  camSet("#s7-c6", [210, 180, 1020, 760], BOX);
+  fade("#s7-c6", 22.55, 0.4);
+  hlIn("#s7-hl-price", 23.9);
   endScene("#s7-stage");
 </script>

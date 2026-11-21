@@ -1,4 +1,4 @@
-<!-- {"id":"drill","start":90.0,"dur":16.0} -->
+<!-- {"id":"drill","start":90.0,"dur":17.2} -->
 <style>
   #s5-title { position: absolute; left: 120px; top: 160px; }
   #s5-date { position: absolute; left: 120px; top: 252px; font-size: 26px; color: var(--ink-2); }
@@ -12,6 +12,14 @@
   #s5-stamp .small { font-family: "IBM Plex Mono", monospace; font-size: 25px; letter-spacing: 0.06em; }
   #s5-view { left: 740px; top: 150px; width: 1080px; height: 830px; }
   #s5-cover { position: absolute; left: 470px; top: 0; width: 680px; height: 476px; background: #f1f4f2; transform-origin: 50% 100%; }
+  #s5-res { position: absolute; left: 760px; top: 170px; width: 1040px; }
+  #s5-res .r { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 24px 30px; margin-bottom: 22px; }
+  #s5-res .label { font-size: 23px; }
+  #s5-res .hash { font-family: "IBM Plex Mono", monospace; font-size: 24px; margin: 10px 0 14px; word-break: break-all; }
+  #s5-res .line { display: flex; justify-content: space-between; align-items: center; gap: 20px; font-size: 24px; color: var(--ink-2); }
+  #s5-res .big { font-family: "IBM Plex Serif", serif; font-weight: 300; font-size: 56px; line-height: 1.1; margin: 6px 0 8px; color: var(--accent); }
+  #s5-res .big.mono { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 44px; }
+  #s5-res .sub { font-size: 23px; color: var(--muted); }
 </style>
 <div class="stage" id="s5-stage">
   <div class="chap" id="s5-chap"><b>05</b> &nbsp;The Q-Day Drill</div>
@@ -24,11 +32,28 @@
     <div class="row"><span>its classical key</span><span class="tag no">HANDED OVER</span></div>
   </div>
   <div id="s5-lead">The attacker holds the key and tries everything it can do alone.</div>
-  <div id="s5-stamp"><div class="big">9 OF 9</div><div class="small">REFUSED · NOTHING MOVED</div></div>
+  <div id="s5-stamp"><div class="big">9 OF 9</div><div class="small">REFUSED IN REHEARSAL</div></div>
   <div class="view" id="s5-view">
     <div class="cam" id="s5-cam" style="width:1136px">
       <img src="assets/shots/rejected.png" width="1136" height="475" alt="Instructions refused in the drill rehearsal" />
       <div id="s5-cover"></div>
+    </div>
+  </div>
+  <div id="s5-res">
+    <div class="r" id="s5-r1">
+      <div class="label">Proof transaction · 18 Nov 2026, 10:18:05 UTC · block 10,309,995</div>
+      <div class="hash">0x42ee8b65dbbd98f6034eb8e9107dc7d3d7e00a869cab1d1cddc2be527cedd4f1</div>
+      <div class="line"><span>ML-DSA-87 signed <span class="mono">openTender</span>, sent from the drill account</span><span class="tag ok">SUCCESS</span></div>
+    </div>
+    <div class="r" id="s5-r2">
+      <div class="label">Moved by the attacker</div>
+      <div class="big">Nothing</div>
+      <div class="sub">the drill account sent only our three transactions all day</div>
+    </div>
+    <div class="r" id="s5-r3">
+      <div class="label">Kept by the vault</div>
+      <div class="big mono">67 QOR · 0.102818 fUSD</div>
+      <div class="sub">everything it held before the drill</div>
     </div>
   </div>
 </div>
@@ -36,20 +61,26 @@
   const BOX = { x: 0, y: 0, w: 1080, h: 830 };
   inn("#s5-chap", 0.1);
   inn("#s5-brand", 0.1);
-  // "For the Q-Day Drill on November eighteenth"
+  // "On November eighteenth, the Q-Day Drill"
   words("#s5-title", 0.45, 0.1);
-  inn("#s5-date", 2.2);
-  // "the signer's classical key goes to the organisers"
-  inn("#s5-acct", 3.3, { y: 12 });
-  inn("#s5-acct .tag", 4.6, { d: 0.3 });
-  // "We rehearsed every route with that key alone"
-  inn("#s5-lead", 6.3);
+  inn("#s5-date", 0.9);
+  // "gave the signer's classical key to an attacker"
+  inn("#s5-acct", 2.6, { y: 12 });
+  inn("#s5-acct .tag", 4.2, { d: 0.3 });
+  // "In rehearsal, all nine routes with that key alone were refused"
+  inn("#s5-lead", 5.8);
   camSet("#s5-cam", [480, 0, 656, 475], BOX);
-  inn("#s5-view", 6.6, { d: 0.4 });
-  // rows uncover as they are named: transfers, windows, approvals, a forged sweep
-  const rows = [[8.6, 119], [9.2, 214], [9.75, 310], [10.15, 357], [11.1, 476]];
-  rows.forEach(([t, y]) => tl.to("#s5-cover", { scaleY: (476 - y) / 476, duration: 0.45, ease: "power2.out" }, t));
-  // "Nine of nine were refused. Nothing moved."
-  tl.fromTo("#s5-stamp", { opacity: 0, scale: 1.25, rotation: -5 }, { opacity: 1, scale: 1, rotation: -5, duration: 0.32, ease: "power4.out" }, 12.55);
+  inn("#s5-view", 5.9, { d: 0.4 });
+  const rows = [[6.5, 119], [7.0, 214], [7.5, 310], [7.9, 357], [8.5, 476]];
+  rows.forEach(([t, y]) => tl.to("#s5-cover", { scaleY: (476 - y) / 476, duration: 0.4, ease: "power2.out" }, t));
+  tl.fromTo("#s5-stamp", { opacity: 0, scale: 1.25, rotation: -5 }, { opacity: 1, scale: 1, rotation: -5, duration: 0.32, ease: "power4.out" }, 9.3);
+  // "On the day, our post-quantum signed proof went through"
+  out("#s5-view", 10.0, 0.3);
+  inn("#s5-r1", 10.5, { y: 12 });
+  inn("#s5-r1 .tag", 12.4, { d: 0.3 });
+  // "the attacker moved nothing"
+  inn("#s5-r2", 13.2, { y: 12 });
+  // "and the vault kept everything it held"
+  inn("#s5-r3", 14.8, { y: 12 });
   endScene("#s5-stage");
 </script>

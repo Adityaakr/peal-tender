@@ -1,17 +1,17 @@
 # Hyperframes Composition Brief: Peal Tender
 
 ## Objective
-A 2:59 narrated explainer and demo of Peal Tender for the QoreChain "Build Before Q-Day" submission (Post-Quantum dApp category). The owner's request for 179 s overrides brag's 15-25 s window.
+A 2:57 narrated explainer and demo of Peal Tender for the QoreChain "Build Before Q-Day" submission (Post-Quantum dApp category). The owner's request for about 179 s overrides brag's 15-25 s window; the second cut (21 November 2026) runs 177.5 s.
 
 ## Output
 - Composition directory: a HyperFrames project built from `src/` (`node src/build.mjs`)
 - Rendered video: `brag.mp4`
 - Format: landscape, 1920x1080, 30 fps
-- Duration: 179 s (root `data-duration="179"`)
+- Duration: 177.5 s (root `data-duration="177.5"`; first cut 179 s)
 
 ## Source Material
 - Project root: `peal-tender` (worktree), files read: README.md, DRILL.md, THREAT_MODEL.md, deployments/qorechain-diana.json, audits/README.md, docs/design.md, apps/dashboard/DESIGN.md, apps/dashboard/src (routes), docs/brand/.
-- Real screens: the landing page at http://localhost:5199 (testnet data) and the app against `npm run demo:local` (local node, a v2 vault in every state). They are captured at 2x into `assets/shots/` by `docs/video/src/capture.mjs`.
+- Real screens: the landing page at http://localhost:5199 (testnet data), captured at 2x into `assets/shots/` by `docs/video/src/capture.mjs`; for scene 7 (second cut), the hosted app at https://peal-tender.vercel.app reading the live v2 vault, by `docs/video/src/capture-live.mjs`, and two shots of a real guest-account run (see that file's header). The first cut's scene 7 used the app against `npm run demo:local`.
 - Product name: Peal Tender
 - Strongest claim (site headline): "Nothing leaves this treasury without two signatures the chain can verify."
 - Copy that must appear verbatim:
@@ -38,15 +38,15 @@ A 2:59 narrated explainer and demo of Peal Tender for the QoreChain "Build Befor
 2. reveal 16.6-34.3
 3. buyback 34.3-62.4
 4. safe 62.4-90.0
-5. drill 90.0-106.0
-6. proof 106.0-123.0
-7. v2 123.0-149.3
-8. reqs 149.3-170.7
-9. outro 170.7-179.0
+5. drill 90.0-107.2
+6. proof 107.2-124.2
+7. v2 124.2-150.18
+8. reqs 150.18-168.87
+9. outro 168.87-177.5
 
 ## Audio
 - Voice: `assets/voiceover.wav` (nine Kokoro af_heart clips, 1.0 s pauses), volume 1, own lane.
-- Music: `assets/music/bed.mp3` (vol-12), 0.09, two passes crossfaded near 116 s, fading out under the outro.
+- Music: `assets/music/bed.mp3` (vol-12), 0.09, two passes crossfaded near 116 s (the second pass ends at 177.5 s), fading out under the outro.
 - Cue guidance: preset for vol-12 exists; not used, the voice sets the timing.
 - Audio-reactive: none (intentional for a narrated explainer).
 - SFX (one lane, one frame after the picture): drop on the verified seal (scene 2) and the clearing price (scene 3); soft impacts on the refused stamp (scene 2) and "9 of 9 refused" (scene 5); bong under the final lockup.

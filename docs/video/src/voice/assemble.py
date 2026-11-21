@@ -1,4 +1,4 @@
-"""assemble.py - lay the nine narration clips on one 179 s track with fixed pauses.
+"""assemble.py - lay the nine narration clips on one 177.5 s track with fixed pauses.
 
 Run from the composition directory, after synthesising each clip with Kokoro:
 
@@ -15,7 +15,7 @@ import json
 import subprocess
 import sys
 
-TOTAL = 179
+TOTAL = 177.5
 gaps = [float(x) for x in sys.argv[1].split(",")]
 lead = float(sys.argv[2])
 durs = [

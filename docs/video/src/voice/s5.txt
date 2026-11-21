@@ -1,1 +1,1 @@
-For the Q-Day Drill on November eighteenth, the signer's classical key goes to the organisers. We rehearsed every route with that key alone: transfers, opening windows, approvals, a forged sweep. Nine of nine were refused. Nothing moved.
+On November eighteenth, the Q-Day Drill gave the signer's classical key to an attacker. In rehearsal, all nine routes with that key alone were refused. On the day, our post-quantum signed proof went through, the attacker moved nothing, and the vault kept everything it held.
