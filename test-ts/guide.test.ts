@@ -7,7 +7,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { Snapshot, Tender } from "../apps/dashboard/src/data.ts";
-import { GUEST_QOR_NEEDED, plan, type Role } from "../apps/dashboard/src/pages/guide.ts";
+import { GUEST_QOR_NEEDED, biddingOver, plan, type Role } from "../apps/dashboard/src/pages/guide.ts";
 
 const NOW = 1_795_003_300n;
 const token = (symbol: string, decimals: number) => ({
@@ -135,6 +135,17 @@ describe("guide: plan", () => {
     assert.equal(step(anyone, /^Collect/), undefined);
     anyone = role(plan(snap({ sales: [{ ...sale, auctionState: "Failed" }] }), noWallet), "anyone");
     assert.equal(step(anyone, /^Collect/)?.state, "now");
+  });
+
+  it("does not call a sealed sale open for bids once its bidding time is over", () => {
+    const sale = { auction: "0x19bCC6197b97fE53b111d19c350660753441082B" as const, state: "Active" as const, startedAt: NOW - 7200n, supply: 900_000n, proceeds: 0n, returned: 0n, endTime: NOW - 60n, auctionState: "Open for bids" };
+    assert.equal(biddingOver(sale, NOW), true);
+    assert.equal(biddingOver({ ...sale, endTime: NOW + 60n }, NOW), false);
+    assert.equal(biddingOver({ ...sale, auctionState: "Failed" }, NOW), false);
+    const anyone = role(plan(snap({ sales: [sale] }), noWallet), "anyone");
+    const st = step(anyone, /sealed buyback/);
+    assert.match(st?.status ?? "", /^bidding ended/);
+    assert.match(st?.text ?? "", /anyone can close it/);
   });
 
   it("signers get commands, never keys on the page", () => {
