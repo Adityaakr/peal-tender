@@ -8,31 +8,95 @@ runs buyback **tenders** from it: it opens a tender with a budget and a price
 ladder, token holders offer tokens at a minimum price, the tender clears at **one
 price**, sellers are paid and the bought tokens stay in the vault.
 
-Every action that moves treasury money or changes the rules (funding, opening,
-cancelling, settling, sweeping, changing the signer) must carry an **ML-DSA-87
-signature** by the treasury's signer account, which the contract checks on chain
-with QoreChain's `pqcKeyStatus` and `pqcVerify` precompiles. Being the sender is
-never enough. So whoever steals the signer account's classical (secp256k1) key, as
+Every action that moves treasury money or changes the rules (funding, opening or
+cancelling a tender, sweeping, starting a sale, changing the signers) must carry
+**ML-DSA-87 signatures** by the treasury's signers, which the contract checks on
+chain with QoreChain's `pqcKeyStatus` and `pqcVerify` precompiles. Being the sender
+is never enough. So whoever steals a signer account's classical (secp256k1) key, as
 the Q-Day Drill's attacker does, cannot move anything.
 
 Entry for the QoreChain "Build Before Q-Day" hackathon, Post-Quantum dApp
 category, and its Q-Day Drill.
 
+| | |
+| --- | --- |
+| **Live app** | **https://peal-tender.vercel.app** (QoreChain testnet; reads the live v2 vault) |
+| **Video** (2:59) | https://drive.google.com/file/d/10CswKFMBm_4AQf1Ljq9MtYgavpXiZnAu/view |
+| **Vault (v2)** | `qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4` / `0x79B2076a34b8CaBCF0120073cE0640165B287940` |
+| **Drill vault (v1)** | `0xc3EA5683C1f8D8594A1865D169D98B509b057D41`, signer `qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j` |
+| **Licence** | Apache-2.0 |
+
+## Try it in five minutes
+
+A buyback is open on the testnet for visitors: **tender #3**, 0.85 fUSD buying
+PEAL-T on a ladder of 0.001 to 0.0019 fUSD per PEAL-T, open until
+**20 December 2026, 12:00 UTC** (after judging and the 16 December demo show),
+up to 200 offers of at least 1 PEAL-T. Test tokens have no value.
+
+1. Open **https://peal-tender.vercel.app** and press **Connect**, then
+   **Create a guest account**. It is a new testnet account made in your browser,
+   with its own ML-DSA-87 key; nothing is installed and nothing leaves the browser.
+2. **Fund it with about 1.5 test QOR**: from QoreX (the panel's *Send from QoreX*),
+   or from the [QoreChain dashboard faucet](https://dashboard.qorechain.io/faucet)
+   to the account's `qor1…` address shown in the panel. Each action costs about
+   0.3 QOR, because it opens and closes an EVM window scoped to the contracts it
+   calls; the first one also registers the account's ML-DSA-87 key (0.15 QOR).
+3. Press **Get test PEAL-T** in the panel: 1,000 PEAL-T from a faucet contract on the
+   testnet (`0xe6c2943ff47e908c8b42af4329fb4abd10452e57`, deployed with Peal Sealed
+   Auction), in one transaction. No other site is needed.
+4. Open **Tenders → #3**, enter a quantity and the lowest price you accept, and press
+   **Offer PEAL-T**. The panel shows each step: the key registration, the window,
+   the approval, the offer, and the window closing again.
+5. See your offer on the tender's price ladder, and the vault, its signers' keys and
+   every transaction on the other tabs. After 20 December anyone can **Settle** it
+   and each seller **Claims**; [tender #2](#the-buyback-path-run-end-to-end-from-the-browser)
+   shows that part already done from a browser.
+
+**How to use** in the app says what each role can do from the vault's live state.
+The treasury side (proposing and signing with ML-DSA-87) runs from the command
+line, on the signers' own machines: [Operating v2](#operating-v2).
+
 ## Status
 
 - **v1, the drill vault** (`PealTender`): a minimal first version with one signer,
-  deployed on the testnet for the Q-Day Drill (18 November 2026). It stays exactly
-  as deployed; the drill judges it as it is.
+  deployed on the testnet on 15 November 2026 for the Q-Day Drill. It stays exactly
+  as deployed; the drill judges it as it is. [The drill, below](#the-q-day-drill-18-november-2026).
 - **v2, the full build** (`PealTenderV2`): a 2-of-3 post-quantum signer set, a
   timelock with a daily cap, permissionless settlement, and buybacks run as sealed
   sales on [Peal Sealed Auction](https://github.com/Adityaakr/peal-sealed-auction).
-  Written and tested (unit, fuzz, invariant, cross-language vectors), checked end to
-  end against the real auction contracts, and **live on the testnet since
-  18 November 2026**: vault `0x79B2076a34b8CaBCF0120073cE0640165B287940`
-  (`qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4`). [See below](#peal-tender-v2-the-full-build).
+  Tested (unit, fuzz, invariant, cross-language vectors), checked end to end against
+  the real auction contracts, and **live on the testnet since 18 November 2026**,
+  with the web app above. [See below](#peal-tender-v2-the-full-build).
 
 Neither version is audited yet; the two-stage QCAI audit of v2 is prepared in
 [`audits/`](audits/README.md).
+
+**Honest limits.** The three treasury signers are three separate accounts that the
+author holds for the demo; a real treasury gives each to a different person. The
+time lock is 15 minutes so a rotation fits in a demo; a real one would use days.
+QoreX cannot send EVM transactions for pages yet, so the browser's guest account
+makes the contract calls. Sealed sales need Peal Sealed Auction's committee to
+release the bids after the close; none is running now (the first one, below, got
+no bids and returned its 0.9 fUSD to the vault).
+
+## The Q-Day Drill (18 November 2026)
+
+The drill account `qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j`
+(`0x1453faDA276086E39A87CA39C1CD1F754cbf56bF`) is the drill vault's signer; its
+classical key went to the drill's attacker bot. Registered contracts: the drill vault
+`0xc3EA5683C1f8D8594A1865D169D98B509b057D41` and its token tPEAL
+`0x6dE33E6D9f106427fb0bee52a61BaD6CdEE01784`.
+
+| | |
+| --- | --- |
+| **Proof transaction** (the normal transaction during the drill) | `0x42ee8b65dbbd98f6034eb8e9107dc7d3d7e00a869cab1d1cddc2be527cedd4f1`, 18 November 2026 10:18:05 UTC, block 10,309,995: a PQ-signed `openTender` (drill tender #2, budget 0.05 fUSD) sent from the drill account in a window scoped to the vault for one transaction, opened (`B3F24028…A2650`) and closed (`056EE9A2…761F9`) around it |
+| **What the attacker moved** | nothing: the drill account's only transactions that day were those three, and the vault's only events were the proof transaction's |
+| **Value kept** | all of it: the vault still holds 67 QOR and 0.102818 fUSD, as before the drill (0.05 fUSD of it reserved for drill tender #2) |
+
+Tender #2 of the drill vault ended unsettled with no offers; settling it needs the
+signer's ML-DSA-87 signature, and the vault is left exactly as the drill judged it.
+How each attack is stopped: [THREAT_MODEL.md](THREAT_MODEL.md); the runbook:
+[DRILL.md](DRILL.md).
 
 ## Deployed (testnet `qorechain-diana`, EVM chain id 9800)
 
@@ -94,6 +158,28 @@ The drill account, vault and token were not used: v2's accounts are its own.
 | 2-of-3 `sweep` of 0.01 fUSD: proposed by A with a QoreSign signature, sealed to B and C with QoreSeal, opened and signed by B (466,762 gas) | `0xd1aec2ea83c7cd9c89a88f9f60d02eca96e6c9c370784c252e852037b6a6bd4f` |
 | 2-of-3 `startSealedSale`: 0.9 fUSD for PEAL-T on Peal Sealed Auction, auction `0x19bCC6197b97fE53b111d19c350660753441082B` (1,213,795 gas) | `0x5a2c880ebdb0cf68377f0a630ede0bf88d85180604abc68611da0147bf70b615` |
 | 2-of-3 `openTender`: tender 1, 0.08 fUSD, open to visitors until 25 November (625,595 gas) | `0x230bcc916d658c9051f3bd80c307402b9a7a725798e1b96f9ea7c9c899d7d9c2` |
+| 21 Nov: the first sealed sale got no bids; anyone closes its bidding (`close-sale`), then collects: 0.9 fUSD back in the vault | `0x90659549e91895669deebd008a5a91e8500ed85cb4500f6bf7ffd059c94dcf3b`, `0x5c5ce0f717b175b3fe0351dff159d8c494e622fa5fdf7b86e8e9d70131ceda01` |
+| 21 Nov: 2-of-3 `cancelTender` of tender 1 (no offers), then 2-of-3 `openTender` of tender 2 (one hour, 0.1 fUSD) for a browser run | `0x083c45375a5616a2191f18610f9191f75a74bc75ef7a3745672853b8c3a5dc0b`, `0x55b605cd296e070c0b691aa25a6fc7880d8aaae794e3f3bca113877589fdc628` |
+| **21 Nov: 2-of-3 `openTender`: tender 3, 0.85 fUSD, open to visitors until 20 December 12:00 UTC** (611,162 gas) | `0xf21ca4e3c19a7a2fb965e89cff2245d2b958bfdb972f0fd522b486c6afdd5290` |
+
+#### The buyback path, run end to end from the browser
+
+On 21 November a guest account created in the hosted app
+(`qor1pzjsdht0fdc4p63kf5wpafxdkgtwqhrjur8lkm` / `0x08A506Dd6f4b7150eA364d1C1EA4cdb216e05c72`,
+funded with test QOR by the relayer) did a holder's whole path in tender 2. Each
+step ran in a window scoped to the contracts it called, opened and closed by the
+browser:
+
+| Step (in the app) | Transaction |
+| --- | --- |
+| Register the account's ML-DSA-87 key (first action) | `BEBB619A38ED229BC6C38C7BF5972CEB7C0156585747149B59389ED38FF204D5` |
+| **Get test PEAL-T**: 1,000 from the faucet contract | `0x37e00d100959e0deb0fed19b13f13796b5a9325075d12e9e2d5f24cea560a018` |
+| **Offer**: approve exactly 50 PEAL-T, offer them at 0.0013 fUSD or more | `0x26584742f04131074584973223165d7c5a54b9993f27c9421c6acd923a806d05`, `0x57b6140b321c233a067bc4e340f9617fdcb57901bf41597a49415ba2b0510a0f` |
+| **Settle it** (anyone, after the end): one price, 0.0013 fUSD; 50 PEAL-T bought for 0.065 fUSD | `0x7be0a3e555797f7b030c3ec817044ea24b3a54d47e27c51915ca07d4857e4831` |
+| **Claim**: 0.065 fUSD paid to the seller | `0xd5e890b5ccf69f6edc0e0903b33c5c56ec516c82809e16350fb66e7da2662a8d` |
+
+The whole path cost the account about 1.4 test QOR in fees (0.15 for the key, then
+two 0.15 window messages and gas per action), which is why the guide asks for 1.5.
 
 Each EVM step ran in a window scoped to the vault, fUSD, PEAL-T and the auction
 factory, opened and closed around it; [`deployments/evidence.json`](deployments/evidence.json)
@@ -230,7 +316,9 @@ npm run v2 -- propose queue signers 2 <a>,<b>,<c>   # timelocked: queue, wait, e
 npm run v2 -- execute <opId>
 npm run v2 -- veto <opId> --as v2-signer-c          # any one signer, alone
 npm run v2 -- propose start-sale sale.json          # a sealed buyback
+npm run v2 -- close-sale <auction>                  # anyone, once bidding has ended
 npm run v2 -- collect <auction>
+npm run v2 -- account send v2-relayer <qor1…> 1.5   # test QOR for a visitor's guest account (at most 2)
 npm run v2 -- status
 npm run v2 -- refusal-demo     # the scoped window refuses an off-target transaction
 ```
@@ -269,7 +357,7 @@ registered ML-DSA-87 key and a live window opened by a hybrid-signed native mess
 
 | Way in | What it does here |
 | --- | --- |
-| **Guest account** | A fresh testnet account made in the visitor's browser (random recovery phrase, both keys derived by `@qorechain/sdk`, kept only in that browser, with backup and forget). It is the one that acts: on first use it registers its ML-DSA-87 key, then each action opens a window scoped to the contracts it calls, sends, and closes the window. It can claim test PEAL-T, offer into a tender, claim, settle, execute a ready change and collect a sale |
+| **Guest account** | A fresh testnet account made in the visitor's browser (random recovery phrase, both keys derived by `@qorechain/sdk`, kept only in that browser, with backup and forget). It is the one that acts: on first use it registers its ML-DSA-87 key, then each action opens a window scoped to the contracts it calls, sends, and closes the window. It can claim test PEAL-T, offer into a tender, claim, settle, execute a ready change, close a sale's bidding and collect a sale. A holder's whole path costs about 1.5 test QOR |
 | **QoreX** | Connects through `window.qorex` and funds the guest account with one QOR transfer the visitor approves in QoreX. QoreX does not send EVM transactions or open windows for pages yet (its docs, 16 November 2026), so the guest account does the contract calls |
 | **MetaMask** | Connects (EIP-6963) and adds the QoreChain testnet network. It cannot make the post-quantum signature a QoreChain transaction needs, so actions go through the guest account |
 
@@ -325,7 +413,7 @@ forge build
 forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
-npm run test:ts      # the kit integrations and the web app's guide: 36 tests, offline
+npm run test:ts      # the kit integrations and the web app's guide: 37 tests, offline
 npm run template:check && npm run cbom:check
 npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```
