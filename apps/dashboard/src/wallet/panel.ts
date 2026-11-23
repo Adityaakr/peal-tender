@@ -56,14 +56,20 @@ export function setOpen(v: boolean): void {
   draw();
 }
 
+let balanceReads = 0;
+
 async function refreshToken(): Promise<void> {
   if (!state.guest || !buyToken) return;
+  const read = ++balanceReads;
   try {
-    tokenBal = (await guest.evm.readContract({ address: buyToken.address, abi: balAbi, functionName: "balanceOf", args: [state.guest.evm as Address] })) as bigint;
-    draw();
+    const bal = (await guest.evm.readContract({ address: buyToken.address, abi: balAbi, functionName: "balanceOf", args: [state.guest.evm as Address] })) as bigint;
+    if (read !== balanceReads) return; // a newer read has started
+    tokenBal = bal;
   } catch {
-    // shown as unknown
+    if (read !== balanceReads) return;
+    tokenBal = undefined; // shown as unknown until a read succeeds
   }
+  draw();
 }
 
 /** The header button: "Connect" or the guest's short address. */

@@ -61,6 +61,7 @@
     {"hash": "0xd5e890b5ccf69f6edc0e0903b33c5c56ec516c82809e16350fb66e7da2662a8d", "expect": "evm", "what": "v2: the guest claims offer 0: 0.065 fUSD paid"},
     {"hash": "0xf21ca4e3c19a7a2fb965e89cff2245d2b958bfdb972f0fd522b486c6afdd5290", "expect": "evm", "what": "v2: 2-of-3 PQ-signed openTender (tender 3, 0.85 fUSD, open to visitors until 20 December 12:00 UTC; signed by A and C)"},
     {"hash": "EB3A10F4ACF17A2646AAADFFCD7498B9A67C116655276449FD74015CE3B6735E", "expect": "pqc", "message": "/qorechain.pqc.v1.MsgCloseEVMWindow", "what": "v2: close that window"},
-    {"hash": "0x16a135be36058ea05f21b3146ce7dc0e472003aaebe3ad7827756b3aa370ff92", "expect": "evm", "what": "v2: the test guest account offers 100 PEAL-T into tender 3 at 0.0015 fUSD or more, from the hosted app"}
+    {"hash": "0x16a135be36058ea05f21b3146ce7dc0e472003aaebe3ad7827756b3aa370ff92", "expect": "evm", "what": "v2: the test guest account offers 100 PEAL-T into tender 3 at 0.0015 fUSD or more, from the hosted app"},
+    {"hash": "0xcf35b009562ddb69d4e54d625a5e8d371709a36b810703cf7419c629a0c0cf78", "expect": "evm", "what": "v2: a new browser account (23 Nov re-check) offers 40 PEAL-T into tender 3 at 0.0012 fUSD or more, from the hosted app"}
   ]
 }
