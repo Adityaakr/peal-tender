@@ -1,6 +1,6 @@
 # QCAI audit, stage 2
 
-**Status: not run yet.** Planned for 29 November 2026 (the freeze), by the owner,
+**Status: not run yet.** Runs on a later day than stage 1 and before submissions close (2 December 2026 23:59 UTC), by the owner,
 on the source with the stage 1 fixes (see [README](README.md)).
 
 | Field | Value |
@@ -9,7 +9,7 @@ on the source with the stage 1 fixes (see [README](README.md)).
 | Audited source commit | |
 | Flattened file | `audits/flattened/PealTenderV2.flat.sol` |
 | Flattened file sha256 | |
-| Report | `audits/stage-2/qcai-report.pdf` |
+| Report | `docs/audit/stage-2-qcai-YYYY-MM-DD.pdf` |
 | Risk level | |
 | Security score (0 to 100) | |
 | Post-quantum readiness | |

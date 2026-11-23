@@ -35,6 +35,13 @@ export function mountPanel(): void {
   document.body.append(scrim, root);
   setOpenPanel(() => setOpen(true));
   subscribe(draw);
+  // An action (an offer escrows tokens, a claim returns them) changes the token
+  // balance: read it again when one finishes, not only when the panel opens.
+  let wasBusy = false;
+  subscribe(() => {
+    if (wasBusy && !state.busy) void refreshToken();
+    wasBusy = Boolean(state.busy);
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && open) setOpen(false);
   });
