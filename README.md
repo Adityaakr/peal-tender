@@ -15,6 +15,13 @@ chain with QoreChain's `pqcKeyStatus` and `pqcVerify` precompiles. Being the sen
 is never enough. So whoever steals a signer account's classical (secp256k1) key, as
 the Q-Day Drill's attacker does, cannot move anything.
 
+**Why post-quantum matters here.** A treasury is a few keys guarding a lot of
+money for a long time, and every account's secp256k1 public key is on chain from
+its first transaction. Whoever can derive private keys from public ones (a large
+quantum computer, or the Q-Day Drill's attacker, who was simply handed one) owns
+an ordinary multisig. Peal Tender's vault never trusts the sender: it trusts only
+ML-DSA-87 signatures, checked against keys read live from the chain's registry.
+
 Entry for the QoreChain "Build Before Q-Day" hackathon, Post-Quantum dApp
 category, and its Q-Day Drill.
 
@@ -22,9 +29,17 @@ category, and its Q-Day Drill.
 | --- | --- |
 | **Live app** | **https://peal-tender.vercel.app** (QoreChain testnet; reads the live v2 vault) |
 | **Video** (2:59) | https://drive.google.com/file/d/10CswKFMBm_4AQf1Ljq9MtYgavpXiZnAu/view |
-| **Vault (v2)** | `qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4` / `0x79B2076a34b8CaBCF0120073cE0640165B287940` |
-| **Drill vault (v1)** | `0xc3EA5683C1f8D8594A1865D169D98B509b057D41`, signer `qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j` |
+| **Vault (v2)** | [`qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4`](https://explore.qore.network/address/qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4) / `0x79B2076a34b8CaBCF0120073cE0640165B287940` |
+| **Drill vault (v1)** | `0xc3EA5683C1f8D8594A1865D169D98B509b057D41`, signer [`qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j`](https://explore.qore.network/address/qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j) |
+| **Audit and PQ design** | [`docs/AUDIT.md`](docs/AUDIT.md): the two-stage QCAI audit ([`docs/audit/`](docs/audit/)), where `pqcVerify` and `pqcKeyStatus` are called, what each protects, which tests cover them |
+| **Threat model** | [THREAT_MODEL.md](THREAT_MODEL.md): each attack, the drill's included, and what stops it |
 | **Licence** | Apache-2.0 |
+
+**In 60 seconds, without an account:** open the [live app](https://peal-tender.vercel.app),
+then [Signers](https://peal-tender.vercel.app/#/signers) (the three ML-DSA-87 keys as
+`pqcKeyStatus` reports them right now), [Tender #3](https://peal-tender.vercel.app/#/tenders/3)
+(the open buyback and its offers) and [Activity](https://peal-tender.vercel.app/#/activity)
+(every vault action, with which signers authorised it).
 
 ## Try it in five minutes
 
@@ -177,6 +192,12 @@ browser:
 | **Offer**: approve exactly 50 PEAL-T, offer them at 0.0013 fUSD or more | `0x26584742f04131074584973223165d7c5a54b9993f27c9421c6acd923a806d05`, `0x57b6140b321c233a067bc4e340f9617fdcb57901bf41597a49415ba2b0510a0f` |
 | **Settle it** (anyone, after the end): one price, 0.0013 fUSD; 50 PEAL-T bought for 0.065 fUSD | `0x7be0a3e555797f7b030c3ec817044ea24b3a54d47e27c51915ca07d4857e4831` |
 | **Claim**: 0.065 fUSD paid to the seller | `0xd5e890b5ccf69f6edc0e0903b33c5c56ec516c82809e16350fb66e7da2662a8d` |
+
+Re-checked on 23 November (chain time) with a new browser account,
+[`qor1pxctlrvzzl6908307cl6w4zlc8dult9jwmph3j`](https://explore.qore.network/address/qor1pxctlrvzzl6908307cl6w4zlc8dult9jwmph3j):
+funded with 1.5 test QOR, it registered its ML-DSA-87 key, claimed 1,000 PEAL-T
+and offered 40 into tender #3 (offer #1, `0xcf35b009562ddb69d4e54d625a5e8d371709a36b810703cf7419c629a0c0cf78`),
+with 0.72 QOR left and no window left open.
 
 The whole path cost the account about 1.4 test QOR in fees (0.15 for the key, then
 two 0.15 window messages and gas per action), which is why the guide asks for 1.5.

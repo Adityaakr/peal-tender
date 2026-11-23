@@ -6,12 +6,13 @@ tool QoreChain offers is the dashboard's **Contract Auditor**
 security score, a post-quantum readiness percentage, findings and a PDF. It needs
 the owner's dashboard sign-in, has no API, and gives one free audit per account
 per UTC day, so the two stages fall on two different days. We read "two-stage" as
-audit, fix the findings, audit the fixed source again, and keep both reports here.
+audit, fix the findings, audit the fixed source again, and keep both reports in
+[`docs/audit/`](../docs/audit/).
 
 | Stage | Planned date (UTC) | Source audited | Who |
 | --- | --- | --- | --- |
-| 1 | about 22 November 2026 | the v2 contracts at that day's `main` | **owner** runs the auditor; the worker fixes findings |
-| 2 | 29 November 2026 (freeze) | the frozen source, after the stage 1 fixes | **owner** runs the auditor |
+| 1 | first free day (it was planned for 22 November and has not run yet) | the v2 contracts at that day's `main` | **owner** runs the auditor; the worker fixes findings |
+| 2 | a later day, before 2 December 2026 23:59 UTC (submissions close) | the source after the stage 1 fixes | **owner** runs the auditor |
 
 The drill vault (`src/PealTender.sol`) is the Q-Day Drill's deployed contract and
 is judged as deployed; it is not in scope and is not changed.
@@ -37,11 +38,15 @@ compiles with:
    audited bytes are in git.
 2. Open `dashboard.qorechain.io/audit`, sign in, paste
    `audits/flattened/PealTenderV2.flat.sol`, run the audit.
-3. Download the PDF report and save it as `audits/stage-1/qcai-report.pdf` (or
-   `stage-2/`). Note the risk level, the security score and the PQ readiness.
+3. Download the PDF report and save it as `docs/audit/stage-1-qcai-YYYY-MM-DD.pdf`
+   (or `stage-2-…`), dated the day it ran: the fest's FAQ asks for both reports in
+   `docs/audit/`, each with its date. Note the risk level, the security score and
+   the PQ readiness. Use the same audit setting, "Ethereum (EVM/Solidity)", both times.
 4. Hand the PDF to the worker (or commit it yourself). The worker fills in
    `audits/stage-N.md`: the audited commit, the file hash, the scores, and one row
    per finding with what was done about it (fixed in commit X, or not a bug and why).
+   Stage 1's findings also go into the table in [`docs/AUDIT.md`](../docs/AUDIT.md),
+   each with its regression test or the reason no contract change is needed.
 
 CI runs `npm run flatten -- --check`, so the committed flattened file always
 matches `src/`.
@@ -57,6 +62,10 @@ Regenerate it on the audited commit so the inventory and the reports describe th
 source; `npm run cbom:check` checks it.
 
 ## Records
+
+The summary judges read first is [`docs/AUDIT.md`](../docs/AUDIT.md): the two stages,
+each Stage 1 finding and what was done, and where the contracts call `pqcVerify` and
+`pqcKeyStatus`, what each call protects and which tests cover it.
 
 - [Stage 1](stage-1.md)
 - [Stage 2](stage-2.md)
