@@ -9,10 +9,10 @@ per UTC day, so the two stages fall on two different days. We read "two-stage" a
 audit, fix the findings, audit the fixed source again, and keep both reports in
 [`docs/audit/`](../docs/audit/).
 
-| Stage | Planned date (UTC) | Source audited | Who |
+| Stage | Date (UTC) | Source audited | Who |
 | --- | --- | --- | --- |
-| 1 | first free day (it was planned for 22 November and has not run yet) | the v2 contracts at that day's `main` | **owner** runs the auditor; the worker fixes findings |
-| 2 | a later day, before 2 December 2026 23:59 UTC (submissions close) | the source after the stage 1 fixes | **owner** runs the auditor |
+| 1 | **run** 24 November 2026 18:38 UTC (00:08 on the 25th in India): 72/100, MEDIUM, 5 findings | `audits/flattened/PealTenderV2.flat.sol` at `b20b082` | **owner** ran the auditor; a worker worked through the findings ([record](stage-1.md)) |
+| 2 | **not run yet**; any later UTC day, from 25 November 2026 00:00 UTC (05:30 India time) to 2 December 2026 23:59 UTC (submissions close) | the same file: the source did not need to change | **owner** runs the auditor |
 
 The drill vault (`src/PealTender.sol`) is the Q-Day Drill's deployed contract and
 is judged as deployed; it is not in scope and is not changed.
@@ -31,6 +31,35 @@ compiles with:
 | Post-quantum authorisation | `PqAuth.sol`, `PqAuthSet.sol` from `qore-pq-kit` v0.3.0 | yes (our toolkit) |
 | ERC-20 helpers, re-entrancy guard, math | OpenZeppelin Contracts 5.1.0 | no |
 
+## Stage 2, exactly (owner)
+
+1. Wait for a UTC day after 24 November 2026: from 25 November 00:00 UTC, which is 05:30
+   India time. Stage 1 used the free audit of 24 November UTC. If the page asks for a
+   payment, credits or an upgrade, stop and come back on a later UTC day; **never pay**.
+2. On `main`, check that the file is still the one stage 1 audited:
+
+   ```sh
+   shasum -a 256 audits/flattened/PealTenderV2.flat.sol
+   # 684e6dafc88d5ae34245e9f1979f1b4d3ed3b310212ed1c4be0039b9730fbdd6
+   ```
+
+   The source is unchanged, so paste **the same file**. A different hash means the source
+   changed: stop and ask before auditing.
+3. Open `dashboard.qorechain.io/audit`, sign in, and set the audit setting to
+   **"Ethereum (EVM/Solidity)"**. Do not leave "Auto-detect from code", and do not pick
+   "QoreChain (CosmWasm + PQC)": it is for CosmWasm contracts. (Stage 1 was left on
+   auto-detect, which resolved to ethereum, so the two reports compare.)
+4. Paste the whole file (4,088 lines) and run the audit once.
+5. Read the report before downloading: it must say **"Blockchain: ethereum"**. If it says
+   anything else, keep that PDF too, hand it over, and run again on the next UTC day.
+   "Quantum Readiness: not scored for this setting" is expected.
+6. Download the PDF, do not edit it or print it to a new PDF, and hand it over with the
+   date and time, the setting shown on the page and the finding texts shown on the page
+   (the PDF has only titles). It becomes `docs/audit/stage-2-qcai-YYYY-MM-DD.pdf`.
+7. A worker fills in [`stage-2.md`](stage-2.md) and the stage 2 row of
+   [`docs/AUDIT.md`](../docs/AUDIT.md). The score may go down as well as up and findings
+   may repeat; the fest FAQ says neither is bad by itself.
+
 ## Steps for each stage (owner)
 
 1. On the commit to audit: `npm run flatten`. It writes the flattened file and prints
@@ -41,7 +70,8 @@ compiles with:
 3. Download the PDF report and save it as `docs/audit/stage-1-qcai-YYYY-MM-DD.pdf`
    (or `stage-2-…`), dated the day it ran: the fest's FAQ asks for both reports in
    `docs/audit/`, each with its date. Note the risk level, the security score and
-   the PQ readiness. Use the same audit setting, "Ethereum (EVM/Solidity)", both times.
+   the PQ readiness. Use the audit setting "Ethereum (EVM/Solidity)"; the report must read
+   "Blockchain: ethereum". (Stage 1 was run with "Auto-detect from code", which resolved to it.)
 4. Hand the PDF to the worker (or commit it yourself). The worker fills in
    `audits/stage-N.md`: the audited commit, the file hash, the scores, and one row
    per finding with what was done about it (fixed in commit X, or not a bug and why).

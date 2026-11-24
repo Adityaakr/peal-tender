@@ -52,6 +52,9 @@ async function main(): Promise<void> {
   const factory = opt("factory", "0x0000000000000000000000000000000000000000")!;
   const delay = BigInt(opt("delay", "900")!); // 15 minutes, short enough for a demo
   const cap = BigInt(opt("cap", "1000000")!); // 1 fUSD a day without the timelock
+  // The vault keeps a day's spend in a uint192. Its timelock refuses a larger cap, but its
+  // constructor does not (QCAI stage 1, finding 2; docs/AUDIT.md), so refuse it here.
+  if (cap < 0n || cap >= 1n << 192n) throw new Error("--cap must be below 2^192");
   if (!buy) throw new Error("--buy <PEAL-T address> is required (the token the vault buys back)");
   const pay = (LOCAL_RPC ? opt("pay", FUSD)! : FUSD) as Address;
   for (const [what, a] of [["buy token", buy], ["factory", factory], ["pay token", pay]] as const) refuseDrill(a, what);

@@ -31,7 +31,7 @@ category, and its Q-Day Drill.
 | **Video** (2:59) | https://drive.google.com/file/d/10CswKFMBm_4AQf1Ljq9MtYgavpXiZnAu/view |
 | **Vault (v2)** | [`qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4`](https://explore.qore.network/address/qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4) / `0x79B2076a34b8CaBCF0120073cE0640165B287940` |
 | **Drill vault (v1)** | `0xc3EA5683C1f8D8594A1865D169D98B509b057D41`, signer [`qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j`](https://explore.qore.network/address/qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j) |
-| **Audit and PQ design** | [`docs/AUDIT.md`](docs/AUDIT.md): the two-stage QCAI audit ([`docs/audit/`](docs/audit/)), where `pqcVerify` and `pqcKeyStatus` are called, what each protects, which tests cover them |
+| **Audit and PQ design** | [`docs/AUDIT.md`](docs/AUDIT.md): the two-stage QCAI audit (reports in [`docs/audit/`](docs/audit/); stage 1 run on 24 November, 72/100, each of its 5 findings mapped to tests or a reason; stage 2 not run yet), where `pqcVerify` and `pqcKeyStatus` are called, what each protects, which tests cover them |
 | **Threat model** | [THREAT_MODEL.md](THREAT_MODEL.md): each attack, the drill's included, and what stops it |
 | **Licence** | Apache-2.0 |
 
@@ -83,8 +83,9 @@ line, on the signers' own machines: [Operating v2](#operating-v2).
   the real auction contracts, and **live on the testnet since 18 November 2026**,
   with the web app above. [See below](#peal-tender-v2-the-full-build).
 
-Neither version is audited yet; the two-stage QCAI audit of v2 is prepared in
-[`audits/`](audits/README.md).
+Stage 1 of v2's two-stage QCAI audit ran on 24 November 2026 (72/100, risk MEDIUM, five
+findings); what was done about each finding is in [`docs/AUDIT.md`](docs/AUDIT.md). Stage 2
+has not run yet. The drill vault (v1) is not audited.
 
 **Honest limits.** The three treasury signers are three separate accounts that the
 author holds for the demo; a real treasury gives each to a different person. The
@@ -431,7 +432,7 @@ Needs Foundry and Node.js 20 or later.
 npm install
 npm run setup        # forge-std, OpenZeppelin and qore-pq-kit v0.3.0 into lib/; forge-std into kit/lib/
 forge build
-forge test           # 132 tests: the drill vault's 50, and v2's 82 (below)
+forge test           # 150 tests: the drill vault's 50, and v2's 100 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
 npm run test:ts      # the kit integrations and the web app's guide: 37 tests, offline
@@ -445,6 +446,7 @@ v2's tests ([`test/v2/`](test/v2)):
 | --- | --- | --- |
 | `PealTenderV2.t.sol` | 57 | each action and each refusal: too few, outsider, repeated, unsorted, replayed, expired or foreign-chain signatures; single-member and v1-format shares; the precompile switched off; the daily cap; the timelock (queue, wait, execute, veto, lapse, a signer-set change voiding older changes, keys checked at execution); tenders with permissionless settlement; sealed sales against a mock auction, including a factory that under-pulls, an unlisted auction and re-entry |
 | `PealTenderV2Fuzz.t.sol` | 8 | amounts against the free balance and the cap, deadlines, nonces, argument binding, every signer subset, the cap over random days, the execution window, delay bounds |
+| `Audit1.t.sol` | 18 | exploit attempts and regression tests for the QCAI stage 1 findings ([`docs/AUDIT.md`](docs/AUDIT.md)): a stranger collecting a sale, the daily counter at 2^192, re-entry into all 13 functions from token hooks and native payments, a billion-entry sale list, ERC-1363 call-backs |
 | `PealTenderV2Invariant.t.sol` | 7 | a random-actor handler (signed actions by random member pairs, forged attempts from members' own accounts, time, donations, tenders, sealed sales, the queue): no forged action succeeds; both tokens conserved; always solvent; no day above the cap; nothing executed early; no approval left behind |
 | `Vectors.t.sol` | 4 | the CLI's TypeScript encoders against Solidity, byte for byte (`vectors/v2-actions.json`) |
 | `Gas.t.sol` | 6 | the gas of each call |

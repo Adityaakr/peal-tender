@@ -1024,7 +1024,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
       "div.t-wrap",
       head(
         "The category's requirements",
-        "QoreChain's Post-Quantum dApp category asks for a scoped EVM window, pqcVerify, a two-stage QCAI audit and Foundry or Hardhat tests. Each one, where it lives in the repository, and its state on 18 November.",
+        "QoreChain's Post-Quantum dApp category asks for a scoped EVM window, pqcVerify, a two-stage QCAI audit and Foundry or Hardhat tests. Each one, where it lives in the repository, and its state on 25 November.",
       ),
       h(
         "div.t-ledger-scroll.t-req-scroll",
@@ -1049,7 +1049,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
             reqRow(
               "Two-stage QCAI audit",
               [
-                "The Contract Auditor on the flattened source, the findings fixed, the frozen source audited again. ",
+                "The Contract Auditor on the flattened source, each finding tested and answered in docs/AUDIT.md, then the source audited again. ",
                 h(
                   "a",
                   {
@@ -1060,12 +1060,12 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
                   "audits/",
                 ),
               ],
-              "Stage 1 about 22 Nov, stage 2 on 29 Nov",
+              "Stage 1 run on 24 Nov: 72/100, 5 findings, each worked through. Stage 2 not run yet",
             ),
             reqRow(
               "Foundry tests",
               [
-                "132 tests. For v2: 57 unit, 8 fuzz, 7 invariant, 4 cross-language vectors, 6 gas. ",
+                "150 tests. For v2: 57 unit, 8 fuzz, 7 invariant, 18 for the audit's findings, 4 cross-language vectors, 6 gas. ",
                 h(
                   "a",
                   {
