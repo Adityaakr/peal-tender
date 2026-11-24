@@ -1455,3 +1455,41 @@
     grid-column: 1 / -1;
   }
 }
+
+/* the way in for judges, in the hero */
+.t-judge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 16px;
+  padding: 12px 16px;
+  background: var(--sheet);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--ink);
+}
+
+.t-judge:hover {
+  background: var(--accent-weak);
+  text-decoration: none;
+}
+
+.t-judge strong {
+  grid-column: 1;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.t-judge span {
+  grid-column: 1;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.t-judge svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}

@@ -5,6 +5,10 @@
   "outputDirectory": "apps/dashboard/dist",
   "rewrites": [
     {
+      "source": "/judge",
+      "destination": "/index.html"
+    },
+    {
       "source": "/api/qore/rest/:path*",
       "destination": "https://api-testnet.qore.host/:path*"
     },

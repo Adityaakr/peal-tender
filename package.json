@@ -29,6 +29,7 @@
     "e2e:local": "forge build && tsx scripts/v2/e2e-local.ts",
     "demo:local": "forge build && tsx scripts/v2/e2e-local.ts --keep",
     "test:ts": "tsx --test test-ts/*.test.ts",
+    "judge:smoke": "tsx scripts/judge/smoke.ts",
     "evidence": "tsx scripts/kits/evidence.ts",
     "template:check": "tsx scripts/kits/template-check.ts",
     "cbom": "tsx scripts/kits/cbom.ts",

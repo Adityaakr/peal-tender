@@ -618,6 +618,7 @@ function nav(): HTMLElement {
       h(
         "nav.t-links",
         { "aria-label": "On this page" },
+        h("a.t-navlink", { href: "#/judge" }, "For judges"),
         link("How to use", "try"),
         link("How it works", "how"),
         link("Security", "attacks"),
@@ -657,6 +658,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
           "Peal Tender holds a project's funds in a vault contract. Every payment is an order signed by two of three signers with ML-DSA-87, a post-quantum signature that QoreChain checks itself. An order signed with a stolen classical key is refused.",
         ),
         h("div.t-ctas", h("a.btn.btn-primary.t-btn", { href: "#/vault" }, "Open the treasury", icon("arrow")), guestBtn),
+        h("a.t-judge", { href: "#/judge" }, h("strong", "For judges: attack the live vault"), h("span", "No wallet, account or funds. About a minute."), icon("arrow")),
         h(
           "dl.t-terms",
           h("div", h("dt", "Signers"), h("dd", snap ? `${snap.threshold} of ${snap.members.length}` : "2 of 3")),
@@ -1168,6 +1170,7 @@ export async function landing(ctx: Partial<Ctx>): Promise<HTMLElement> {
         h(
           "div.t-foot-col",
           h("div.t-foot-title", "Records"),
+          h("a", { href: "#/judge" }, "For judges"),
           h("a", { href: REPO, target: "_blank", rel: "noopener" }, "Source"),
           h(
             "a",

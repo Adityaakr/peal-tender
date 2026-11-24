@@ -25,17 +25,29 @@ ML-DSA-87 signatures, checked against keys read live from the chain's registry.
 Entry for the QoreChain "Build Before Q-Day" hackathon, Post-Quantum dApp
 category, and its Q-Day Drill.
 
+**Judges: [peal-tender.vercel.app/judge](https://peal-tender.vercel.app/judge)** needs no
+wallet, account or funds. One button runs 23 `eth_call`s against the deployed contracts:
+16 attacks (a stolen classical key, a wrong member set, replayed and edited orders, over
+the daily cap, early execution), each with the contract's own error, next to 5 controls
+that must succeed and 2 calls that are stopped before the check they aim at, and say so.
+It also reads the vault live and maps the entry to the rubric. The same calls from a
+terminal: `npm run judge:smoke`. [How they are built, and their limits](#the-judge-page).
+
 | | |
 | --- | --- |
+| **Judge page** | **https://peal-tender.vercel.app/judge** (or `/#/judge`): no wallet, no account, no funds |
 | **Live app** | **https://peal-tender.vercel.app** (QoreChain testnet; reads the live v2 vault) |
 | **Video** (2:59) | https://drive.google.com/file/d/10CswKFMBm_4AQf1Ljq9MtYgavpXiZnAu/view |
 | **Vault (v2)** | [`qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4`](https://explore.qore.network/address/qor10xeqw635hr9teuqjqpeuupjqzedjs72q4kd4t4) / `0x79B2076a34b8CaBCF0120073cE0640165B287940` |
 | **Drill vault (v1)** | `0xc3EA5683C1f8D8594A1865D169D98B509b057D41`, signer [`qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j`](https://explore.qore.network/address/qor1z3fl4k38vzrw8x58eguurnglw4xt744lked87j) |
-| **Audit and PQ design** | [`docs/AUDIT.md`](docs/AUDIT.md): the two-stage QCAI audit (reports in [`docs/audit/`](docs/audit/); stage 1 run on 24 November, 72/100, each of its 5 findings mapped to tests or a reason; stage 2 not run yet), where `pqcVerify` and `pqcKeyStatus` are called, what each protects, which tests cover them |
+| **Audit and PQ design** | [`docs/AUDIT.md`](docs/AUDIT.md): the QCAI audit, **stage 1 of 2 run** (24 November 2026, 72/100, MEDIUM, 5 findings, each mapped to tests or a reason; report in [`docs/audit/`](docs/audit/)), **stage 2 not run yet**; and where `pqcVerify` and `pqcKeyStatus` are called, what each protects, which tests cover them |
 | **Threat model** | [THREAT_MODEL.md](THREAT_MODEL.md): each attack, the drill's included, and what stops it |
 | **Licence** | Apache-2.0 |
 
-**In 60 seconds, without an account:** open the [live app](https://peal-tender.vercel.app),
+The explorer links open on mainnet: press **Testnet** at the explorer's top once, and they
+work from then on.
+
+**Looking around, without an account:** open the [live app](https://peal-tender.vercel.app),
 then [Signers](https://peal-tender.vercel.app/#/signers) (the three ML-DSA-87 keys as
 `pqcKeyStatus` reports them right now), [Tender #3](https://peal-tender.vercel.app/#/tenders/3)
 (the open buyback and its offers) and [Activity](https://peal-tender.vercel.app/#/activity)
@@ -83,9 +95,10 @@ line, on the signers' own machines: [Operating v2](#operating-v2).
   the real auction contracts, and **live on the testnet since 18 November 2026**,
   with the web app above. [See below](#peal-tender-v2-the-full-build).
 
-Stage 1 of v2's two-stage QCAI audit ran on 24 November 2026 (72/100, risk MEDIUM, five
-findings); what was done about each finding is in [`docs/AUDIT.md`](docs/AUDIT.md). Stage 2
-has not run yet. The drill vault (v1) is not audited.
+**Audit status.** v2: stage 1 of the two-stage QCAI audit ran on 24 November 2026 (72/100,
+risk MEDIUM, five findings, each answered in [`docs/AUDIT.md`](docs/AUDIT.md)); stage 2 has
+not run yet, so the two-stage audit is half done. It is an automated audit, not a manual
+one. v1, the drill vault: not audited, and kept exactly as the drill judged it.
 
 **Honest limits.** The three treasury signers are three separate accounts that the
 author holds for the demo; a real treasury gives each to a different person. The
@@ -392,6 +405,7 @@ Content-Security-Policy.
 
 | Page | What it shows |
 | --- | --- |
+| [For judges](https://peal-tender.vercel.app/judge) | live state, the attack calls and the rubric, without a wallet ([below](#the-judge-page)) |
 | How to use | each role's steps with the live state: explore the vault, get an account and test tokens, offer into the open tender, settle and claim, see the sealed sale, and the signers' commands |
 | Overview | free balances, what is left of today's allowance, changes waiting, recent activity, the signers |
 | Signers | each member's ML-DSA-87 key as `pqcKeyStatus` reports it (registered, possession, a key fingerprint), and what each has signed |
@@ -400,6 +414,37 @@ Content-Security-Policy.
 | Sealed sales | each sale with the auction's state, proceeds and the price achieved |
 | Activity | the vault's events in words, with which signers authorised each action |
 | Propose | **build** a proposal (the same file `npm run v2 -- propose` writes, checked against the vault's own `quorumMessage`) and **check** one someone sent: what it does, decoded from its arguments, and every share verified with ML-DSA-87 against the signer's key on chain |
+
+#### The judge page
+
+[`/judge`](https://peal-tender.vercel.app/judge) is for a juror with no wallet, account or
+funds. Its calls are a controlled experiment
+([`apps/dashboard/src/judge/probes.ts`](apps/dashboard/src/judge/probes.ts)):
+
+- **The baseline is real.** The page fetches the 2-of-3 sweep the vault accepted on 18
+  November (`0xd1aec2ea…bd4f`) from the chain, with its two ML-DSA-87 signatures, and
+  simulates it at the block before it landed. The deployed vault, with the real
+  `pqcKeyStatus` and `pqcVerify`, accepts it again.
+- **Each attack changes one thing**, and a row counts only if the contract throws the error
+  it aims at, with the expected arguments. Any other refusal is shown as "refused by another
+  check", a call the node would not answer as "no answer".
+
+| Attack | The contract's answer |
+| --- | --- |
+| Stolen classical key, no or forged ML-DSA signatures (including as the drill account, whose key the drill's attacker was given) | `PqSetTooFewSignatures(0, 2)`, `PqSignatureInvalid` |
+| Wrong member set: one signer, an outsider, the same signer twice, a signature under another name | `PqSetTooFewSignatures(1, 2)`, `PqSetNotMember`, `PqSetNotAscending`, `PqSignatureInvalid` |
+| Replayed signature: one block later, and today | `PqSignatureInvalid` (the nonce moved), `PqExpired` |
+| Edited recipient, amount, deadline | `PqSignatureInvalid` |
+| Over the daily cap | a plain call is stopped earlier, by the signatures; simulated with a stolen quorum: `OverDailyCap` |
+| Early execution | `settle` on the open tender: `TooEarly`; a plain `execute` finds nothing queued (`NoSuchOp`); simulated with a queued sweep: `OpNotReady` |
+
+What it cannot show: `eth_call` does not check the sender's signature or its EVM window (so
+the attacker gets more than on chain), and no outsider's plain call can reach the daily cap
+or the timelock on the live state. Those four rows, marked "Simulated state", replace what
+they name and run the same deployed vault code: for the cap, both precompiles are stand-ins
+that answer "valid" (the node switches the real ones off when a call carries replaced
+state); for the timelock, a queued sweep is written into the simulated storage. No private
+key is used, nothing is sent, and every call can be copied as a `curl` command.
 
 To try it without the testnet: `npm run demo:local` runs the end-to-end check, then
 leaves a local node running with a vault in every state (a waiting signer change, an
@@ -435,7 +480,8 @@ forge build
 forge test           # 150 tests: the drill vault's 50, and v2's 100 (below)
 npm --workspace kit run test   # the in-repo kit: 30 tests
 npm run typecheck
-npm run test:ts      # the kit integrations and the web app's guide: 37 tests, offline
+npm run test:ts      # the kit integrations, the web app's guide and the judge page's calls: 77 tests, offline
+npm run judge:smoke  # the judge page's 23 calls against the live testnet, read-only
 npm run template:check && npm run cbom:check
 npm run snapshot     # v2 gas per call, into snapshots/GasTest.json
 ```

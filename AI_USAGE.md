@@ -361,3 +361,13 @@ The attempt on finding 2 showed that the constructor does not bound its first da
 the worker wrote that down, pinned it with a test and made the deploy script refuse such a
 cap. It compared the live bytecode with the build by read-only calls, and filled in
 `docs/AUDIT.md` and `audits/`. Stage 2 is the owner's to run.
+
+### 25 November 2026: the judge page
+
+The owner asked for a page where judges can try the entry without a wallet or funds. A
+worker designed the calls around one accepted order so that each attack differs from it in
+one thing, checked every call against the live testnet, and found that this node disables
+its post-quantum precompiles in any call with state overrides; the daily-cap rows were
+rebuilt around that and say so. It also found that the public explorer opens on mainnet and
+does not take EVM hashes, and corrected the links. It tested the production build in a
+headless browser (desktop, tablet, 390px, RPC down, rate-limited, recovered).
