@@ -4,15 +4,18 @@ The Post-Quantum dApp category asks for a "two-stage QCAI audit". The only audit
 tool QoreChain offers is the dashboard's **Contract Auditor**
 (`dashboard.qorechain.io/audit`): paste source code, get a risk level, a 0 to 100
 security score, a post-quantum readiness percentage, findings and a PDF. It needs
-the owner's dashboard sign-in, has no API, and gives one free audit per account
-per UTC day, so the two stages fall on two different days. We read "two-stage" as
-audit, fix the findings, audit the fixed source again, and keep both reports in
-[`docs/audit/`](../docs/audit/).
+the owner's dashboard sign-in and has no API. When we planned the stages the page
+offered a free audit per day; we know no hard limit of one per day, and other entries'
+public reports show both stages dated the same day. Our rule is **free only, and the
+owner decides when**: if the page asks for a payment, credits or an upgrade, stop. We
+read "two-stage" as audit, work through every finding, audit again, and keep both
+reports in [`docs/audit/`](../docs/audit/) (the fest's FAQ: stage 2 is "a second QCAI
+run after you have worked through every Stage 1 finding").
 
 | Stage | Date (UTC) | Source audited | Who |
 | --- | --- | --- | --- |
 | 1 | **run** 24 November 2026 18:38 UTC (00:08 on the 25th in India): 72/100, MEDIUM, 5 findings | `audits/flattened/PealTenderV2.flat.sol` at `b20b082` | **owner** ran the auditor; a worker worked through the findings ([record](stage-1.md)) |
-| 2 | **not run yet**; any later UTC day, from 25 November 2026 00:00 UTC (05:30 India time) to 2 December 2026 23:59 UTC (submissions close) | the same file: the source did not need to change | **owner** runs the auditor |
+| 2 | **not run yet**; when the owner decides, before 2 December 2026 23:59 UTC (submissions close) | the same file: the source did not need to change | **owner** runs the auditor |
 
 The drill vault (`src/PealTender.sol`) is the Q-Day Drill's deployed contract and
 is judged as deployed; it is not in scope and is not changed.
@@ -33,9 +36,8 @@ compiles with:
 
 ## Stage 2, exactly (owner)
 
-1. Wait for a UTC day after 24 November 2026: from 25 November 00:00 UTC, which is 05:30
-   India time. Stage 1 used the free audit of 24 November UTC. If the page asks for a
-   payment, credits or an upgrade, stop and come back on a later UTC day; **never pay**.
+1. Run it when you choose, as long as the page offers it free. If it asks for a payment,
+   credits or an upgrade, stop and try another day; **never pay**.
 2. On `main`, check that the file is still the one stage 1 audited:
 
    ```sh
@@ -51,7 +53,7 @@ compiles with:
    auto-detect, which resolved to ethereum, so the two reports compare.)
 4. Paste the whole file (4,088 lines) and run the audit once.
 5. Read the report before downloading: it must say **"Blockchain: ethereum"**. If it says
-   anything else, keep that PDF too, hand it over, and run again on the next UTC day.
+   anything else, keep that PDF too, hand it over, and run again when it is free.
    "Quantum Readiness: not scored for this setting" is expected.
 6. Download the PDF, do not edit it or print it to a new PDF, and hand it over with the
    date and time, the setting shown on the page and the finding texts shown on the page

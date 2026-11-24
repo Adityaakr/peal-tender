@@ -175,8 +175,9 @@ could in principle freeze or move balances. That is outside what the drill tests
 
 - The QoreChain validators verify hybrid signatures and windows as the docs and our
   observations say, and the precompiles implement ML-DSA-87 correctly.
-- The contracts are **not audited**. They are a minimal first version written for the
-  drill. The full Peal Tender (sealed offers, a factory, the auditor rounds) is later work.
+- The drill vault's contracts are **not audited**. They are a minimal first version written
+  for the drill. The full Peal Tender is v2 (section 8): stage 1 of its QCAI audit has run,
+  stage 2 has not run yet.
 - The "ops" account (`0xdA940905B6665BdA3Dcdb000030c830B74D4659F`) holds the test
   token and plays the token holders. It is not a drill account and its keys are not
   handed over.

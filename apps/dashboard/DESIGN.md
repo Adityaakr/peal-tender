@@ -72,6 +72,22 @@ Scale: display 64/1.05 (phone 40), title 38/1.12 (phone 29), lead 19/1.6, body
 Grid: 12 columns at 1200px; section heads put the title in 5 columns and the lead in 7.
 Every drawing has its own phone version at 1:1 scale rather than a shrunk copy.
 
+## The judge page
+
+For a juror with no wallet, account or funds (`src/pages/judge.ts`). Same paper, ledger and
+stamps as the landing page:
+
+| Section | The juror's question | Form |
+| --- | --- | --- |
+| Guide | What do I do, in what order? | One screen: the claim and one button, five ruled steps |
+| Attacks | Does the contract itself refuse? | Ledger rows in groups, controls first; each ends in a stamp and the contract's own error. Stamp red only for a refusal by the named check, green for an accepted control, amber for "stopped earlier" and for simulated state, solid red for a result that should not happen |
+| The vault, read now | Is it live? | A table: what, now, read from which function |
+| Limits | What does this not prove? | Plain list |
+| Rubric | How does it score? | Criterion, what to look at, where it falls short |
+
+Loading, no answer and retry states are words beside the figures, never an empty page; a
+failed reading never leaves old figures without saying so.
+
 ## Motion
 
 One moment, on load: the two signatures are written (stroke drawn over 900 ms, 250 ms

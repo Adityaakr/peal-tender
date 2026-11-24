@@ -17,6 +17,7 @@ import { propose } from "./pages/propose.ts";
 import { connect } from "./pages/connect.ts";
 import { landing } from "./pages/landing.ts";
 import { guidePage } from "./pages/guide.ts";
+import { judgePage } from "./pages/judge.ts";
 import { mountPanel, setBuyToken, walletButton } from "./wallet/panel.ts";
 import { openPanel, state as wallet, subscribe } from "./wallet/store.ts";
 
@@ -35,6 +36,7 @@ type Page = (ctx: Ctx, arg?: string) => HTMLElement | Promise<HTMLElement>;
 
 const ROUTES: { path: string; label: string; page: Page; live: boolean; tab?: false }[] = [
   { path: "", label: "Home", page: landing, live: true, tab: false },
+  { path: "judge", label: "For judges", page: (_c, arg) => judgePage(arg), live: true, tab: false },
   { path: "vault", label: "Overview", page: overview, live: true },
   { path: "guide", label: "How to use", page: (c) => guidePage(c.snap, wallet, () => openPanel()), live: true },
   { path: "signers", label: "Signers", page: signers, live: true },
@@ -117,6 +119,8 @@ function footer(): HTMLElement {
       "Treasury keys never touch this page: signers sign proposals with ",
       h("span.mono", "npm run sign-action"),
       ". A guest account, if you make one, lives only in this browser. Refreshes every 15 seconds. ",
+      h("a", { href: "#/judge" }, "For judges"),
+      " · ",
       h("a", { href: "https://github.com/Adityaakr/peal-tender", target: "_blank", rel: "noopener" }, "Source"),
       error ? h("div", { style: "color:var(--red);margin-top:6px" }, error) : null,
     ),
@@ -127,7 +131,7 @@ async function render(force = false): Promise<void> {
   const id = ++rendering;
   const { r, arg } = route();
   if (!force && r.tab === false && app.dataset.route === location.hash) {
-    // Do not redraw the landing page under a reader (animations, scroll); live figures update on the next visit.
+    // Do not redraw the landing or judge page under a reader (animations, scroll, results); live figures update on the next visit.
     return;
   }
   if (!force && !r.live && app.dataset.route === location.hash) {
@@ -137,7 +141,7 @@ async function render(force = false): Promise<void> {
   }
   let body: HTMLElement;
   if (r.tab === false) {
-    body = await landing({ vault, snap, activity: getActivity, refresh: () => void render(true), reload: () => void load(true) } as Ctx);
+    body = await r.page({ vault, snap, activity: getActivity, refresh: () => void render(true), reload: () => void load(true) } as Ctx, arg);
   } else if (!vault) {
     body = connect((v) => {
       vault = v;
@@ -158,7 +162,7 @@ async function render(force = false): Promise<void> {
   }
   if (id !== rendering) return;
   if (r.tab === false) {
-    // The landing page brings its own navigation bar and footer.
+    // The landing and judge pages bring their own navigation bar and footer.
     app.replaceChildren(body);
   } else {
     const main = h("main.wrap.page-enter", body);
@@ -179,6 +183,9 @@ async function load(force = false): Promise<void> {
   await render(force);
 }
 
+// The app routes by hash; the hosted /judge path (vercel.json) is the judge page's short address.
+if (/^\/judge\/?$/.test(location.pathname)) history.replaceState(null, "", `/${location.search}#/judge`);
+
 mountPanel();
 // The guide's account steps follow the wallet (account created, QOR arrived).
 subscribe(() => {
@@ -187,6 +194,14 @@ subscribe(() => {
 window.addEventListener("hashchange", () => {
   window.scrollTo(0, 0);
   void render(true);
+  if (!snap && route().r.path !== "judge") void load(true);
 });
-void load(true);
-setInterval(() => void load(false), 15_000);
+if (route().r.path === "judge") {
+  // It reads the testnet itself and needs no snapshot: the vault is first read on the way to another page.
+  void render(true);
+} else {
+  void load(true);
+}
+setInterval(() => {
+  if (route().r.path !== "judge") void load(false);
+}, 15_000);
