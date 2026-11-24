@@ -643,7 +643,12 @@ export const PROBES: Probe[] = [
     change: "Only the amount, against the row below: 2 times the daily cap. Today's real vault.",
     simulated: "pqcKeyStatus and pqcVerify replaced by code that always answers valid, as if two ML-DSA-87 keys were stolen. The vault's code and state are the chain's.",
     means: "The cap holds even when every signature passes. The vault compares the amount with what is left today.",
-    build: (f) => ({ call: quorumSweep(f, f.cap * 2n), expect: error("OverDailyCap", FUSD, f.cap * 2n, f.left), where: now(f) }),
+    build: (f) => ({
+      call: quorumSweep(f, f.cap * 2n),
+      // what remains can move between reading it and the call, so only the token and the amount are pinned
+      expect: error("OverDailyCap", FUSD, f.cap * 2n),
+      where: now(f),
+    }),
   },
   {
     id: "cap-within",

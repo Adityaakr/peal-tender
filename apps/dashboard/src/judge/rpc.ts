@@ -17,6 +17,12 @@ export type Fetch = (url: string, init: { method: string; headers: Record<string
 /** The node could not be reached, or would not answer. Says nothing about the contract. */
 export class RpcFailure extends Error {
   override name = "RpcFailure";
+  /** Worth another try: a network error, a timeout, HTTP 429 or HTTP 5xx. */
+  readonly transient: boolean;
+  constructor(message: string, transient = false) {
+    super(message);
+    this.transient = transient;
+  }
 }
 
 /** State the simulation replaces at one address. Only ever used by rows that say so. */
@@ -88,7 +94,7 @@ export class Rpc {
     try {
       const res = await this.#fetch(this.url, { method: "POST", headers: { "content-type": "application/json" }, body, signal: ctl.signal });
       const text = await res.text();
-      if (!res.ok) throw new RpcFailure(`the testnet node answered HTTP ${res.status}`);
+      if (!res.ok) throw new RpcFailure(`the testnet node answered HTTP ${res.status}`, res.status === 429 || res.status >= 500);
       try {
         return JSON.parse(text) as unknown;
       } catch {
@@ -98,6 +104,7 @@ export class Rpc {
       if (e instanceof RpcFailure) throw e;
       throw new RpcFailure(
         ctl.signal.aborted ? `no answer from the testnet node in ${Math.round(this.#timeout / 1000)} seconds` : "the testnet node could not be reached",
+        true,
       );
     } finally {
       clearTimeout(timer);
@@ -110,7 +117,7 @@ export class Rpc {
       try {
         return await this.#once(text);
       } catch (e) {
-        if (i >= this.#retries) throw e;
+        if (i >= this.#retries || !(e instanceof RpcFailure && e.transient)) throw e;
         await new Promise((r) => setTimeout(r, this.#backoff * (i + 1)));
       }
     }

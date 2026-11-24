@@ -300,6 +300,11 @@ describe("the node", () => {
     const flaky = fake(() => (++tries < 3 ? { status: 429 } : { result: "0x1" }), { retries: 2 });
     assert.equal(await flaky.request("eth_blockNumber", []), "0x1");
     assert.equal(tries, 3);
+    for (const status of [400, 403, 404]) {
+      tries = 0;
+      await assert.rejects(fake(() => (tries++, { status }), { retries: 2 }).request("eth_blockNumber", []), new RegExp(`HTTP ${status}`));
+      assert.equal(tries, 1);
+    }
   });
   it("sends calls made together in one batch and gives each its own answer", async () => {
     let posts = 0;

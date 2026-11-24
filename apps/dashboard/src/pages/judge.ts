@@ -289,8 +289,11 @@ function attackPanel(rpc: Rpc): { el: HTMLElement; runAll: () => void } {
 
   const rows = new Map<string, Row>();
   let running = false;
+  // A row run on its own may still be waiting when a full run starts: its late answer is dropped.
+  let generation = 0;
   const runOne = async (p: Probe): Promise<void> => {
     const row = rows.get(p.id)!;
+    const mine = generation;
     row.busy();
     let r: Result;
     try {
@@ -298,12 +301,14 @@ function attackPanel(rpc: Rpc): { el: HTMLElement; runAll: () => void } {
     } catch (e) {
       r = { verdict: "node-failure", said: e instanceof Error ? e.message : String(e) };
     }
+    if (mine !== generation) return;
     results.set(p.id, r);
     row.show(r);
   };
   const runAll = async () => {
     if (running) return;
     running = true;
+    generation++;
     allBtn.setAttribute("disabled", "");
     allBtn.textContent = "Running…";
     results.clear();
@@ -331,7 +336,9 @@ function attackPanel(rpc: Rpc): { el: HTMLElement; runAll: () => void } {
       p.id,
       attackRow(p, () => {
         if (running) return;
-        void runOne(p).then(() => summarise(false));
+        void runOne(p).then(() => {
+          if (!running) summarise(false);
+        });
       }),
     );
   }
