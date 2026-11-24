@@ -1,7 +1,10 @@
 # QCAI audit, stage 2
 
-**Status: not run yet.** Runs on a later day than stage 1 and before submissions close (2 December 2026 23:59 UTC), by the owner,
-on the source with the stage 1 fixes (see [README](README.md)).
+**Status: not run yet.** The owner runs it on a UTC day after stage 1's (24 November 2026)
+and before submissions close (2 December 2026 23:59 UTC). Stage 1 needed no source change,
+so it audits the same file, sha256
+`684e6dafc88d5ae34245e9f1979f1b4d3ed3b310212ed1c4be0039b9730fbdd6`. The exact steps are in
+the [README](README.md#stage-2-exactly-owner).
 
 | Field | Value |
 | --- | --- |

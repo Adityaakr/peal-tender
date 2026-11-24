@@ -286,5 +286,8 @@ run against the real Peal Sealed Auction contracts ([`docs/spikes.md`](docs/spik
 - **In the demo the owner holds all three signer keys,** as three accounts on
   separate machines or browsers, disclosed as demo-only (as decision D3 does for the
   auction's committee). That shows the mechanism, not independent custody.
-- **v2 is not audited yet**; the two-stage QCAI audit is prepared in
-  [`audits/`](audits/README.md).
+- **v2's two-stage QCAI audit is half done**: stage 1 ran on 24 November 2026 (72/100, risk
+  MEDIUM, five findings, each answered in [`docs/AUDIT.md`](docs/AUDIT.md)); stage 2 has not
+  run yet. It is an automated audit, not a manual one.
+- **The constructor does not bound the first daily cap** below 2^192, as the timelock does
+  for later ones. The live vault (1 fUSD) is not affected; `docs/AUDIT.md`, finding 2.

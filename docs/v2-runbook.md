@@ -197,5 +197,5 @@ Sealed Auction's website nor any account of ours.
 - After the drill (from 19 November) the drill vault may also move to `qore-pq-kit` by tag and `kit/`
   can go (its Solidity is byte-identical to v0.3.0); `DRILL.md`'s commands must keep
   working.
-- **(owner)** QCAI audit stage 1 (about 22 November) and stage 2 (29 November):
-  `audits/README.md`.
+- **(owner)** QCAI audit: stage 1 ran on 24 November 2026 (UTC); stage 2, on a later UTC day
+  before 2 December 23:59 UTC, is still to run: `audits/README.md`.

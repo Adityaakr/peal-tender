@@ -350,3 +350,14 @@ contract. The owner then asked for the app to open the live vault by default and
 explain how to use it; the worker wrote the "How to use" guide (`pages/guide.ts`), whose
 steps come from the vault's live state and are unit-tested, and checked it in a
 headless browser at desktop and phone widths.
+
+### 25 November 2026: the QCAI stage 1 findings
+
+The owner ran stage 1 of the QCAI audit and supplied the report. A worker treated each of
+its five findings as possibly true: it read the code, wrote exploit attempts
+(`test/v2/Audit1.t.sol`), and checked the tests against 22 deliberately broken versions of
+the vault. None of the findings is exploitable on the live vault, so no contract changed.
+The attempt on finding 2 showed that the constructor does not bound its first daily cap;
+the worker wrote that down, pinned it with a test and made the deploy script refuse such a
+cap. It compared the live bytecode with the build by read-only calls, and filled in
+`docs/AUDIT.md` and `audits/`. Stage 2 is the owner's to run.
